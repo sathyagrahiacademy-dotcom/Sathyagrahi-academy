@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#082a63" />
+  <title>Sathyagrahi Academy</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="ticker" aria-label="Academy tagline">
+      <div class="ticker-text">★ &nbsp; Every Dream Deserves the Right Direction &nbsp; ★</div>
+    </div>
+
+    <div class="brand-wrap">
+      <img class="brand-image" src="assets/header-brand.png" alt="Sathyagrahi Academy" />
+    </div>
+
+    <nav class="main-nav" aria-label="Primary navigation">
+      <a class="nav-item active" href="#home"><svg class="nav-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.8 12 3l9 7.8v9.7a.5.5 0 0 1-.5.5H15v-6H9v6H3.5a.5.5 0 0 1-.5-.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>HOME</span></a>
+      <a class="nav-item" href="#about">ABOUT US</a>
+      <a class="nav-item" href="#courses">COURSES</a>
+      <a class="nav-item" href="#exams">ONLINE EXAMS</a>
+      <a class="nav-item" href="#material">STUDY MATERIAL</a>
+      <a class="nav-item" href="#results">RESULTS</a>
+      <a class="nav-item" href="#contact">CONTACT US</a>
+    </nav>
+  </header>
+
+  <main id="home">
+    <section class="hero" aria-label="Sathyagrahi Academy hero banner">
+      <img src="assets/hero-banner.png" alt="Dr. B. R. Ambedkar quote banner" />
+    </section>
+
+    <section class="dashboard-strip" aria-label="Academy information">
+      <article class="panel notifications-panel">
+        <div class="panel-title">🔔 <span>NOTIFICATIONS</span></div>
+        <div class="notifications-window" id="notificationsWindow" tabindex="0" aria-label="Scrolling notifications">
+          <div class="notifications-list" id="notificationsList">
+            <div class="notice"><span class="dot"></span><div><strong>NEET Full Syllabus Test – 01</strong><small>will be conducted on 25 May 2025</small></div><time>20 May 2025</time></div>
+            <div class="notice"><span class="dot"></span><div><strong>Study Material – Physics</strong><small>New Chapter Notes Uploaded</small></div><time>19 May 2025</time></div>
+            <div class="notice"><span class="dot"></span><div><strong>Chemistry Practice Test – 05</strong><small>Results Published</small></div><time>18 May 2025</time></div>
+            <div class="notice"><span class="dot"></span><div><strong>Academy Holiday</strong><small>26 May 2025 (Monday)</small></div><time>17 May 2025</time></div>
+            <div class="notice"><span class="dot"></span><div><strong>New Batch Admission</strong><small>NEET admission window open</small></div><time>15 May 2025</time></div>
+          </div>
+        </div>
+        <button class="outline-btn" type="button">VIEW ALL</button>
+      </article>
+
+      <article class="panel welcome-panel" id="about">
+        <div class="welcome-inner">
+          <h1>WELCOME TO<br /><span>SATHYAGRAHI ACADEMY</span></h1>
+          <div class="accent-line" aria-hidden="true"></div>
+          <p>Sathyagrahi Academy is a student-focused learning platform dedicated to NEET aspirants. We provide high-quality study material, online exams, performance analysis and personal guidance to help every student achieve their dream.</p>
+          <button class="primary-btn" id="openWelcome" type="button">VIEW MORE</button>
+        </div>
+      </article>
+
+      <article class="panel login-panel" id="exams">
+        <div class="panel-title"><svg class="nav-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 20c.5-4 2.7-6.2 6.5-6.2s6 2.2 6.5 6.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>STUDENT LOGIN</span></div>
+        <form class="login-form" onsubmit="return false;">
+          <label for="studentId">Student ID</label>
+          <div class="input-wrap"><span aria-hidden="true">♙</span><input id="studentId" inputmode="numeric" maxlength="8" placeholder="Enter your 8 digit Student ID" /></div>
+
+          <label for="password">Password</label>
+          <div class="input-wrap"><span aria-hidden="true">▣</span><input id="password" type="password" placeholder="Enter your password" /><button class="eye-btn" id="togglePassword" type="button" aria-label="Show password">◉</button></div>
+
+          <div class="login-options">
+            <label class="remember"><input type="checkbox" /> <span>Remember Me</span></label>
+            <a href="#" onclick="return false;">Forgot Password?</a>
+          </div>
+          <button class="login-btn" type="submit">LOGIN</button>
+        </form>
+      </article>
+    </section>
+  </main>
+
+  <footer class="site-footer" id="contact">
+    <div class="footer-grid">
+      <section>
+        <h2>SATHYAGRAHI ACADEMY</h2>
+        <p>Empowering Students.<br />Inspiring Excellence.</p>
+      </section>
+      <section>
+        <h3>QUICK LINKS</h3>
+        <a href="#home">Home</a><a href="#about">About Us</a><a href="#courses">Courses</a><a href="#exams">Online Exams</a><a href="#material">Study Material</a><a href="#results">Results</a><a href="#contact">Contact Us</a>
+      </section>
+      <section>
+        <h3>FOLLOW US</h3>
+        <div class="socials"><a href="#" aria-label="Facebook">f</a><a href="#" aria-label="YouTube">▶</a><a href="#" aria-label="Telegram">➤</a><a href="#" aria-label="Instagram">◎</a></div>
+      </section>
+      <section>
+        <h3>CONTACT US</h3>
+        <p>☎ &nbsp; +91 9059995537</p>
+        <p>✉ &nbsp; info@sathyagrahiacademy.com</p>
+        <p>⌖ &nbsp; Bheemgal, Nizamabad,<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Telangana, India</p>
+      </section>
+    </div>
+    <div class="footer-bottom"><span>© 2026 Sathyagrahi Academy. All Rights Reserved.</span><span><a href="#">Privacy Policy</a><i></i><a href="#">Terms &amp; Conditions</a></span></div>
+  </footer>
+
+  <div class="modal" id="welcomeModal" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Welcome to Sathyagrahi Academy">
+    <div class="modal-backdrop" data-close-modal></div>
+    <div class="modal-card">
+      <button class="modal-close" type="button" data-close-modal aria-label="Close">×</button>
+      <div class="modal-toolbar"><strong>Welcome to Sathyagrahi Academy</strong><button id="openPosterTab" type="button">OPEN FULL IMAGE</button></div>
+      <div class="poster-stage"><img src="assets/welcome-poster.png" alt="Welcome to Sathyagrahi Academy full message" /></div>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
