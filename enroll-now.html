@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#082a63">
+<title>Enroll Now | Sathyagrahi Academy</title>
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="stylesheet" href="styles.css">
+<style>
+.enroll-page{min-height:100vh;background:#f6f8fb}
+.enroll-top{max-width:1160px;margin:0 auto;padding:26px 20px 0}
+.enroll-back{display:inline-flex;align-items:center;gap:6px;color:#123b68;text-decoration:none;font-weight:800;font-size:13px}
+.enroll-shell{max-width:1160px;margin:18px auto 0;padding:0 20px 60px;display:grid;grid-template-columns:.85fr 1.15fr;gap:22px}
+.enroll-intro{background:linear-gradient(145deg,#0c2f5c,#174f86);color:#fff;border-radius:20px;padding:34px;min-height:540px;box-shadow:0 18px 45px rgba(12,47,92,.13)}
+.enroll-intro img{width:56px;height:56px;border-radius:50%;background:#fff;padding:4px;margin-bottom:22px}
+.enroll-intro .eyebrow{font-size:12px;letter-spacing:.14em;font-weight:900;color:#cddcec}
+.enroll-intro h1{font-size:34px;line-height:1.12;margin:10px 0 12px}
+.enroll-intro p{font-size:15px;line-height:1.7;color:#d7e4f0;max-width:520px}
+.enroll-points{display:grid;gap:12px;margin-top:28px}
+.enroll-point{display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(255,255,255,.06)}
+.enroll-point b{display:block;font-size:14px}.enroll-point span{display:block;font-size:12px;color:#cddcec;margin-top:4px;line-height:1.55}
+.enroll-card{background:#fff;border:1px solid #e1e7ef;border-radius:20px;padding:28px;box-shadow:0 18px 45px rgba(38,63,90,.07)}
+.enroll-card h2{margin:0 0 6px;color:#123b68;font-size:25px}.enroll-card .sub{margin:0 0 20px;color:#6b7889;font-size:14px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-grid label{font-size:13px;font-weight:800;color:#536476}
+.form-grid .wide{grid-column:1/-1}
+.form-grid input,.form-grid select,.form-grid textarea{width:100%;box-sizing:border-box;margin-top:7px;border:1px solid #cbd6e1;border-radius:9px;padding:12px 13px;font:inherit;font-size:14px;background:#fff;outline:none}
+.form-grid textarea{min-height:96px;resize:vertical}
+.form-grid input:focus,.form-grid select:focus,.form-grid textarea:focus{border-color:#123b68;box-shadow:0 0 0 3px rgba(18,59,104,.07)}
+.required{color:#b23a3a}
+.consent{display:flex;gap:9px;align-items:flex-start;margin:16px 0 0;padding:12px;background:#f7f9fc;border:1px solid #e2e8ef;border-radius:10px;color:#5d6c7c;font-size:12px;line-height:1.55}
+.consent input{margin-top:2px}
+.submit-row{display:flex;justify-content:flex-end;align-items:center;gap:12px;margin-top:17px}
+.submit-btn{border:0;background:#123b68;color:#fff;border-radius:9px;padding:13px 20px;font-size:12px;font-weight:900;letter-spacing:.04em;cursor:pointer}
+.submit-btn:disabled{opacity:.55;cursor:not-allowed}
+#formMsg{font-size:12px;flex:1}
+.success{display:none;text-align:center;padding:38px 10px}
+.success.show{display:block}.success .tick{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;background:#e8f6ee;color:#26734a;font-size:30px;margin:0 auto 18px}
+.success h2{font-size:25px}.success p{color:#657487;font-size:14px;line-height:1.65}
+.success a{display:inline-block;margin-top:12px;padding:11px 16px;border-radius:8px;background:#123b68;color:#fff;text-decoration:none;font-size:12px;font-weight:900}
+@media(max-width:900px){.enroll-shell{grid-template-columns:1fr}.enroll-intro{min-height:0}}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr}.form-grid .wide{grid-column:auto}.enroll-intro,.enroll-card{padding:22px}.enroll-intro h1{font-size:28px}}
+</style>
+</head>
+<body class="enroll-page">
+<header class="site-header">
+  <div class="ticker"><div class="ticker-text">★ &nbsp; Every Dream Deserves the Right Direction &nbsp; ★</div></div>
+  <div class="brand-wrap"><img class="brand-image" src="assets/header-brand.png" alt="Sathyagrahi Academy"></div>
+</header>
+
+<div class="enroll-top"><a class="enroll-back" href="index.html">← BACK TO HOME</a></div>
+
+<main class="enroll-shell">
+<section class="enroll-intro">
+  <img src="assets/favicon.png" alt="">
+  <span class="eyebrow">SATHYAGRAHI ACADEMY</span>
+  <h1>Begin Your NEET Preparation Journey</h1>
+  <p>Submit the enrollment form below. Our academy will review your details and contact you regarding the next step.</p>
+  <div class="enroll-points">
+    <div class="enroll-point"><div>01</div><div><b>Submit Your Details</b><span>Enter accurate student and parent contact information.</span></div></div>
+    <div class="enroll-point"><div>02</div><div><b>Academy Review</b><span>Your application appears directly in the Admin New Enrollments panel.</span></div></div>
+    <div class="enroll-point"><div>03</div><div><b>Personal Guidance</b><span>Our team will contact you and guide the next enrollment step.</span></div></div>
+  </div>
+</section>
+
+<section class="enroll-card">
+  <div id="formArea">
+    <h2>Student Enrollment Form</h2>
+    <p class="sub">Fields marked with <span class="required">*</span> are required.</p>
+    <form id="enrollForm">
+      <div class="form-grid">
+        <label>Student Name <span class="required">*</span>
+          <input id="studentName" maxlength="120" required placeholder="Enter full name">
+        </label>
+        <label>Student Mobile <span class="required">*</span>
+          <input id="mobile" inputmode="numeric" maxlength="10" required placeholder="10-digit mobile number">
+        </label>
+
+        <label>Parent / Guardian Name
+          <input id="parentName" maxlength="120" placeholder="Parent or guardian name">
+        </label>
+        <label>Parent Mobile
+          <input id="parentMobile" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number">
+        </label>
+
+        <label>Current Class
+          <select id="currentClass">
+            <option value="">Select</option>
+            <option>Class 10</option>
+            <option>Class 11</option>
+            <option>Class 12</option>
+            <option>Intermediate 1st Year</option>
+            <option>Intermediate 2nd Year</option>
+            <option>Repeater / Dropper</option>
+            <option>Other</option>
+          </select>
+        </label>
+        <label>Target Exam
+          <select id="targetExam">
+            <option value="NEET 2027">NEET 2027</option>
+            <option value="NEET">NEET</option>
+          </select>
+        </label>
+
+        <label class="wide">School / College
+          <input id="schoolCollege" maxlength="180" placeholder="Current school or college">
+        </label>
+
+        <label class="wide">Location
+          <input id="location" maxlength="180" placeholder="Village / Town / District">
+        </label>
+
+        <label class="wide">Message / Preparation Requirement
+          <textarea id="message" maxlength="1200" placeholder="Tell us briefly what guidance you need."></textarea>
+        </label>
+      </div>
+
+      <label class="consent">
+        <input id="consent" type="checkbox" required>
+        <span>I confirm that the information entered above is correct and I agree to be contacted by Sathyagrahi Academy regarding this enrollment request.</span>
+      </label>
+
+      <div class="submit-row">
+        <div id="formMsg"></div>
+        <button id="submitBtn" class="submit-btn" type="submit">SUBMIT ENROLLMENT</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="successArea" class="success">
+    <div class="tick">✓</div>
+    <h2>Enrollment Request Submitted</h2>
+    <p>Thank you. Your application has reached Sathyagrahi Academy. Our team will review it and contact you using the mobile number provided.</p>
+    <a href="index.html">RETURN TO HOME</a>
+  </div>
+</section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="enroll-now.js"></script>
+</body>
+</html>

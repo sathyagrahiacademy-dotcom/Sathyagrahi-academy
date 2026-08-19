@@ -1,0 +1,511 @@
+
+:root{--navy:#06275f;--blue:#0b3f91;--bg:#f5f8fc;--line:#dce4ef;--ink:#14213a;--muted:#6b7890;--white:#fff}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:'Trebuchet MS','Segoe UI',Arial,sans-serif;color:var(--ink);background:var(--bg)}
+button,a{font:inherit}.app-shell{min-height:100vh;display:grid;grid-template-columns:235px 1fr}
+.sidebar{background:linear-gradient(180deg,#082f6d,#05265c);color:#fff;padding:22px 14px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.sidebar-brand{display:flex;align-items:center;gap:10px;padding:0 8px 22px;border-bottom:1px solid rgba(255,255,255,.15)}
+.sidebar-brand img{width:42px;height:42px}.sidebar-brand strong,.sidebar-brand span{display:block;letter-spacing:.5px}.sidebar-brand strong{font-size:16px}.sidebar-brand span{font-size:12px;opacity:.85}
+.sidebar nav{display:flex;flex-direction:column;gap:4px;padding-top:20px}.side-link{color:#eaf1ff;text-decoration:none;padding:12px 14px;border-radius:7px;font-size:15px;font-weight:700}
+.side-link:hover,.side-link.active{background:rgba(255,255,255,.13);color:#fff}.sidebar-help{margin-top:auto;border-top:1px solid rgba(255,255,255,.16);padding:18px 10px 4px;font-size:13px;display:flex;flex-direction:column;gap:4px}
+.main{min-width:0}.topbar{height:82px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 34px;gap:14px;position:sticky;top:0;z-index:5}
+.topbar h1{font-size:22px;margin:0;color:var(--navy)}.topbar p{font-size:13px;margin:4px 0 0;color:var(--muted)}.student-area{margin-left:auto;display:flex;align-items:center;gap:18px}.student-meta{text-align:right}.student-meta strong,.student-meta span{display:block}.student-meta strong{font-size:14px}.student-meta span{font-size:12px;color:var(--muted);margin-top:3px}
+.logout-btn{border:1px solid #b7c6da;background:#fff;color:var(--navy);border-radius:6px;padding:8px 12px;font-size:11px;font-weight:800;cursor:pointer}.menu-btn{display:none;border:0;background:transparent;font-size:23px;color:var(--navy)}
+.content{max-width:1180px;margin:0 auto;padding:30px}.welcome-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}.eyebrow,.card-label{font-size:11px;font-weight:800;letter-spacing:1px;color:#2c5fa5}.welcome-row h2{font-size:27px;margin:4px 0 0;color:var(--navy)}.secure-badge{font-size:10px;color:#147a4b;background:#eaf8f1;padding:7px 10px;border-radius:20px}
+.countdown-card,.section-card{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 3px 12px rgba(25,47,84,.04)}.countdown-card{padding:26px 28px;display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:20px;background:linear-gradient(120deg,#fff,#f1f6ff)}
+.countdown-card h3,.section-heading h3{margin:5px 0 0;color:var(--navy);font-size:18px}.countdown-card p{font-size:11px;color:var(--muted);margin:7px 0 0}.countdown{display:flex;gap:9px}.countdown div{width:76px;height:70px;background:var(--navy);color:#fff;border-radius:9px;display:grid;place-items:center;padding:7px}.countdown strong{font-size:24px;line-height:1}.countdown span{font-size:9px;opacity:.75}
+.section-card{padding:22px 24px;margin-bottom:20px}.section-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.progress-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.subject-card{border:1px solid #e0e7f0;border-radius:9px;padding:18px}.subject-head{display:flex;justify-content:space-between;font-size:13px}.subject-head span{color:var(--blue);font-weight:800}.progress-track{height:8px;border-radius:20px;background:#e9eef5;overflow:hidden;margin-top:14px}.progress-track>div{height:100%;width:0;background:linear-gradient(90deg,#0b3f91,#2f72d5);border-radius:20px;transition:width .5s ease}
+.notification-list{display:flex;flex-direction:column}.notification-item{display:grid;grid-template-columns:1fr auto;gap:14px;padding:13px 4px;border-bottom:1px solid #edf1f6}.notification-item:last-child{border-bottom:0}.notification-item strong{font-size:12px;color:#17233c}.notification-item p{font-size:11px;margin:4px 0 0;color:var(--muted)}.notification-item time{font-size:9px;color:#4770a9;white-space:nowrap}.empty-state{font-size:12px;color:var(--muted);padding:12px 0}
+footer{text-align:center;color:#7d899d;font-size:11px;padding:5px 20px 24px}.toast{position:fixed;right:22px;bottom:22px;background:#102a55;color:#fff;padding:10px 14px;border-radius:8px;font-size:11px;opacity:0;pointer-events:none;transform:translateY(10px);transition:.2s}.toast.show{opacity:1;transform:translateY(0)}
+@media(max-width:850px){.app-shell{grid-template-columns:1fr}.sidebar{position:fixed;z-index:20;left:-255px;width:235px;transition:left .2s}.sidebar.open{left:0}.menu-btn{display:block}.topbar{padding:0 16px}.student-meta{display:none}.content{padding:20px 14px}.countdown-card{align-items:flex-start;flex-direction:column}.progress-grid{grid-template-columns:1fr}.secure-badge{display:none}}
+@media(max-width:480px){.countdown{width:100%}.countdown div{flex:1;width:auto}.topbar h1{font-size:17px}.welcome-row h2{font-size:23px}}
+
+
+/* SGA Preparation Command Center */
+.prep-dashboard{max-width:1400px}.prep-subtitle{margin:5px 0 0;color:#687386;font-size:14px}.prep-hero{display:grid;grid-template-columns:1fr 230px;gap:18px;background:linear-gradient(135deg,#fff,#f7faff);border:1px solid #dfe7f0;border-radius:18px;padding:24px;margin-bottom:18px}.prep-hero-main h3{font-size:25px;margin:6px 0}.prep-hero-main>p{color:#50647a;margin:0 0 20px}.overall-row{display:grid;grid-template-columns:180px 1fr;gap:22px;align-items:center}.overall-score{background:#0e315a;color:white;border-radius:16px;padding:20px;text-align:center}.overall-score strong{display:block;font-size:38px}.overall-score span{font-size:11px;font-weight:800}.overall-bars{display:grid;gap:10px}.overall-bars>div{display:grid;grid-template-columns:115px 45px 1fr;gap:8px;align-items:center;font-size:13px}.overall-bars b{text-align:right}.overall-bars i{height:8px;background:#e8edf3;border-radius:99px;overflow:hidden}.overall-bars em{display:block;height:100%;background:#123b68}.countdown-mini{background:#f2f6fa;border:1px solid #dde5ee;border-radius:16px;padding:18px;text-align:center;display:flex;flex-direction:column;justify-content:center}.countdown-mini strong{font-size:48px;color:#102f55}.countdown-mini span,.countdown-mini small{font-size:12px;font-weight:800;color:#66788b}.today-grid{display:grid;grid-template-columns:1.55fr .7fr;gap:18px;margin-bottom:18px}.today-card{background:#fff;border:1px solid #dfe7f0;border-radius:16px;padding:20px}.today-head{display:flex;justify-content:space-between}.date-chip{background:#eef4fa;padding:6px 9px;border-radius:10px;font-size:11px;font-weight:800}.study-card h3{font-size:30px;margin:8px 0;color:#123b68}.mini-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:18px 0}.mini-stats div{background:#f7f9fc;border-radius:10px;padding:10px;text-align:center}.mini-stats b{display:block;font-size:18px}.mini-stats span{font-size:11px;color:#657487}.prep-btn{border:1px solid #cbd5df;background:#fff;border-radius:8px;padding:9px 12px;font-size:11px;font-weight:800}.prep-btn.primary{background:#123b68;color:#fff}.task-list{display:grid;gap:8px;margin-top:14px}.task-item,.revision-item{display:flex;justify-content:space-between;gap:12px;align-items:center;background:#f8fafc;border:1px solid #e6ebf0;border-radius:11px;padding:12px}.task-item.high{border-left:4px solid #c63d32}.task-item div,.revision-item div{display:flex;flex-direction:column;gap:3px}.task-item span,.revision-item span{font-size:11px;font-weight:800;color:#607086}.task-item small,.revision-item small{font-size:11px;color:#7a8795}.task-item button,.revision-item button{border:0;background:#123b68;color:white;border-radius:7px;padding:7px 9px;font-size:10px;font-weight:800}.phase-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:18px}.phase-card{background:#fff;border:1px solid #dfe7f0;border-radius:16px;padding:18px;display:grid;grid-template-columns:35px 1fr;gap:12px}.phase-no{width:32px;height:32px;border-radius:9px;background:#eef4fa;display:grid;place-items:center;font-size:10px;font-weight:900}.phase-card h3{font-size:15px;margin:4px 0}.phase-card p{font-size:12px;color:#6d7b8a}.phase-kpi{grid-column:1/-1;background:#f7f9fc;border-radius:10px;padding:10px 12px;display:flex!important;justify-content:space-between}.phase-kpi b{font-size:22px;color:#123b68}.subject-command-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.subject-command{border:1px solid #e0e7ef;border-radius:13px;padding:15px}.subject-command-head{display:flex;justify-content:space-between;margin-bottom:10px}.subject-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px}.subject-meta span{background:#f7f9fc;border-radius:8px;padding:8px;font-size:10px;text-align:center}.subject-meta b{display:block;font-size:15px}.journey-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}.exam-snapshot{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}.exam-snapshot div{background:#f7f9fc;border-radius:11px;padding:14px;text-align:center}.exam-snapshot b{display:block;font-size:23px;color:#123b68}.guidance-box{background:#edf4fa;border-left:4px solid #123b68;border-radius:8px;padding:12px;font-size:12px}.text-link{font-size:11px;font-weight:800;color:#123b68}.timeline-item{display:grid;grid-template-columns:12px 1fr auto;gap:12px;align-items:center;border-bottom:1px solid #edf1f5;padding:9px 0}.timeline-item i{width:9px;height:9px;border-radius:99px;background:#123b68}.timeline-item div{display:flex;flex-direction:column}.timeline-item span,.timeline-item small,.timeline-item time{font-size:11px;color:#7b8997}.prep-modal{position:fixed;inset:0;background:rgba(9,27,48,.62);display:none;place-items:center;padding:20px;z-index:100}.prep-modal.open{display:grid}.prep-modal-card{background:white;border-radius:16px;padding:22px;width:min(720px,96vw)}.modal-head{display:flex;justify-content:space-between}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.form-grid label{font-size:12px;font-weight:800}.form-grid .wide{grid-column:1/-1}.form-grid input,.form-grid select{width:100%;box-sizing:border-box;margin-top:5px;padding:10px;border:1px solid #ccd6e0;border-radius:8px}.form-tip{font-size:12px;background:#f7f9fc;padding:10px}.modal-actions{display:flex;justify-content:flex-end;gap:8px}@media(max-width:1000px){.prep-hero,.today-grid,.journey-grid{grid-template-columns:1fr}.phase-grid,.subject-command-grid{grid-template-columns:1fr}.overall-row{grid-template-columns:1fr}.countdown-mini{display:none}}
+
+/* ===== SIMPLE STUDENT-FIRST DASHBOARD ===== */
+.simple-dashboard{max-width:1400px}
+.simple-welcome{margin-bottom:16px}
+.top-focus-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;margin-bottom:18px}
+.focus-card{min-height:260px}
+.helper-text{margin:4px 0 14px;color:#69798b;font-size:12px}
+.neet-countdown-card{background:linear-gradient(145deg,#0d2d53,#163f70);color:#fff;border-radius:18px;padding:22px;box-shadow:0 12px 28px rgba(13,45,83,.18);position:relative;overflow:hidden}
+.neet-countdown-card:after{content:"";position:absolute;width:230px;height:230px;border:1px solid rgba(255,255,255,.09);border-radius:50%;right:-90px;top:-95px}
+.countdown-title-row{display:flex;justify-content:space-between;gap:10px;align-items:center;position:relative;z-index:1}
+.countdown-live{display:inline-block;font-size:10px;font-weight:900;letter-spacing:.1em;color:#93e7bc;margin-right:8px}
+.exam-date-pill{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);border-radius:99px;padding:6px 9px;font-size:10px;font-weight:900;letter-spacing:.08em}
+.neet-countdown-card h3{font-size:24px;margin:16px 0 4px;position:relative;z-index:1}
+.neet-countdown-card p{font-size:13px;color:#ccdaea;margin:0 0 18px;position:relative;z-index:1}
+.countdown-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;position:relative;z-index:1}
+.countdown-grid div{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:13px 8px;text-align:center}
+.countdown-grid strong{display:block;font-size:28px;line-height:1.05}.countdown-grid span{font-size:10px;letter-spacing:.1em;color:#cbd8e6}
+.countdown-footer{display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,.13);padding-top:12px;margin-top:14px;font-size:11px;position:relative;z-index:1}
+.my-progress-section,.today-study-simple{margin-bottom:18px}
+.progress-summary-grid{display:grid;grid-template-columns:170px repeat(3,1fr);gap:12px;align-items:stretch}
+.simple-overall{display:flex;flex-direction:column;justify-content:center}
+.progress-track-card{border:1px solid #e2e8f0;border-radius:12px;padding:14px;background:#fbfcfe}
+.progress-line{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;font-size:13px;font-weight:800}
+.progress-track.large{height:9px}.progress-track-card small{display:block;margin-top:8px;font-size:11px;color:#788697;line-height:1.4}
+.quick-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.quick-kpis div{background:#f7f9fc;border:1px solid #e8edf3;border-radius:10px;padding:11px 13px;display:flex;justify-content:space-between;align-items:center}
+.quick-kpis span{font-size:11px;color:#69798b}.quick-kpis b{font-size:20px;color:#123b68}
+.guidance-strip{margin-top:12px;background:#edf4fa;border-left:4px solid #123b68;border-radius:9px;padding:11px 13px;display:flex;gap:12px;align-items:flex-start}
+.guidance-strip span{font-size:10px;font-weight:900;color:#123b68;letter-spacing:.08em}.guidance-strip strong{font-size:12px;color:#43576d;font-weight:700;line-height:1.45}
+.today-study-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.today-study-stats div{background:#f7f9fc;border:1px solid #e7edf3;border-radius:12px;padding:13px;text-align:center}
+.today-study-stats b{display:block;color:#123b68;font-size:20px}.today-study-stats span{font-size:11px;color:#718093}
+.subject-meta span{line-height:1.35}.subject-meta b{margin-bottom:2px}
+.practice-field{display:none}
+@media(max-width:1050px){.top-focus-grid,.progress-summary-grid{grid-template-columns:1fr}.countdown-grid{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:650px){.countdown-grid{grid-template-columns:repeat(2,1fr)}.today-study-stats{grid-template-columns:1fr 1fr}.quick-kpis{grid-template-columns:1fr}.top-focus-grid{grid-template-columns:1fr}}
+
+
+/* ===== SAFE VISUAL FIX: CIRCLE LOGO + COUNTDOWN LABEL VISIBILITY ===== */
+.sidebar-brand img{
+  width:46px !important;
+  height:46px !important;
+  object-fit:cover !important;
+  border-radius:50% !important;
+  background:#ffffff !important;
+  padding:4px !important;
+  border:2px solid rgba(255,255,255,.18) !important;
+  box-shadow:0 4px 12px rgba(0,0,0,.18) !important;
+}
+
+/* if any wrapper exists around the logo */
+.sidebar-brand .logo-circle,
+.sidebar-brand .brand-logo,
+.sidebar-brand .academy-logo{
+  border-radius:50% !important;
+  overflow:hidden !important;
+}
+
+/* Improve visibility of NEET countdown heading text */
+.countdown-title-row,
+.countdown-title-row *{
+  position:relative;
+  z-index:2;
+}
+
+.countdown-live{
+  font-size:9px !important;
+  font-weight:900 !important;
+  letter-spacing:.12em !important;
+  color:#b8ffd8 !important;
+  opacity:1 !important;
+  text-shadow:0 1px 0 rgba(0,0,0,.15);
+}
+
+.countdown-title-row > span:not(.countdown-live):not(.exam-date-pill),
+.countdown-title-row .countdown-title,
+.countdown-title-row .countdown-label,
+.countdown-title-row .countdown-subtitle{
+  color:#dce9f8 !important;
+  font-size:11px !important;
+  font-weight:900 !important;
+  letter-spacing:.10em !important;
+  opacity:1 !important;
+}
+
+.neet-countdown-card h3{
+  color:#ffffff !important;
+}
+
+.neet-countdown-card p{
+  color:#e7f1fb !important;
+  opacity:1 !important;
+}
+
+.exam-date-pill{
+  color:#ffffff !important;
+  background:rgba(255,255,255,.16) !important;
+  border:1px solid rgba(255,255,255,.22) !important;
+}
+
+.countdown-grid strong{
+  color:#ffffff !important;
+}
+
+.countdown-grid span{
+  color:#edf4ff !important;
+  font-size:10px !important;
+  font-weight:800 !important;
+  opacity:1 !important;
+}
+
+.countdown-footer,
+.countdown-footer *{
+  color:#edf4ff !important;
+  opacity:1 !important;
+}
+
+/* Fallback for mini countdown variants if used elsewhere */
+.countdown-mini span,
+.countdown-mini small,
+.countdown-mini div,
+.countdown-mini b{
+  color:#214264 !important;
+  opacity:1 !important;
+}
+
+.countdown-mini strong{
+  color:#102f55 !important;
+}
+
+
+/* ===== SGA STUDENT PORTAL PROFESSIONAL DESIGN SYSTEM ===== */
+/*
+   One shared visual standard for every Student Portal page.
+   Typography + logo + readability only. No layout/data/JS changes.
+*/
+
+/* 1) ONE PROFESSIONAL FONT FAMILY ACROSS THE WHOLE PORTAL */
+html,body,button,input,select,textarea,a{
+  font-family:'Trebuchet MS','Segoe UI',Arial,sans-serif !important;
+}
+body{
+  font-size:14px !important;
+  line-height:1.5 !important;
+}
+
+/* 2) EXACT SAME SIDEBAR BRAND/LOGO AS LEARNING PROGRESS */
+.sidebar-brand img{
+  width:46px !important;
+  height:46px !important;
+  flex:0 0 46px !important;
+  border-radius:50% !important;
+  object-fit:cover !important;
+  display:block !important;
+  background:#ffffff !important;
+  padding:2px !important;
+  border:1px solid rgba(255,255,255,.65) !important;
+  box-shadow:0 4px 12px rgba(0,0,0,.12) !important;
+}
+.sidebar-brand strong{
+  font-size:14px !important;
+  font-weight:800 !important;
+  letter-spacing:.045em !important;
+  line-height:1.2 !important;
+}
+.sidebar-brand span{
+  font-size:10px !important;
+  font-weight:700 !important;
+  letter-spacing:.04em !important;
+  line-height:1.2 !important;
+  opacity:.88 !important;
+}
+.sidebar nav{gap:3px !important}
+.side-link{
+  font-size:14px !important;
+  font-weight:650 !important;
+  line-height:1.25 !important;
+  padding:11px 13px !important;
+}
+.sidebar-help{
+  font-size:12px !important;
+  line-height:1.45 !important;
+}
+
+/* 3) PAGE HEADER STANDARD */
+.topbar h1{
+  font-size:22px !important;
+  font-weight:700 !important;
+  line-height:1.2 !important;
+  letter-spacing:-.01em !important;
+}
+.topbar p{
+  font-size:13px !important;
+  line-height:1.45 !important;
+}
+.student-meta strong{font-size:13px !important;font-weight:700 !important}
+.student-meta span{font-size:11px !important}
+.logout-btn{font-size:11px !important;font-weight:750 !important}
+
+/* 4) SHARED CONTENT HIERARCHY */
+.eyebrow,.card-label{
+  font-size:10px !important;
+  font-weight:800 !important;
+  letter-spacing:.10em !important;
+  line-height:1.3 !important;
+}
+.welcome-row h2{
+  font-size:27px !important;
+  font-weight:700 !important;
+  line-height:1.2 !important;
+}
+.section-heading h3,
+.access-card h3,.exam-list-card h3,
+.help-card h3,.n-head h3,.mat h3,
+.card-head h3,.markbox h2{
+  font-size:17px !important;
+  font-weight:700 !important;
+  line-height:1.3 !important;
+}
+.empty-state,.empty,.empty-exams{
+  font-size:13px !important;
+  line-height:1.55 !important;
+}
+footer{font-size:10px !important}
+
+/* 5) DASHBOARD — PROFESSIONAL READABILITY, SAME EXISTING LAYOUT */
+.simple-dashboard .helper-text,
+.prep-subtitle,
+.prep-hero-main>p,
+.focus-card p{
+  font-size:13px !important;
+  line-height:1.55 !important;
+}
+.progress-line,
+.subject-command-head,
+.quick-kpis span,
+.today-study-stats span,
+.subject-meta span,
+.task-item span,.revision-item span,
+.task-item small,.revision-item small,
+.timeline-item span,.timeline-item small,.timeline-item time,
+.guidance-strip strong,.guidance-box,
+.progress-track-card small,
+.mini-stats span{
+  font-size:11px !important;
+  line-height:1.45 !important;
+}
+.quick-kpis b,.today-study-stats b{font-size:20px !important}
+.subject-meta b{font-size:14px !important}
+.prep-btn,.task-item button,.revision-item button,.text-link{
+  font-size:11px !important;
+  font-weight:750 !important;
+}
+
+/* Countdown: NEVER fade the NEET 2027 COUNTDOWN title */
+.neet-countdown-card .countdown-title-row,
+.neet-countdown-card .countdown-title-row *{
+  opacity:1 !important;
+}
+.neet-countdown-card .countdown-live{
+  color:#a8f2c7 !important;
+  font-size:10px !important;
+  font-weight:900 !important;
+  letter-spacing:.12em !important;
+  opacity:1 !important;
+}
+.neet-countdown-card .card-label,
+.neet-countdown-card .countdown-title,
+.neet-countdown-card .countdown-label,
+.neet-countdown-card .countdown-subtitle,
+.countdown-title-row > span:not(.countdown-live):not(.exam-date-pill){
+  color:#f0f6ff !important;
+  font-size:11px !important;
+  font-weight:900 !important;
+  letter-spacing:.11em !important;
+  opacity:1 !important;
+  text-shadow:0 1px 1px rgba(0,0,0,.15) !important;
+}
+.neet-countdown-card h3{color:#fff !important;font-size:25px !important;font-weight:750 !important}
+.neet-countdown-card p{color:#e6eff8 !important;font-size:13px !important;opacity:1 !important}
+.exam-date-pill{font-size:10px !important;color:#fff !important;opacity:1 !important}
+.countdown-grid strong{font-size:28px !important;color:#fff !important}
+.countdown-grid span{font-size:9px !important;font-weight:800 !important;color:#edf5ff !important;opacity:1 !important}
+.countdown-footer,.countdown-footer *{font-size:11px !important;color:#edf5ff !important;opacity:1 !important}
+
+/* 6) LEARNING PROGRESS */
+.lp-hero h2{font-size:25px !important;font-weight:700 !important}
+.lp-hero p{font-size:13px !important;line-height:1.6 !important}
+.lp-stat b{font-size:24px !important}
+.lp-stat span{font-size:10px !important;font-weight:750 !important}
+.lp-toolbar select,.lp-toolbar input{
+  font-size:13px !important;
+  line-height:1.35 !important;
+}
+.unit-head h3{font-size:16px !important;font-weight:700 !important}
+.unit-head span{font-size:11px !important}
+.topic-title strong{font-size:14px !important;line-height:1.35 !important}
+.topic-title small{font-size:11px !important;line-height:1.5 !important}
+.status{font-size:10px !important;font-weight:750 !important}
+.topic-row button{font-size:10px !important;font-weight:750 !important}
+.lp-form label{font-size:12px !important}
+.lp-form input,.lp-form select{font-size:13px !important}
+.lp-topic-name{font-size:14px !important;line-height:1.45 !important}
+
+/* 7) EXAMINATIONS */
+.helper,.access-message,.instruction-text{
+  font-size:13px !important;
+  line-height:1.6 !important;
+}
+.exam-field label{font-size:11px !important}
+.exam-field input{font-size:13px !important}
+.verify-btn{font-size:12px !important}
+.exam-tab{font-size:11px !important}
+.exam-card h4{font-size:15px !important}
+.exam-card p{font-size:12px !important;line-height:1.5 !important}
+.exam-status{font-size:10px !important}
+.instruction-actions button{font-size:11px !important}
+
+/* 8) RESULTS */
+.field label{font-size:11px !important}
+.field input,.field select{font-size:13px !important}
+.btn{font-size:11px !important}
+.msg,.muted{font-size:12px !important;line-height:1.5 !important}
+.score-head .academy{font-size:14px !important}
+.info span{font-size:10px !important}
+.info b{font-size:13px !important}
+.big-score span{font-size:11px !important}
+.metric{font-size:11px !important}
+.line,.explanation{font-size:12px !important;line-height:1.55 !important}
+
+/* 9) PERFORMANCE */
+.metric small{font-size:10px !important}
+.subperf .row{font-size:13px !important}
+.history{font-size:12px !important}
+.history th{font-size:10px !important}
+.trend{font-size:12px !important}
+
+/* 10) ATTENDANCE */
+.markbox p{font-size:13px !important;line-height:1.5 !important}
+.markbtn{font-size:12px !important}
+.cards .card{font-size:13px !important}
+.cards .card b{font-size:25px !important}
+.month{font-size:13px !important}
+table{font-size:12px !important}
+th{font-size:11px !important}
+
+/* 11) STUDY MATERIAL */
+.toolbar input,.toolbar select{font-size:13px !important}
+.mat{font-size:13px !important;line-height:1.5 !important}
+.tag{font-size:10px !important}
+.meta{font-size:12px !important;line-height:1.5 !important}
+.mat .btn{font-size:11px !important}
+
+/* 12) NOTIFICATIONS */
+.n-hero h2{font-size:24px !important;font-weight:700 !important}
+.n-hero p{font-size:13px !important;line-height:1.6 !important}
+.n-toolbar{font-size:13px !important}
+.n-toolbar input{font-size:13px !important}
+.n-head h3{font-size:16px !important}
+.n-date{font-size:11px !important}
+.n-card p{font-size:13px !important;line-height:1.6 !important}
+.n-chip{font-size:9px !important}
+
+/* 13) HELP & FEEDBACK */
+.help-hero h2{font-size:25px !important;font-weight:700 !important}
+.help-hero p{font-size:13px !important;line-height:1.6 !important}
+.help-card h3{font-size:18px !important}
+.help-card .muted{font-size:12px !important;line-height:1.55 !important}
+.help-form label{font-size:12px !important}
+.help-form input,.help-form select,.help-form textarea{font-size:13px !important}
+.file-note{font-size:10px !important}
+.help-btn{font-size:11px !important}
+#formMsg{font-size:11px !important}
+.ticket h4{font-size:15px !important}
+.ticket p{font-size:12px !important;line-height:1.6 !important}
+.ticket small{font-size:10px !important}
+.chip{font-size:9px !important}
+.reply b,.attach{font-size:10px !important}
+.stat span{font-size:9px !important}
+.stat b{font-size:22px !important}
+
+/* 14) MY PROFILE */
+.profile-hero .eyebrow{font-size:10px !important}
+.profile-hero h2{font-size:27px !important;font-weight:700 !important}
+.profile-hero p{font-size:12px !important}
+.hero-tag{font-size:9px !important}
+.card-head h3{font-size:17px !important}
+.profile-card .muted{font-size:11px !important}
+.info span{font-size:9px !important}
+.info b{font-size:13px !important}
+.form-grid label,.password-grid label{font-size:11px !important}
+.form-grid input,.form-grid select,.password-grid input{font-size:13px !important}
+.profile-btn{font-size:11px !important}
+.status-msg{font-size:11px !important}
+.security-note{font-size:11px !important;line-height:1.55 !important}
+.photo-note{font-size:10px !important}
+
+/* Responsive: keep readability on mobile too */
+@media(max-width:850px){
+  .side-link{font-size:14px !important}
+  .topbar h1{font-size:20px !important}
+  .topbar p{font-size:12px !important}
+}
+
+
+/* =========================================================
+   STUDY HISTORY - SAFE THREE-DOT ACTION MENU
+   ========================================================= */
+.timeline-item .timeline-side{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:7px;
+  min-width:74px;
+  position:relative;
+}
+.study-more-wrap{
+  position:relative;
+  display:block !important;
+}
+.study-more-btn{
+  width:30px;
+  height:30px;
+  display:grid;
+  place-items:center;
+  border:1px solid #d5dee8;
+  background:#ffffff;
+  color:#244b78;
+  border-radius:8px;
+  font-size:21px;
+  font-weight:900;
+  line-height:1;
+  cursor:pointer;
+  padding:0;
+}
+.study-more-btn:hover,
+.study-more-btn[aria-expanded="true"]{
+  background:#edf4fa;
+  border-color:#b9c9d9;
+}
+.study-more-btn:focus-visible{
+  outline:3px solid rgba(18,59,104,.16);
+  outline-offset:2px;
+}
+.study-entry-menu{
+  position:absolute;
+  right:0;
+  top:35px;
+  z-index:30;
+  width:128px;
+  background:#ffffff;
+  border:1px solid #dce4ed;
+  border-radius:10px;
+  box-shadow:0 12px 30px rgba(21,43,70,.16);
+  padding:5px;
+}
+.study-entry-menu[hidden]{display:none !important}
+.study-entry-menu button{
+  width:100%;
+  border:0;
+  background:transparent;
+  color:#173f6c;
+  border-radius:7px;
+  padding:9px 10px;
+  text-align:left;
+  font-size:11px;
+  font-weight:800;
+  cursor:pointer;
+}
+.study-entry-menu button:hover{background:#edf4fa}
+.study-entry-menu button.danger{color:#a12e2e}
+.study-entry-menu button.danger:hover{background:#fff0f0}
+.edit-study-card{width:min(720px,96vw)}
+.edit-study-card .form-grid label{font-size:12px}
+.edit-study-card .edit-completion-row{
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  gap:8px;
+  margin-top:8px;
+}
+.edit-study-card .edit-completion-row input{width:auto;margin:0}
+.edit-study-card .edit-completion-row strong{font-size:11px}
+@media(max-width:650px){
+  .timeline-item .timeline-side{min-width:58px}
+  .study-entry-menu{width:122px;right:0}
+}

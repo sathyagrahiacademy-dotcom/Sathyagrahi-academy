@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#082f65">
+  <title>NEET FAQ | Sathyagrahi Academy</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="stylesheet" href="neet-portal.css">
+  <link rel="stylesheet" href="neet-faq.css">
+</head>
+<body>
+<div class="portal-shell">
+  <header class="portal-top">
+    <div class="portal-brand">
+      <img src="assets/header-brand.png" alt="Sathyagrahi Academy">
+      <a class="main-site-link" href="index.html">← MAIN WEBSITE</a>
+    </div>
+
+    <div class="portal-titlebar">
+      <div class="portal-titlebar-inner">
+        <strong>STUDENT PORTAL · NEET KNOWLEDGE CENTRE</strong>
+        <span>Clear common doubts before they become confusion</span>
+      </div>
+    </div>
+
+    <nav class="portal-nav neet-main-tabs" aria-label="NEET Guide">
+      <a href="student-portal.html"><small>01</small><span>ABOUT NEET</span></a>
+      <a href="neet-exam.html"><small>02</small><span>EXAM PATTERN</span></a>
+      <a href="neet-syllabus.html"><small>03</small><span>SYLLABUS</span></a>
+      <a href="neet-preparation.html"><small>04</small><span>PREPARATION GUIDE</span></a>
+      <a href="neet-papers.html"><small>05</small><span>PREVIOUS PAPERS</span></a>
+      <a href="neet-counselling.html"><small>06</small><span>COUNSELLING</span></a>
+      <a href="neet-official.html"><small>07</small><span>OFFICIAL SOURCES</span></a>
+      <a class="active" href="neet-faq.html"><small>08</small><span>FAQ</span></a>
+    </nav>
+  </header>
+
+  <main class="page faq-page">
+
+    <section class="faq-hero">
+      <div>
+        <span class="eyebrow">NEET DOUBT CENTRE</span>
+        <h1>Ask Before<br><em>You Assume.</em></h1>
+        <p>A NEET aspirant will have hundreds of doubts across the exam, syllabus, preparation, PYQs, results and counselling. Search here first — then verify time-sensitive rules from the official source.</p>
+        <div class="hero-tags"><span>STUDENT DOUBTS</span><span>PARENT DOUBTS</span><span>OFFICIAL FACTS</span><span>ACADEMY GUIDANCE</span></div>
+      </div>
+      <div class="hero-question">
+        <span>START WITH YOUR QUESTION</span>
+        <div><b>?</b><input id="heroSearch" type="search" placeholder="Example: negative marking, NCERT, AIQ, Physics weak..."></div>
+        <small id="heroHint">Search across all FAQ categories</small>
+      </div>
+    </section>
+
+    <section class="faq-principle">
+      <div><b>OFFICIAL</b><span>Exam rules, eligibility, counselling and current-year facts</span></div>
+      <i>+</i>
+      <div><b>ACADEMY GUIDANCE</b><span>How to study, practise, revise, analyse and improve</span></div>
+      <i>=</i>
+      <div class="final"><b>CLEARER DECISIONS</b><span>Know what is a rule and what is a study suggestion</span></div>
+    </section>
+
+    <section class="faq-section">
+      <div class="section-label">01 · SEARCH & FILTER</div>
+      <div class="section-heading">
+        <div>
+          <h2>Find the Doubt You Have Right Now</h2>
+          <p>Choose a category or type a word. Matching questions open automatically.</p>
+        </div>
+        <div class="faq-count"><span>VISIBLE FAQs</span><strong id="visibleCount">—</strong></div>
+      </div>
+
+      <div class="faq-toolbar">
+        <label class="faq-search">
+          <span>SEARCH YOUR NEET DOUBT</span>
+          <div><b>⌕</b><input id="faqSearch" type="search" placeholder="Search: eligibility, syllabus, PYQ, score, counselling, parent..."></div>
+        </label>
+
+        <div class="category-filters">
+          <button class="active" data-category="All" type="button">ALL</button>
+          <button data-category="Basics" type="button">BASICS</button>
+          <button data-category="Exam" type="button">EXAM</button>
+          <button data-category="Syllabus" type="button">SYLLABUS</button>
+          <button data-category="Preparation" type="button">PREPARATION</button>
+          <button data-category="PYQ" type="button">PYQs</button>
+          <button data-category="Result" type="button">RESULT</button>
+          <button data-category="Counselling" type="button">COUNSELLING</button>
+          <button data-category="Parents" type="button">PARENTS</button>
+        </div>
+
+        <div class="faq-tools">
+          <button id="expandFaqs" type="button">EXPAND ALL</button>
+          <button id="collapseFaqs" type="button">COLLAPSE ALL</button>
+        </div>
+      </div>
+
+      <div id="faqList" class="faq-list">
+
+        <!-- BASICS -->
+        <details class="faq-item" data-category="Basics" data-type="official" open>
+          <summary><span class="faq-no">01</span><div><small>NEET BASICS · OFFICIAL</small><b>What is NEET (UG)?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>NEET (UG) is the National Eligibility cum Entrance Test used as the common entrance examination for undergraduate medical education and other courses/applications notified under the applicable laws and official bulletin. NTA conducts NEET (UG).</p><a href="student-portal.html">Read About NEET →</a></div>
+        </details>
+
+        <details class="faq-item" data-category="Basics" data-type="official">
+          <summary><span class="faq-no">02</span><div><small>NEET BASICS · OFFICIAL</small><b>Who conducts NEET?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>The National Testing Agency (NTA) conducts NEET (UG). Counselling and admission are handled separately by the competent counselling/admission authorities.</p><a href="neet-official.html">See Official Source Map →</a></div>
+        </details>
+
+        <details class="faq-item" data-category="Basics" data-type="official">
+          <summary><span class="faq-no">03</span><div><small>NEET BASICS · OFFICIAL</small><b>Is NEET only for MBBS?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>No. The current official NEET framework also applies to other notified undergraduate medical/AYUSH-related admissions. The exact use of a NEET score should always be checked in the current official bulletin and the relevant admission authority’s rules.</p></div>
+        </details>
+
+        <details class="faq-item" data-category="Basics" data-type="official">
+          <summary><span class="faq-no">04</span><div><small>ELIGIBILITY · OFFICIAL</small><b>How do I know whether I am eligible for NEET?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>Eligibility depends on the current NEET Information Bulletin, including qualifying-examination, subject, age and other applicable conditions. Do not rely on an old-year eligibility screenshot. Check the current bulletin before applying.</p><a href="neet-official.html">Open Official Sources →</a></div>
+        </details>
+
+        <!-- EXAM -->
+        <details class="faq-item" data-category="Exam" data-type="official">
+          <summary><span class="faq-no">05</span><div><small>EXAM PATTERN · OFFICIAL 2026</small><b>How many questions and marks are in the current NEET pattern?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>For NEET (UG) 2026, the official pattern has 180 compulsory MCQs for 720 marks: 45 Physics, 45 Chemistry and 90 Biology questions.</p><a href="neet-exam.html">Explore Exam Pattern →</a></div>
+        </details>
+
+        <details class="faq-item" data-category="Exam" data-type="official">
+          <summary><span class="faq-no">06</span><div><small>MARKING · OFFICIAL 2026</small><b>Is there negative marking in NEET?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>Yes, under the 2026 official scheme: a correct answer gets +4, an incorrect marked answer gets −1 and an unanswered question gets 0. Special treatment can apply to officially dropped/incorrect questions as described in the bulletin.</p></div>
+        </details>
+
+        <details class="faq-item" data-category="Exam" data-type="official">
+          <summary><span class="faq-no">07</span><div><small>EXAM MODE · OFFICIAL 2026</small><b>Is NEET online or pen-and-paper?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>NEET (UG) 2026 is conducted in pen-and-paper mode. Aspirants record answers on an OMR response sheet according to the exam instructions.</p></div>
+        </details>
+
+        <details class="faq-item" data-category="Exam" data-type="official">
+          <summary><span class="faq-no">08</span><div><small>LANGUAGE · OFFICIAL 2026</small><b>Can I write NEET in Telugu?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>Yes. Telugu is one of the question-paper media listed for NEET (UG) 2026. Candidates should check the current bulletin for language and examination-centre rules.</p></div>
+        </details>
+
+        <details class="faq-item" data-category="Exam" data-type="guidance">
+          <summary><span class="faq-no">09</span><div><small>EXAM STRATEGY · ACADEMY GUIDANCE</small><b>Which subject should I attempt first?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>There is no single best order for every aspirant. Use full-length mock tests to find the order that gives you the best combination of accuracy, confidence and time control. Do not choose an order only because someone else follows it.</p></div>
+        </details>
+
+        <!-- SYLLABUS -->
+        <details class="faq-item" data-category="Syllabus" data-type="official">
+          <summary><span class="faq-no">10</span><div><small>SYLLABUS · OFFICIAL</small><b>Where should I check the complete NEET syllabus?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>Use the current official syllabus published through the competent official source. Sathyagrahi Academy’s Syllabus Explorer organises that official scope into units and topics for easier understanding.</p><a href="neet-syllabus.html">Open Syllabus Explorer →</a></div>
+        </details>
+
+        <details class="faq-item" data-category="Syllabus" data-type="guidance">
+          <summary><span class="faq-no">11</span><div><small>SYLLABUS USE · ACADEMY GUIDANCE</small><b>Should I study the syllabus in the same order it is printed?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>Not necessarily. A syllabus tells you what can be tested; it is not automatically the best learning sequence. Preparation order should consider foundations, chapter connections, current level, practice requirements and revision needs.</p><a href="neet-preparation.html">Use Preparation Guide →</a></div>
+        </details>
+
+        <details class="faq-item" data-category="Syllabus" data-type="guidance">
+          <summary><span class="faq-no">12</span><div><small>NCERT · ACADEMY GUIDANCE</small><b>Is NCERT enough for NEET?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>NCERT is a core learning source, especially for Biology and many Chemistry areas, but preparation is not just reading. Physics and Physical Chemistry require strong concept application and numerical practice; every subject also needs PYQs, revision and testing.</p></div>
+        </details>
+
+        <details class="faq-item" data-category="Syllabus" data-type="official">
+          <summary><span class="faq-no">13</span><div><small>SYLLABUS CHANGES · OFFICIAL</small><b>Can the NEET syllabus change?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>Yes, official syllabus publications can be updated. Always identify the exam year on the syllabus and verify it from NMC/NTA official sources rather than using an undated PDF.</p></div>
+        </details>
+
+        <!-- PREPARATION -->
+        <details class="faq-item" data-category="Preparation" data-type="guidance">
+          <summary><span class="faq-no">14</span><div><small>STARTING PREPARATION · ACADEMY GUIDANCE</small><b>I am new to NEET. What should I do first?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>First understand the exam pattern and official syllabus. Then identify your current level in Physics, Chemistry and Biology. Build concept clarity chapter by chapter, practise questions, revise repeatedly and use tests to decide what needs improvement.</p><a href="neet-preparation.html">Open Preparation Guide →</a></div>
+        </details>
+
+        <details class="faq-item" data-category="Preparation" data-type="guidance">
+          <summary><span class="faq-no">15</span><div><small>PHYSICS · ACADEMY GUIDANCE</small><b>What if Physics is my weakest subject?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>Do not begin by chasing difficult questions. Build the chapter’s basic language, quantities, units, graphs and core equations first. Then practise one concept at a time before mixing concepts. Weak Physics improves through structured repetition, not through memorising formulas alone.</p></div>
+        </details>
+
+        <details class="faq-item" data-category="Preparation" data-type="guidance">
+          <summary><span class="faq-no">16</span><div><small>CHEMISTRY · ACADEMY GUIDANCE</small><b>Should I study all Chemistry in the same way?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>No. Physical Chemistry needs concepts + calculations; Inorganic Chemistry needs precise NCERT understanding, trends and revision; Organic Chemistry needs mechanism/reaction understanding, connections and repeated practice.</p></div>
+        </details>
+
+        <details class="faq-item" data-category="Preparation" data-type="guidance">
+          <summary><span class="faq-no">17</span><div><small>BIOLOGY · ACADEMY GUIDANCE</small><b>How should I read NCERT Biology?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>Read for exact meaning, not just speed. Pay attention to definitions, examples, exceptions, diagrams, tables and similar-looking terms. After reading, close the book and recall, then solve questions and return to the lines you misunderstood.</p></div>
+        </details>
+
+        <details class="faq-item" data-category="Preparation" data-type="guidance">
+          <summary><span class="faq-no">18</span><div><small>DAILY STUDY · ACADEMY GUIDANCE</small><b>How many hours should I study every day?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>There is no universal number. Measure useful output instead: concepts completed, questions practised, revision done, mistakes corrected and tests analysed. A sustainable focused routine is more valuable than a large hour-count with low concentration.</p></div>
+        </details>
+
+        <details class="faq-item" data-category="Preparation" data-type="guidance">
+          <summary><span class="faq-no">19</span><div><small>REVISION · ACADEMY GUIDANCE</small><b>What does proper revision mean?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>Revision is not simply rereading everything. Recall what you know, review formulas/NCERT lines/short notes, solve selected questions, check old errors and retest weak areas. The aim is faster and more accurate retrieval.</p></div>
+        </details>
+
+        <details class="faq-item" data-category="Preparation" data-type="guidance">
+          <summary><span class="faq-no">20</span><div><small>MOCK TESTS · ACADEMY GUIDANCE</small><b>When should I start full-length tests?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>Begin chapter and part-syllabus tests early. Full-length tests become more valuable as syllabus coverage grows. Do not wait for “perfect preparation”; testing itself teaches time management, stamina, error patterns and revision priorities.</p></div>
+        </details>
+
+        <!-- PYQ -->
+        <details class="faq-item" data-category="PYQ" data-type="guidance">
+          <summary><span class="faq-no">21</span><div><small>PYQs · ACADEMY GUIDANCE</small><b>Why are previous-year questions important?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>PYQs show how syllabus concepts have been converted into actual questions. They help you recognise question style, recurring concepts, NCERT focus, calculation depth and common traps.</p><a href="neet-papers.html">Open Previous Papers →</a></div>
+        </details>
+
+        <details class="faq-item" data-category="PYQ" data-type="guidance">
+          <summary><span class="faq-no">22</span><div><small>PYQs · ACADEMY GUIDANCE</small><b>How many years of PYQs should I solve?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>Use a meaningful multi-year set rather than chasing a number. More recent papers help you understand the current style, while older relevant questions can strengthen concepts. Always account for syllabus changes before treating an old question as current-syllabus practice.</p></div>
+        </details>
+
+        <details class="faq-item" data-category="PYQ" data-type="guidance">
+          <summary><span class="faq-no">23</span><div><small>PYQ ANALYSIS · ACADEMY GUIDANCE</small><b>Is solving the question enough?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>No. After solving, identify the chapter, exact concept, why the correct option works, why you made an error, and whether the issue was knowledge, calculation, reading or time. That turns a PYQ into a learning tool.</p></div>
+        </details>
+
+        <details class="faq-item" data-category="PYQ" data-type="guidance">
+          <summary><span class="faq-no">24</span><div><small>QUESTION TYPES · ACADEMY GUIDANCE</small><b>Are Physics, Chemistry and Biology questions tested in the same style?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>No. Physics often emphasises concept application/numericals; Chemistry varies across Physical, Inorganic and Organic styles; Biology frequently demands precise NCERT reading, statements, diagrams, examples and distinctions. These are learning categories, not official NTA classifications.</p></div>
+        </details>
+
+        <!-- RESULT -->
+        <details class="faq-item" data-category="Result" data-type="official">
+          <summary><span class="faq-no">25</span><div><small>RESULT · OFFICIAL</small><b>Where should I download my NEET scorecard?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>Use the official NEET/NTA portal and the current official result/scorecard service. Do not enter credentials into an unofficial result page.</p><a href="neet-official.html">See Official Sources →</a></div>
+        </details>
+
+        <details class="faq-item" data-category="Result" data-type="guidance">
+          <summary><span class="faq-no">26</span><div><small>RESULT TERMS · EXPLANATION</small><b>What is the difference between score, percentile and AIR?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p><strong>Score</strong> is the marks obtained under the exam marking scheme. <strong>Percentile</strong> is a relative measure used in the result framework. <strong>AIR</strong> means All India Rank. Admission decisions then depend on the applicable counselling merit, category/quota and seat availability.</p></div>
+        </details>
+
+        <details class="faq-item" data-category="Result" data-type="guidance">
+          <summary><span class="faq-no">27</span><div><small>CUT-OFF · EXPLANATION</small><b>Is qualifying cut-off the same as medical-college admission cut-off?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>No. Qualifying the examination makes you eligible under the applicable rules, but the rank/score needed for a particular seat can be much more competitive and varies by counselling route, category, college, quota, round and year.</p></div>
+        </details>
+
+        <!-- COUNSELLING -->
+        <details class="faq-item" data-category="Counselling" data-type="official">
+          <summary><span class="faq-no">28</span><div><small>COUNSELLING · OFFICIAL</small><b>Does NTA allot medical seats?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>No. NTA conducts NEET and publishes examination results. Medical-seat counselling/allotment is handled by the competent counselling authorities such as MCC and designated state authorities.</p></div>
+        </details>
+
+        <details class="faq-item" data-category="Counselling" data-type="official">
+          <summary><span class="faq-no">29</span><div><small>COUNSELLING · OFFICIAL</small><b>What is AIQ counselling?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>All India Quota and other participating UG medical counselling categories handled by MCC are governed by the current MCC scheme. Registration, schedule, seat matrix and allotment should be checked directly on MCC.</p><a href="neet-counselling.html">Open Counselling Guide →</a></div>
+        </details>
+
+        <details class="faq-item" data-category="Counselling" data-type="official">
+          <summary><span class="faq-no">30</span><div><small>TELANGANA · OFFICIAL</small><b>What is “Convener Quota” in Telangana?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>“Convener Quota” is a commonly used informal term. KNRUHS officially uses <strong>Competent Authority Quota</strong>. The current KNRUHS prospectus/notification should be used for eligibility, reservation, local-area and seat-allotment rules.</p></div>
+        </details>
+
+        <details class="faq-item" data-category="Counselling" data-type="official">
+          <summary><span class="faq-no">31</span><div><small>TELANGANA · OFFICIAL</small><b>Are Management B and NRI C the same?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>No. They are different categories within the separately notified Management Quota process. C/NRI requires the notified NRI eligibility/document conditions. Current-year KNRUHS prospectus and fee/seat notifications take priority.</p></div>
+        </details>
+
+        <details class="faq-item" data-category="Counselling" data-type="guidance">
+          <summary><span class="faq-no">32</span><div><small>CHOICE FILLING · ACADEMY GUIDANCE</small><b>Should I copy another student’s college preference list?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>No. College preference depends on your own course preference, eligibility, fees, bond/service conditions, location, category/quota and willingness to join. Use historical closing ranks as supporting data, not as a substitute for your real preference.</p></div>
+        </details>
+
+        <!-- PARENTS -->
+        <details class="faq-item parent-item" data-category="Parents" data-type="guidance">
+          <summary><span class="faq-no">33</span><div><small>PARENTS · ACADEMY GUIDANCE</small><b>How much pressure should parents put on a NEET aspirant?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>Track routines and responsibilities without turning every conversation into a marks discussion. Ask what the student learned, where they are struggling and what support is needed. Consistency improves better in a stable environment than under constant comparison.</p></div>
+        </details>
+
+        <details class="faq-item parent-item" data-category="Parents" data-type="guidance">
+          <summary><span class="faq-no">34</span><div><small>PARENTS · ACADEMY GUIDANCE</small><b>What should we do if test marks suddenly fall?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>First analyse the reason: incomplete syllabus, weak revision, careless errors, time pressure, difficult paper or stress. One test is data, not a final judgment. Correct the cause and compare performance across several tests.</p></div>
+        </details>
+
+        <details class="faq-item parent-item" data-category="Parents" data-type="guidance">
+          <summary><span class="faq-no">35</span><div><small>PARENTS · ACADEMY GUIDANCE</small><b>Should parents compare their child with toppers or friends?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>Comparison can hide the actual learning problem. Compare the student with their own previous preparation: syllabus coverage, accuracy, revision quality, test behaviour and error reduction.</p></div>
+        </details>
+
+        <details class="faq-item parent-item" data-category="Parents" data-type="guidance">
+          <summary><span class="faq-no">36</span><div><small>PARENTS · ACADEMY GUIDANCE</small><b>How can parents help without teaching the subjects?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>Help protect study time, sleep, meals and a calm environment; track important official deadlines; encourage honest test analysis; and notice when the student needs academic or emotional support. You do not have to know Physics or Biology to support a good system.</p></div>
+        </details>
+
+        <details class="faq-item parent-item" data-category="Parents" data-type="guidance">
+          <summary><span class="faq-no">37</span><div><small>PARENTS · ACADEMY GUIDANCE</small><b>What if the student says “I studied a lot” but marks do not improve?</b></div><i>+</i></summary>
+          <div class="faq-answer"><p>Shift the discussion from hours to evidence: Can the student recall the concept? Solve questions? Avoid repeated mistakes? Complete revision? Perform under test conditions? Study time becomes useful only when it changes performance.</p></div>
+        </details>
+
+      </div>
+
+      <div id="faqEmpty" class="faq-empty" hidden>
+        <b>No matching FAQ found.</b>
+        <p>Try a simpler word or choose ALL categories.</p>
+      </div>
+    </section>
+
+    <section class="official-reminder">
+      <div>
+        <span>IMPORTANT</span>
+        <h2>FAQ Answers Do Not Replace the Latest Official Notice</h2>
+        <p>Exam dates, eligibility, application rules, counselling schedules, seat matrices, fees and admission requirements can change. Use the FAQ to understand the concept, then use the Official Sources tab before taking a time-sensitive action.</p>
+      </div>
+      <a href="neet-official.html">VERIFY OFFICIALLY →</a>
+    </section>
+
+    <section class="guide-complete">
+      <span>NEET KNOWLEDGE CENTRE</span>
+      <h2>You Can Move Through the Guide in Any Order</h2>
+      <p>If a FAQ shows that your doubt needs deeper explanation, return to the relevant main tab.</p>
+      <div class="guide-grid">
+        <a href="student-portal.html"><b>ABOUT NEET</b><small>Understand the examination</small></a>
+        <a href="neet-exam.html"><b>EXAM PATTERN</b><small>Understand the paper</small></a>
+        <a href="neet-syllabus.html"><b>SYLLABUS</b><small>Know what to learn</small></a>
+        <a href="neet-preparation.html"><b>PREPARATION GUIDE</b><small>Know how to learn</small></a>
+        <a href="neet-papers.html"><b>PREVIOUS PAPERS</b><small>Learn from PYQs</small></a>
+        <a href="neet-counselling.html"><b>COUNSELLING</b><small>Understand admission</small></a>
+      </div>
+    </section>
+
+    <div class="footer-note">
+      <div><strong>Sathyagrahi Academy · NEET Knowledge Centre</strong><p>Ask clearly. Understand correctly. Verify when it matters.</p></div>
+      <a href="index.html#student-portal">STUDENT LOGIN</a>
+    </div>
+
+  </main>
+</div>
+<script src="neet-faq.js"></script>
+</body>
+</html>

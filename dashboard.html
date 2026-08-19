@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#06275f"><title>Student Dashboard | Sathyagrahi Academy</title>
+<link rel="icon" type="image/png" href="assets/favicon.png"><link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+<div class="app-shell">
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand"><img src="assets/favicon.png" alt=""><div><strong>SATHYAGRAHI</strong><span>ACADEMY</span></div></div>
+  <nav>
+    <a class="side-link active" href="dashboard.html">Dashboard</a>
+    <a class="side-link" href="student-examinations.html">Examinations</a>
+    <a class="side-link" href="student-results.html">Results</a>
+    <a class="side-link" href="student-performance.html">Performance</a>
+    <a class="side-link" href="student-attendance.html">Attendance</a>
+    <a class="side-link" href="student-study-material.html">Study Material</a>
+    <a class="side-link" href="#" data-coming>Notifications</a>
+    <a class="side-link" href="#" data-coming>Help & Feedback</a>
+    <a class="side-link" href="#" data-coming>My Profile</a>
+  </nav>
+  <div class="sidebar-help"><strong>Need Help?</strong><span>+91 9059995537</span></div>
+</aside>
+
+<main class="main">
+<header class="topbar">
+  <button class="menu-btn" id="menuBtn" type="button">☰</button>
+  <div><h1>Student Dashboard</h1><p>Learn with Clarity. Progress with Purpose.</p></div>
+  <div class="student-area">
+    <div class="student-meta"><strong id="studentName">Student</strong><span id="studentCode">—</span></div>
+    <button id="logoutBtn" class="logout-btn">LOGOUT</button>
+  </div>
+</header>
+
+<section class="content prep-dashboard simple-dashboard">
+  <div class="welcome-row simple-welcome">
+    <div>
+      <span class="eyebrow">WELCOME BACK</span>
+      <h2 id="welcomeName">Student</h2>
+      <p class="prep-subtitle">Today, focus on the next right step. Your full preparation history is tracked here.</p>
+    </div>
+    <span class="secure-badge">● Secure Student Portal</span>
+  </div>
+
+  <section class="top-focus-grid">
+    <article class="today-card action-card focus-card">
+      <div class="today-head">
+        <div><span class="card-label">TODAY'S NEXT STEP</span><h3>What should I do today?</h3></div>
+        <span id="todayDate" class="date-chip"></span>
+      </div>
+      <p class="helper-text">Complete the first priority before starting a new topic.</p>
+      <div id="todayTasks" class="task-list"><div class="empty-state">No tasks assigned for today.</div></div>
+    </article>
+
+    <article class="neet-countdown-card">
+      <div class="countdown-title-row">
+        <div><span class="countdown-live">● LIVE</span><span class="card-label">NEET 2027 COUNTDOWN</span></div>
+        <span class="exam-date-pill">02 MAY 2027</span>
+      </div>
+      <h3>Every day matters.</h3>
+      <p>Use the time left with clarity, consistency and revision.</p>
+      <div class="countdown-grid">
+        <div><strong id="daysLeft">—</strong><span>DAYS</span></div>
+        <div><strong id="hoursLeft">—</strong><span>HOURS</span></div>
+        <div><strong id="minutesLeft">—</strong><span>MIN</span></div>
+        <div><strong id="secondsLeft">—</strong><span>SEC</span></div>
+      </div>
+      <div class="countdown-footer"><span>Target Exam</span><strong>NEET UG 2027</strong></div>
+    </article>
+  </section>
+
+  <section class="section-card my-progress-section">
+    <div class="section-heading">
+      <div><span class="card-label">MY PROGRESS</span><h3>Learn → Revise → Test</h3></div>
+      <span class="section-note">Three separate tracks. One complete preparation journey.</span>
+    </div>
+    <div class="progress-summary-grid">
+      <div class="overall-score simple-overall">
+        <strong id="overallScore">0%</strong><span>MY PROGRESS</span>
+      </div>
+      <div class="progress-track-card">
+        <div class="progress-line"><span>Learning</span><b id="learningScore">0%</b></div>
+        <div class="progress-track large"><div id="learningBar"></div></div>
+        <small>What you have understood and completed.</small>
+      </div>
+      <div class="progress-track-card">
+        <div class="progress-line"><span>Revision</span><b id="revisionScore">0%</b></div>
+        <div class="progress-track large"><div id="revisionBar"></div></div>
+        <small>What you have revised and retained.</small>
+      </div>
+      <div class="progress-track-card">
+        <div class="progress-line"><span>Exam Progress</span><b id="examScore">0%</b></div>
+        <div class="progress-track large"><div id="examBar"></div></div>
+        <small>What your actual exam performance shows.</small>
+      </div>
+    </div>
+
+    <div class="quick-kpis">
+      <div><span>Topics Completed</span><b id="topicsCompleted">0</b></div>
+      <div><span>Revision Due</span><b id="revisionDue">0</b></div>
+      <div><span>Exams Attempted</span><b id="examsAttempted">0</b></div>
+    </div>
+
+    <div class="guidance-strip"><span>GUIDANCE</span><strong id="guidanceLine">Your next best action will appear here.</strong></div>
+  </section>
+
+  <section class="section-card today-study-simple">
+    <div class="section-heading">
+      <div><span class="card-label">TODAY'S STUDY</span><h3>Track what you actually studied</h3></div>
+      <button class="prep-btn primary" id="logStudyBtn">+ LOG STUDY</button>
+    </div>
+    <div class="today-study-stats">
+      <div><b id="todayMinutes">00 hr 00 min</b><span>Study Time</span></div>
+      <div><b id="todaySessions">0</b><span>Sessions</span></div>
+      <div><b id="todayTopics">0</b><span>Topics</span></div>
+      <div><b id="todayQuestions">0</b><span>Questions</span></div>
+    </div>
+  </section>
+
+  <section class="section-card subject-section">
+    <div class="section-heading">
+      <div><span class="card-label">SUBJECT PROGRESS</span><h3>Physics · Chemistry · Biology</h3></div>
+      <span class="section-note">See completed topics, study time and revision due.</span>
+    </div>
+    <div class="subject-command-grid">
+      <article class="subject-command">
+        <div class="subject-command-head"><strong>Physics</strong><span id="physicsPct">0%</span></div>
+        <div class="progress-track"><div id="physicsBar"></div></div>
+        <div class="subject-meta"><span><b id="physicsTopics">0</b>Completed Topics</span><span><b id="physicsMinutes">00 hr 00 min</b>Study Time</span><span><b id="physicsDue">0</b>Revision Due</span></div>
+      </article>
+      <article class="subject-command">
+        <div class="subject-command-head"><strong>Chemistry</strong><span id="chemistryPct">0%</span></div>
+        <div class="progress-track"><div id="chemistryBar"></div></div>
+        <div class="subject-meta"><span><b id="chemistryTopics">0</b>Completed Topics</span><span><b id="chemistryMinutes">00 hr 00 min</b>Study Time</span><span><b id="chemistryDue">0</b>Revision Due</span></div>
+      </article>
+      <article class="subject-command">
+        <div class="subject-command-head"><strong>Biology</strong><span id="biologyPct">0%</span></div>
+        <div class="progress-track"><div id="biologyBar"></div></div>
+        <div class="subject-meta"><span><b id="biologyTopics">0</b>Completed Topics</span><span><b id="biologyMinutes">00 hr 00 min</b>Study Time</span><span><b id="biologyDue">0</b>Revision Due</span></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="journey-grid">
+    <article class="section-card">
+      <div class="section-heading"><div><span class="card-label">REVISION DUE</span><h3>What should I revise now?</h3></div></div>
+      <div id="revisionList" class="revision-list"><div class="empty-state">No revisions due now.</div></div>
+    </article>
+
+    <article class="section-card">
+      <div class="section-heading">
+        <div><span class="card-label">RECENT PERFORMANCE</span><h3>How are my exams going?</h3></div>
+        <a class="text-link" href="student-performance.html">View Details →</a>
+      </div>
+      <div class="exam-snapshot">
+        <div><b id="avgScore">0%</b><span>Average Score</span></div>
+        <div><b id="accuracy">0%</b><span>Accuracy</span></div>
+        <div><b id="lastExamScore">—</b><span>Last Exam</span></div>
+      </div>
+      <div id="examGuidance" class="guidance-box">Write your first exam to begin performance tracking.</div>
+    </article>
+  </section>
+
+  <section class="section-card">
+    <div class="section-heading">
+      <div><span class="card-label">MY STUDY HISTORY</span><h3>What have I done recently?</h3></div>
+      <button class="prep-btn" id="logStudyBtn2">+ LOG STUDY</button>
+    </div>
+    <div id="prepTimeline" class="prep-timeline"><div class="empty-state">Your study, revision and exam history will appear here.</div></div>
+  </section>
+
+  <section class="section-card">
+    <div class="section-heading"><div><span class="card-label">LATEST NOTIFICATIONS</span><h3>Academy Updates</h3></div></div>
+    <div id="dashboardNotifications" class="notification-list"><div class="empty-state">No new notifications yet.</div></div>
+  </section>
+</section>
+
+<footer>© 2026 Sathyagrahi Academy. All Rights Reserved.</footer>
+</main>
+</div>
+
+<div class="prep-modal" id="studyModal">
+  <div class="prep-modal-card">
+    <div class="modal-head"><div><span class="card-label">STUDY LOG</span><h3>Record Today's Study</h3></div><button id="closeStudyModal">×</button></div>
+    <form id="studyForm">
+      <div class="form-grid">
+        <label>Subject<select id="studySubject"><option>Physics</option><option>Chemistry</option><option>Biology</option></select></label>
+        <label>What did you do?<select id="studyType"><option value="learning">Learning</option><option value="revision">Revision</option><option value="practice">Question Practice</option></select></label>
+        <label class="wide">Chapter<input id="studyChapter" required placeholder="e.g. Human Reproduction"></label>
+        <label class="wide">Topic<input id="studyTopic" required placeholder="e.g. Gametogenesis"></label>
+        <label>Study Time (minutes)<input id="studyMinutes" type="number" min="1" value="45"></label>
+        <label>Topic Status<select id="studyStatus"><option value="in_progress">Still Learning</option><option value="completed">Completed</option></select></label>
+        <label class="practice-field">Questions Attempted<input id="studyQuestions" type="number" min="0" value="0"></label>
+        <label class="practice-field">Correct Answers<input id="studyCorrect" type="number" min="0" value="0"></label>
+      </div>
+      <p class="form-tip">If you mark a topic Completed, the first revision will be scheduled automatically for tomorrow.</p>
+      <div class="modal-actions"><button type="button" class="prep-btn" id="cancelStudy">CANCEL</button><button class="prep-btn primary">SAVE STUDY LOG</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="dashboard.js"></script>
+</body>
+</html>
