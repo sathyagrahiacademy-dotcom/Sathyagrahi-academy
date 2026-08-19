@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Online Examination | Sathyagrahi Academy</title>
+<link rel="icon" href="assets/favicon.png">
+<style>
+:root{--nav:#0c3b72;--blue:#145da0;--bg:#eef2f6;--line:#d9e0e8;--text:#182230;--muted:#667085;--green:#2e7d32;--red:#c62828;--purple:#7b1fa2;--grey:#8a94a3;--orange:#ef6c00}
+*{box-sizing:border-box}body{margin:0;font-family:'Trebuchet MS','Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text)}
+.top{height:60px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 18px;position:sticky;top:0;z-index:20}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--nav)}.brand img{width:34px;height:34px}.brand small{display:block;font-size:10px;font-weight:600;color:var(--muted)}
+.top-right{display:flex;align-items:center;gap:16px}.timerbox{font-weight:800;color:#b42318;font-size:19px}.candidate{font-size:11px;text-align:right}.candidate strong{display:block}
+.exam-shell{display:grid;grid-template-columns:minmax(0,1fr) 330px;min-height:calc(100vh - 60px)}
+.main{background:#fff;margin:12px 6px 12px 12px;border:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+.subjectbar{background:var(--nav);color:#fff;padding:11px 16px;font-weight:700;display:flex;justify-content:space-between;align-items:center}.subjectbar span{font-size:12px;font-weight:500}
+.question-head{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line);background:#fafafa}.qno{font-weight:800}.marks{font-size:11px;color:var(--muted)}
+.question-area{padding:24px 28px;flex:1;overflow:auto}.question-text{font-size:18px;line-height:1.55;font-weight:600;margin-bottom:22px;white-space:pre-wrap}
+.option{border:1px solid #cfd8e3;border-radius:7px;padding:13px 14px;margin:11px 0;display:flex;gap:12px;align-items:flex-start;cursor:pointer;background:#fff}.option:hover{background:#f5f9ff}.option.selected{border-color:#1f6fb2;background:#edf6ff}.option input{margin-top:3px}.letter{width:25px;height:25px;border:1px solid #9eabb8;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:12px;flex:0 0 25px}
+.actions{border-top:1px solid var(--line);padding:12px 16px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#fafafa}.actions-left,.actions-right{display:flex;gap:8px;flex-wrap:wrap}
+button{border:1px solid #b8c2cf;background:#fff;padding:10px 14px;border-radius:4px;font-weight:700;font-size:12px;cursor:pointer}.primary{background:#1261a0;color:#fff;border-color:#1261a0}.review{background:#7b1fa2;color:#fff;border-color:#7b1fa2}.submit{background:#b42318;color:#fff;border-color:#b42318}.clear{background:#fff}
+.side{background:#fff;margin:12px 12px 12px 6px;border:1px solid var(--line);display:flex;flex-direction:column;min-height:0}.side-title{padding:13px 14px;font-weight:800;border-bottom:1px solid var(--line);background:#f8fafc}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px;border-bottom:1px solid var(--line);font-size:10px}.legend-item{display:flex;align-items:center;gap:7px}.lg{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:10px;font-weight:800}.lg.grey{background:#a0a8b2}.lg.red{background:var(--red)}.lg.green{background:var(--green)}.lg.purple{background:var(--purple)}.lg.reviewed{background:var(--purple);position:relative}.lg.reviewed:after{content:'✓';position:absolute;right:-5px;bottom:-4px;background:var(--green);border-radius:50%;width:14px;height:14px;font-size:9px;display:grid;place-items:center}
+.palette-wrap{padding:12px;overflow:auto;flex:1}.palette{display:grid;grid-template-columns:repeat(5,1fr);gap:9px}.pbtn{width:42px;height:42px;padding:0;border-radius:50%;border:0;background:#a0a8b2;color:#fff;font-weight:800;position:relative}.pbtn.notanswered{background:var(--red)}.pbtn.answered{background:var(--green)}.pbtn.review{background:var(--purple)}.pbtn.reviewanswered{background:var(--purple)}.pbtn.reviewanswered:after{content:'✓';position:absolute;right:-3px;bottom:-3px;width:15px;height:15px;border-radius:50%;background:var(--green);display:grid;place-items:center;font-size:9px}.pbtn.current{outline:3px solid #ffb300;outline-offset:2px}
+.side-actions{padding:12px;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr;gap:8px}.side-actions button{font-size:10px}
+.modal{position:fixed;inset:0;background:#0b1220aa;display:none;place-items:center;z-index:50;padding:20px}.modal.open{display:grid}.modal-card{width:min(760px,96vw);max-height:88vh;overflow:auto;background:#fff;border-radius:8px;padding:22px}.modal-card h2{margin-top:0;color:var(--nav)}.modal-card p,.modal-card li{font-size:13px;line-height:1.6}.modal-actions{text-align:right;margin-top:18px}
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}.summary div{border:1px solid var(--line);padding:12px;border-radius:6px;text-align:center}.summary strong{display:block;font-size:20px}
+@media(max-width:900px){.exam-shell{grid-template-columns:1fr}.side{margin:0 12px 12px}.main{margin:12px}.palette{grid-template-columns:repeat(8,1fr)}}@media(max-width:600px){.top{height:auto;padding:9px 12px}.brand small{display:none}.candidate{display:none}.exam-shell{min-height:auto}.question-area{padding:18px 14px}.question-text{font-size:16px}.palette{grid-template-columns:repeat(5,1fr)}.summary{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><img src="assets/favicon.png"><div>SATHYAGRAHI ACADEMY<small>Online Examination Portal</small></div></div>
+  <div class="top-right"><div class="timerbox">Time Left: <span id="timer">--:--:--</span></div><div class="candidate"><strong id="candidateName">Student</strong><span id="candidateId">—</span></div></div>
+</header>
+<div class="exam-shell">
+  <section class="main">
+    <div class="subjectbar"><div id="examTitle">Online Examination</div><span id="subjectName">Subject</span></div>
+    <div class="question-head"><div class="qno">Question No. <span id="questionNo">1</span></div><div class="marks">Marks: <span id="marksInfo">+4 / -1</span></div></div>
+    <div class="question-area">
+      <div class="question-text" id="questionText">Loading question...</div>
+      <div id="options"></div>
+    </div>
+    <div class="actions">
+      <div class="actions-left"><button class="clear" id="clearBtn">CLEAR RESPONSE</button><button class="review" id="reviewBtn">MARK FOR REVIEW & NEXT</button></div>
+      <div class="actions-right"><button id="prevBtn">PREVIOUS</button><button class="primary" id="saveNextBtn">SAVE & NEXT</button></div>
+    </div>
+  </section>
+  <aside class="side">
+    <div class="side-title">Question Palette</div>
+    <div class="legend">
+      <div class="legend-item"><span class="lg grey">1</span>Not Visited</div>
+      <div class="legend-item"><span class="lg red">2</span>Not Answered</div>
+      <div class="legend-item"><span class="lg green">3</span>Answered</div>
+      <div class="legend-item"><span class="lg purple">4</span>Marked for Review</div>
+      <div class="legend-item"><span class="lg reviewed">5</span>Answered & Review</div>
+    </div>
+    <div class="palette-wrap"><div class="palette" id="palette"></div></div>
+    <div class="side-actions"><button id="instructionsBtn">INSTRUCTIONS</button><button id="paperBtn">QUESTION PAPER</button><button class="submit" id="submitBtn" style="grid-column:1/-1">SUBMIT EXAM</button></div>
+  </aside>
+</div>
+
+<div class="modal" id="instructionsModal"><div class="modal-card"><h2>Exam Instructions</h2><div id="instructionsContent"></div><div class="modal-actions"><button class="primary" data-close="instructionsModal">CLOSE</button></div></div></div>
+<div class="modal" id="paperModal"><div class="modal-card"><h2>Question Paper</h2><div id="paperContent"></div><div class="modal-actions"><button class="primary" data-close="paperModal">CLOSE</button></div></div></div>
+<div class="modal" id="submitModal"><div class="modal-card"><h2>Submit Examination</h2><p>Please review your attempt summary before final submission.</p><div class="summary"><div><strong id="sumAnswered">0</strong>Answered</div><div><strong id="sumUnanswered">0</strong>Not Answered</div><div><strong id="sumReview">0</strong>Marked Review</div><div><strong id="sumNotVisited">0</strong>Not Visited</div></div><p><strong>After submission, answers cannot be changed.</strong></p><div class="modal-actions"><button data-close="submitModal">CANCEL</button> <button class="submit" id="confirmSubmit">FINAL SUBMIT</button></div></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="student-exam-attempt.js"></script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Examinations | Sathyagrahi Academy</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <link rel="stylesheet" href="dashboard.css" />
+  <style>
+    .exam-layout{display:grid;grid-template-columns:360px 1fr;gap:20px}
+    .access-card,.exam-list-card{background:#fff;border:1px solid #dce4ef;border-radius:12px;padding:22px}
+    .access-card h3,.exam-list-card h3{color:#06275f;margin:4px 0 5px}
+    .helper{font-size:11px;color:#6b7890;line-height:1.6}
+    .exam-field{margin:13px 0}.exam-field label{display:block;font-size:10px;font-weight:800;margin-bottom:6px}
+    .exam-field input{width:100%;box-sizing:border-box;padding:11px;border:1px solid #ccd7e5;border-radius:7px}
+    .verify-btn{width:100%;border:0;border-radius:7px;padding:12px;background:#06275f;color:#fff;font-weight:800}
+    .verify-btn:disabled{opacity:.6}.access-message{min-height:20px;font-size:11px;margin-top:10px;font-weight:700}.error{color:#b42318}.ok{color:#067647}
+    .exam-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.exam-tab{border:1px solid #ccd7e5;background:#fff;padding:7px 10px;border-radius:20px;font-size:10px;font-weight:800}.exam-tab.active{background:#06275f;color:#fff}
+    .exam-card{border:1px solid #e1e7f0;border-radius:9px;padding:16px;margin-bottom:11px;display:grid;grid-template-columns:1fr auto;gap:14px}
+    .exam-card h4{margin:0;color:#14294d;font-size:13px}.exam-card p{font-size:10px;color:#6b7890;margin:5px 0 0}
+    .exam-status{padding:6px 9px;border-radius:20px;font-size:9px;font-weight:800}.st-active{background:#eaf8f1;color:#087443}.st-upcoming{background:#edf4ff;color:#1e5ba8}.st-closed{background:#f1f3f6;color:#6a7484}
+    .empty-exams{padding:26px;text-align:center;font-size:11px;color:#7a879b}
+    .instruction-overlay{position:fixed;inset:0;background:#06152b99;display:none;place-items:center;padding:20px;z-index:50}.instruction-overlay.open{display:grid}
+    .instruction-card{width:min(620px,96vw);background:#fff;border-radius:14px;padding:26px}.instruction-card h2{color:#06275f}
+    .instruction-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0}.instruction-grid div{background:#f6f8fc;border:1px solid #e2e8f1;border-radius:8px;padding:12px;text-align:center}.instruction-grid strong{display:block;color:#06275f}
+    .instruction-text{font-size:11px;line-height:1.7;color:#46556c;background:#fafbfe;border:1px solid #e7ebf2;border-radius:8px;padding:14px;white-space:pre-wrap}
+    .instruction-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}.instruction-actions button{border-radius:7px;padding:10px 14px;font-size:10px;font-weight:800}.close-btn{border:1px solid #bdc9d9;background:#fff}.start-btn{border:0;background:#06275f;color:#fff}.start-btn:disabled{opacity:.45}
+    @media(max-width:900px){.exam-layout{grid-template-columns:1fr}}
+  </style>
+
+<style>
+/* Student Portal visual consistency fix */
+.sidebar-brand img{
+  width:46px !important;
+  height:46px !important;
+  border-radius:50% !important;
+  object-fit:cover !important;
+  background:#ffffff !important;
+  padding:2px !important;
+  border:1px solid rgba(255,255,255,.65) !important;
+  box-shadow:0 4px 12px rgba(0,0,0,.12) !important;
+  flex:0 0 46px !important;
+}
+</style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand"><img src="assets/favicon.png" alt="" /><div><strong>SATHYAGRAHI</strong><span>ACADEMY</span></div></div>
+      <nav><a class="side-link" href="dashboard.html">Dashboard</a><a class="side-link" href="student-learning-progress.html">Learning Progress</a><a class="side-link active" href="student-examinations.html">Examinations</a><a class="side-link" href="student-results.html">Results</a><a class="side-link" href="student-performance.html">Performance</a><a class="side-link" href="student-attendance.html">Attendance</a><a class="side-link" href="student-study-material.html">Study Material</a><a class="side-link" href="student-notifications.html">Notifications</a><a class="side-link" href="student-help-feedback.html">Help & Feedback</a><a class="side-link" href="student-my-profile.html">My Profile</a></nav>
+    </aside>
+    <main class="main">
+      <header class="topbar"><button class="menu-btn" id="menuBtn">☰</button><div><h1>Examinations</h1><p>Access your online assessments</p></div><div class="student-area"><div class="student-meta"><strong id="studentName">Student</strong><span id="studentCode">—</span></div><button id="logoutBtn" class="logout-btn">LOGOUT</button></div></header>
+      <section class="content">
+        <div class="welcome-row"><div><span class="eyebrow">ONLINE ASSESSMENT</span><h2>Enter Exam Access</h2></div><span class="secure-badge">● Secure Exam Access</span></div>
+        <div class="exam-layout">
+          <section class="access-card">
+            <span class="card-label">EXAM CODE & PASSWORD</span><h3>Access an Exam</h3><p class="helper">Use the Exam Code and Password shared by Sathyagrahi Academy.</p>
+            <form id="examAccessForm">
+              <div class="exam-field"><label>EXAM CODE</label><input id="examCode" maxlength="20" placeholder="Enter Exam Code" required></div>
+              <div class="exam-field"><label>EXAM PASSWORD</label><input id="examPassword" type="password" placeholder="Enter Exam Password" required></div>
+              <button class="verify-btn" id="verifyBtn">VERIFY & CONTINUE</button><div class="access-message" id="accessMessage"></div>
+            </form>
+          </section>
+          <section class="exam-list-card">
+            <span class="card-label">AVAILABLE EXAMS</span><h3>Published Exams</h3>
+            
+            <div id="examList"><div class="empty-exams">Loading available exams...</div></div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+  <div class="instruction-overlay" id="instructionOverlay">
+    <section class="instruction-card"><span class="card-label">EXAM INSTRUCTIONS</span><h2 id="instructionTitle">Exam</h2><div id="instructionMeta"></div>
+      <div class="instruction-grid"><div><strong id="instructionQuestions">—</strong><span>QUESTIONS</span></div><div><strong id="instructionDuration">—</strong><span>MINUTES</span></div><div><strong id="instructionMarks">—</strong><span>TOTAL MARKS</span></div></div>
+      <div class="instruction-text" id="instructionText"></div><div class="access-message" id="startMessage"></div>
+      <div class="instruction-actions"><button class="close-btn" id="closeInstructions">CLOSE</button><button class="start-btn" id="startExamBtn">START EXAM</button></div>
+    </section>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="student-examinations.js"></script>
+</body>
+</html>

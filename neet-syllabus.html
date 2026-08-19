@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#082f65">
+  <title>NEET Syllabus | Sathyagrahi Academy</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="stylesheet" href="neet-portal.css">
+  <link rel="stylesheet" href="neet-syllabus.css">
+</head>
+<body>
+<div class="portal-shell">
+  <header class="portal-top">
+    <div class="portal-brand">
+      <img src="assets/header-brand.png" alt="Sathyagrahi Academy">
+      <a class="main-site-link" href="index.html">← MAIN WEBSITE</a>
+    </div>
+
+    <div class="portal-titlebar">
+      <div class="portal-titlebar-inner">
+        <strong>STUDENT PORTAL · NEET KNOWLEDGE CENTRE</strong>
+        <span>Understand the complete NEET syllabus clearly</span>
+      </div>
+    </div>
+
+    <nav class="portal-nav neet-main-tabs" aria-label="NEET Guide">
+      <a href="student-portal.html"><small>01</small><span>ABOUT NEET</span></a>
+      <a href="neet-exam.html"><small>02</small><span>EXAM PATTERN</span></a>
+      <a class="active" href="neet-syllabus.html"><small>03</small><span>SYLLABUS</span></a>
+      <a href="neet-preparation.html"><small>04</small><span>PREPARATION GUIDE</span></a>
+      <a href="neet-papers.html"><small>05</small><span>PREVIOUS PAPERS</span></a>
+      <a href="neet-counselling.html"><small>06</small><span>COUNSELLING</span></a>
+      <a href="neet-official.html"><small>07</small><span>OFFICIAL SOURCES</span></a>
+      <a href="neet-faq.html"><small>08</small><span>FAQ</span></a>
+    </nav>
+  </header>
+
+  <main class="page syllabus-page">
+    <section class="syllabus-hero">
+      <div>
+        <span class="eyebrow">CURRENT OFFICIAL MASTER · NEET SYLLABUS</span>
+        <h1>Know Exactly<br><em>What You Have to Learn.</em></h1>
+        <p>The syllabus is the boundary of your preparation. Explore Physics, Chemistry and Biology from unit level down to the official topic detail, without losing your way inside a long PDF.</p>
+        <div class="hero-actions">
+          <a href="#explorer" class="hero-btn">EXPLORE THE SYLLABUS ↓</a>
+          <span>Official scope first · Preparation priority comes next</span>
+        </div>
+      </div>
+
+      <div class="syllabus-counts">
+        <article><b>20</b><span>Physics Units</span></article>
+        <article><b>20</b><span>Chemistry Units</span></article>
+        <article><b>10</b><span>Biology Units</span></article>
+        <article class="total"><b>50</b><span>Total Units</span></article>
+      </div>
+    </section>
+
+    <section class="orientation-strip">
+      <div><span>1</span><p><b>Choose a Subject</b><small>Physics, Chemistry or Biology</small></p></div>
+      <i>→</i>
+      <div><span>2</span><p><b>Open a Unit</b><small>See the exact official scope</small></p></div>
+      <i>→</i>
+      <div><span>3</span><p><b>Read Every Topic</b><small>Use it as your checklist</small></p></div>
+      <i>→</i>
+      <div><span>4</span><p><b>Then Plan Preparation</b><small>Priority belongs in Preparation Guide</small></p></div>
+    </section>
+
+    <section class="syllabus-section gateway-section">
+      <div class="section-label">01 · THREE SUBJECT GATEWAYS</div>
+      <div class="section-heading">
+        <div>
+          <h2>Start With the Subject You Want to Explore</h2>
+          <p>These cards do not rank subjects. They simply take you into the official syllabus structure.</p>
+        </div>
+      </div>
+
+      <div class="subject-gateways">
+        <button class="gateway physics" data-subject-jump="Physics" type="button">
+          <span class="subject-symbol">P</span>
+          <div><small>PHYSICS</small><b>20 Units</b><p>Measurement, mechanics, thermal physics, electricity, optics, modern physics and experimental skills.</p><strong>EXPLORE PHYSICS →</strong></div>
+        </button>
+
+        <button class="gateway chemistry" data-subject-jump="Chemistry" type="button">
+          <span class="subject-symbol">C</span>
+          <div><small>CHEMISTRY</small><b>20 Units</b><p>Physical, inorganic, organic chemistry and practical/experimental principles in the official scope.</p><strong>EXPLORE CHEMISTRY →</strong></div>
+        </button>
+
+        <button class="gateway biology" data-subject-jump="Biology" type="button">
+          <span class="subject-symbol">B</span>
+          <div><small>BIOLOGY</small><b>10 Units</b><p>Diversity, cell biology, physiology, reproduction, genetics, biotechnology, health and ecology.</p><strong>EXPLORE BIOLOGY →</strong></div>
+        </button>
+      </div>
+    </section>
+
+    <section class="syllabus-section explorer-section" id="explorer">
+      <div class="section-label">02 · COMPLETE OFFICIAL SYLLABUS EXPLORER</div>
+      <div class="section-heading explorer-heading">
+        <div>
+          <h2>Unit → Topic → Official Detail</h2>
+          <p>Search any word, choose a subject, and open a unit. Search results automatically reveal the matching official topics.</p>
+        </div>
+        <div class="live-badge"><span></span> LIVE FROM ACADEMY MASTER</div>
+      </div>
+
+      <div class="explorer-toolbar">
+        <label class="search-field">
+          <span>SEARCH THE SYLLABUS</span>
+          <div><b>⌕</b><input id="syllabusSearch" type="search" placeholder="Try: friction, equilibrium, genetics, reproduction..."></div>
+        </label>
+
+        <div class="subject-filters" aria-label="Subject filters">
+          <button class="active" data-subject="All" type="button">ALL</button>
+          <button data-subject="Physics" type="button">PHYSICS</button>
+          <button data-subject="Chemistry" type="button">CHEMISTRY</button>
+          <button data-subject="Biology" type="button">BIOLOGY</button>
+        </div>
+
+        <div class="expand-tools">
+          <button id="expandAll" type="button">EXPAND ALL</button>
+          <button id="collapseAll" type="button">COLLAPSE ALL</button>
+        </div>
+      </div>
+
+      <div class="explorer-stats">
+        <article><span>VISIBLE UNITS</span><strong id="unitCount">—</strong></article>
+        <article><span>VISIBLE TOPICS</span><strong id="topicCount">—</strong></article>
+        <article><span>SUBJECT VIEW</span><strong id="subjectView">ALL</strong></article>
+        <article><span>SOURCE</span><strong>OFFICIAL MASTER</strong></article>
+      </div>
+
+      <div id="syllabusStatus" class="syllabus-status">Loading official syllabus…</div>
+      <div id="syllabusList" class="syllabus-list"></div>
+    </section>
+
+    <section class="syllabus-section syllabus-map-section" id="syllabusMap">
+      <div class="section-label">03 · VISUAL SYLLABUS MAP</div>
+      <div class="section-heading">
+        <div>
+          <h2>See the Complete Syllabus as One Map</h2>
+          <p>This visual map is built directly from the Academy’s official syllabus master. It does not use poster images, and it updates automatically when the master syllabus is updated.</p>
+        </div>
+        <div class="map-badge">LIVE · COMPLETE</div>
+      </div>
+
+      <div class="syllabus-map-grid">
+        <article class="syllabus-map-card physics">
+          <div class="map-card-head">
+            <span class="map-symbol">P</span>
+            <div>
+              <small>PHYSICS</small>
+              <h3>20 Official Units</h3>
+            </div>
+          </div>
+          <div id="physicsMap" class="map-unit-list">
+            <span class="map-loading">Loading Physics units…</span>
+          </div>
+          <button type="button" class="map-jump" data-subject-jump="Physics">EXPLORE PHYSICS IN DETAIL →</button>
+        </article>
+
+        <article class="syllabus-map-card chemistry">
+          <div class="map-card-head">
+            <span class="map-symbol">C</span>
+            <div>
+              <small>CHEMISTRY</small>
+              <h3>20 Official Units</h3>
+            </div>
+          </div>
+          <div id="chemistryMap" class="map-unit-list">
+            <span class="map-loading">Loading Chemistry units…</span>
+          </div>
+          <button type="button" class="map-jump" data-subject-jump="Chemistry">EXPLORE CHEMISTRY IN DETAIL →</button>
+        </article>
+
+        <article class="syllabus-map-card biology">
+          <div class="map-card-head">
+            <span class="map-symbol">B</span>
+            <div>
+              <small>BIOLOGY</small>
+              <h3>10 Official Units</h3>
+            </div>
+          </div>
+          <div id="biologyMap" class="map-unit-list">
+            <span class="map-loading">Loading Biology units…</span>
+          </div>
+          <button type="button" class="map-jump" data-subject-jump="Biology">EXPLORE BIOLOGY IN DETAIL →</button>
+        </article>
+      </div>
+
+      <div class="map-note">
+        <b>Important:</b>
+        <span>This map shows syllabus structure only. It does not rank units by importance or weightage. Study priority belongs in the Preparation Guide.</span>
+      </div>
+    </section>
+
+
+    <section class="syllabus-section understand-section">
+      <div class="section-label">04 · HOW TO USE THIS PAGE</div>
+      <div class="section-heading">
+        <div>
+          <h2>A Syllabus Is a Checklist — Not a Study Plan</h2>
+          <p>This distinction is important for every NEET aspirant.</p>
+        </div>
+      </div>
+
+      <div class="use-grid">
+        <article><span>SYLLABUS TELLS YOU</span><b>What can be asked?</b><p>The unit and topic explorer defines the preparation scope.</p></article>
+        <article><span>PREPARATION GUIDE TELLS YOU</span><b>How should I learn it?</b><p>Study order, foundation links, practice, revision and test strategy belong there.</p></article>
+        <article><span>PREVIOUS PAPERS TELL YOU</span><b>How has it been tested?</b><p>PYQs help you understand the nature of questions asked from the syllabus.</p></article>
+      </div>
+    </section>
+
+    <section class="official-box">
+      <div>
+        <span>OFFICIAL REFERENCE PRINCIPLE</span>
+        <h2>Always Follow the Current Competent Authority Syllabus</h2>
+        <p>Sathyagrahi Academy organises the syllabus to make it easier to understand and track. If a future official syllabus changes, the official authority notification takes priority and the Academy master should be updated accordingly.</p>
+      </div>
+      <a href="neet-official.html">GO TO OFFICIAL SOURCES →</a>
+    </section>
+
+    <section class="next-guide">
+      <span>NEXT STEP</span>
+      <h2>You Know What to Learn. Now Learn How to Approach It.</h2>
+      <p>The Preparation Guide will analyse the syllabus as a learning journey — foundations, subject approach, sequence, practice, revision and testing.</p>
+      <a href="neet-preparation.html"><b>04 · PREPARATION GUIDE</b><small>Continue to preparation guidance →</small></a>
+    </section>
+
+    <div class="footer-note">
+      <div><strong>Sathyagrahi Academy · NEET Knowledge Centre</strong><p>Official scope first. Clear learning direction next.</p></div>
+      <a href="index.html#student-portal">STUDENT LOGIN</a>
+    </div>
+  </main>
+</div>
+
+  <img id="posterImage" src="" alt="">
+</div>
+
+<script src="neet-portal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="neet-syllabus.js"></script>
+</body>
+</html>

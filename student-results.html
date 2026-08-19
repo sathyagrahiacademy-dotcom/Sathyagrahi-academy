@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Results | Sathyagrahi Academy</title>
+<link rel="icon" href="assets/favicon.png">
+<link rel="stylesheet" href="dashboard.css">
+<style>
+.results-wrap{padding:28px}.access-grid{display:grid;grid-template-columns:360px 1fr;gap:20px}.card{background:#fff;border:1px solid #e0e7ef;border-radius:12px;padding:20px;box-shadow:0 3px 12px rgba(20,40,70,.04)}
+.card h3{margin:4px 0 8px;color:#102a43}.muted{color:#667085;font-size:12px;line-height:1.5}.field{margin:14px 0}.field label{display:block;font-size:10px;font-weight:800;margin-bottom:6px}.field input{width:100%;padding:11px;border:1px solid #cbd5df;border-radius:7px;font:inherit}
+.btn{border:1px solid #b8c2cf;background:#fff;padding:10px 14px;border-radius:6px;font-weight:800;font-size:11px;cursor:pointer}.primary{background:#123b68;color:#fff;border-color:#123b68}.green{background:#2e7d32;color:#fff;border-color:#2e7d32}.full{width:100%}
+.msg{font-size:11px;font-weight:700;margin-top:10px;min-height:18px}.error{color:#b42318}.ok{color:#067647}
+.placeholder{display:grid;place-items:center;min-height:360px;text-align:center;color:#6b7890}.placeholder b{display:block;color:#102a43;font-size:18px;margin-bottom:6px}
+.scorecard{display:none}.scorecard.show{display:block}.score-head{text-align:center;border-bottom:1px solid #e6ebf1;padding-bottom:16px}.score-head h2{margin:6px 0;color:#0d3768}.score-head .academy{font-size:13px;font-weight:800;letter-spacing:1.5px;color:#123b68}
+.student-box{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:16px 0}.info{background:#f8fafc;border:1px solid #e5eaf0;border-radius:8px;padding:11px}.info span{display:block;font-size:9px;color:#667085;font-weight:800}.info b{font-size:13px;color:#102a43}
+.score-main{display:grid;grid-template-columns:170px 1fr;gap:16px;align-items:center;margin:18px 0}.big-score{background:#123b68;color:#fff;border-radius:12px;padding:22px;text-align:center}.big-score b{display:block;font-size:34px}.big-score span{font-size:11px}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.metric{background:#f8fafc;border:1px solid #e3e8ee;border-radius:8px;padding:12px;text-align:center;font-size:10px}.metric b{display:block;font-size:19px;color:#102a43}
+.score-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.modal{position:fixed;inset:0;background:#0b1b3099;display:none;place-items:center;padding:20px;z-index:90}.modal.open{display:grid}.modal-card{width:min(920px,96vw);max-height:90vh;overflow:auto;background:#fff;border-radius:12px;padding:22px}.modal-head{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #e8edf2;padding-bottom:12px}.qreview{border:1px solid #e3e8ef;border-radius:9px;padding:14px;margin:12px 0}.qreview h4{margin:0 0 8px}.line{font-size:12px;margin:5px 0}.good{color:#1f7a39}.bad{color:#b42318}.neutral{color:#667085}.explanation{margin-top:9px;background:#f8fafc;border-left:3px solid #123b68;padding:9px;font-size:12px}
+@media(max-width:900px){.access-grid{grid-template-columns:1fr}.score-main{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}}@media(max-width:600px){.student-box{grid-template-columns:1fr}}
+</style>
+
+<style>
+/* Student Portal visual consistency fix */
+.sidebar-brand img{
+  width:46px !important;
+  height:46px !important;
+  border-radius:50% !important;
+  object-fit:cover !important;
+  background:#ffffff !important;
+  padding:2px !important;
+  border:1px solid rgba(255,255,255,.65) !important;
+  box-shadow:0 4px 12px rgba(0,0,0,.12) !important;
+  flex:0 0 46px !important;
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand"><img src="assets/favicon.png"><div><strong>SATHYAGRAHI</strong><span>ACADEMY</span></div></div>
+  <nav><a class="side-link" href="dashboard.html">Dashboard</a><a class="side-link" href="student-learning-progress.html">Learning Progress</a><a class="side-link" href="student-examinations.html">Examinations</a><a class="side-link active" href="student-results.html">Results</a><a class="side-link" href="student-performance.html">Performance</a><a class="side-link" href="student-attendance.html">Attendance</a><a class="side-link" href="student-study-material.html">Study Material</a><a class="side-link" href="student-notifications.html">Notifications</a><a class="side-link" href="student-help-feedback.html">Help & Feedback</a><a class="side-link" href="student-my-profile.html">My Profile</a></nav>
+</aside>
+<main class="main">
+<header class="topbar">
+  <button class="menu-btn" id="menuBtn">☰</button>
+  <div><h1>Results</h1><p>Secure result access and downloadable score card</p></div>
+  <div class="student-area"><div class="student-meta"><strong id="studentName">Student</strong><span id="studentCode">—</span></div><button id="logoutBtn" class="logout-btn">LOGOUT</button></div>
+</header>
+
+<section class="results-wrap">
+  <div class="access-grid">
+    <section class="card">
+      <span class="eyebrow">RESULT ACCESS</span><h3>Open Your Score Card</h3>
+      <p class="muted">Enter the same Exam Code and Password used for the examination. The score card opens only after the Academy publishes the result.</p>
+      <form id="resultForm">
+        <div class="field"><label>EXAM CODE</label><input id="examCode" maxlength="20" placeholder="Enter Exam Code" required></div>
+        <div class="field"><label>EXAM PASSWORD</label><input id="examPassword" type="password" placeholder="Enter Exam Password" required></div>
+        <button class="btn primary full" id="verifyBtn">VIEW SCORE CARD</button>
+        <div class="msg" id="resultMsg"></div>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="placeholder" id="placeholder"><div><b>Your Score Card</b>Enter Exam Code and Password to view the published result.</div></div>
+      <div class="scorecard" id="scorecard">
+        <div class="score-head"><img src="assets/favicon.png" alt="Sathyagrahi Academy Logo" style="width:58px;height:58px;object-fit:contain;margin-bottom:8px"><div class="academy">SATHYAGRAHI ACADEMY</div><h2>OFFICIAL EXAMINATION SCORE CARD</h2><div class="muted">Empowering Students. Inspiring Excellence.</div><div class="muted" id="scExamLine" style="margin-top:6px;font-weight:700;color:#244b78"></div></div>
+        <div class="student-box">
+          <div class="info"><span>STUDENT NAME</span><b id="scName"></b></div>
+          <div class="info"><span>STUDENT ID</span><b id="scId"></b></div>
+          <div class="info"><span>EXAM CODE</span><b id="scCode"></b></div>
+          <div class="info"><span>SUBMITTED ON</span><b id="scDate"></b></div>
+        </div>
+        <div class="score-main">
+          <div class="big-score"><b id="scScore">0 / 0</b><span>TOTAL SCORE</span></div>
+          <div class="metrics">
+            <div class="metric"><b id="scCorrect">0</b>Correct</div>
+            <div class="metric"><b id="scWrong">0</b>Wrong</div>
+            <div class="metric"><b id="scUnattempted">0</b>Unattempted</div>
+            <div class="metric"><b id="scPercent">0%</b>Percentage</div>
+          </div>
+        </div>
+        <div style="margin-top:14px;padding:10px 12px;border:1px dashed #9fb0c3;border-radius:8px;background:#fbfcfe;font-size:10px;color:#59697d">Verified result issued through Sathyagrahi Academy Student Portal • Every Dream Deserves the Right Direction.</div><div class="score-actions">
+          <button class="btn green" id="downloadScore">DOWNLOAD SCORE CARD PDF</button>
+          <button class="btn primary" id="reviewBtn">VIEW ANSWER REVIEW</button>
+          <button class="btn" id="downloadAnswer">DOWNLOAD ANSWER PAPER PDF</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</section>
+</main>
+</div>
+
+<div class="modal" id="reviewModal"><div class="modal-card"><div class="modal-head"><div><h2 id="reviewTitle">Answer Review</h2><div class="muted" id="reviewMeta"></div></div><button class="btn" id="closeReview">CLOSE</button></div><div id="reviewQuestions"></div></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<script src="supabase-config.js"></script>
+<script src="student-results.js"></script>
+</body></html>

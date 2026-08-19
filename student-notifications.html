@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Notifications | Sathyagrahi Academy</title><link rel="icon" href="assets/favicon.png"><link rel="stylesheet" href="dashboard.css">
+<style>
+.n-wrap{max-width:1200px}.n-hero{background:linear-gradient(135deg,#0e315b,#174d83);color:#fff;border-radius:17px;padding:22px;margin-bottom:16px}.n-hero h2{margin:5px 0}.n-hero p{margin:0;color:#d9e5f1;font-size:10px}
+.n-toolbar{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:12px}.n-toolbar input{border:1px solid #ccd7e2;border-radius:8px;padding:9px;min-width:240px}
+.n-list{display:grid;gap:12px}.n-card{background:#fff;border:1px solid #e0e7ef;border-radius:14px;padding:16px}.n-head{display:flex;justify-content:space-between;gap:10px}.n-head h3{font-size:14px;margin:2px 0}.n-date{font-size:9px;color:#738193;white-space:nowrap}.n-card p{font-size:10px;color:#59697a;line-height:1.6;white-space:pre-line}.n-poster{margin-top:12px;border:1px solid #e1e8ef;border-radius:11px;background:#f8fafc;padding:8px;cursor:pointer}.n-poster img{display:block;width:100%;max-height:520px;object-fit:contain;border-radius:8px}.n-chip{font-size:7px;font-weight:900;color:#123b68;background:#eaf1f8;border-radius:99px;padding:4px 7px}.empty{background:#fff;border:1px solid #e1e8ef;border-radius:13px;padding:30px;text-align:center;color:#718093;font-size:10px}
+.poster-modal{position:fixed;inset:0;background:rgba(6,23,40,.82);display:none;place-items:center;z-index:100;padding:20px}.poster-modal.open{display:grid}.poster-modal img{max-width:96vw;max-height:90vh;border-radius:10px}.poster-modal button{position:fixed;right:18px;top:18px;width:38px;height:38px;border:0;border-radius:50%;font-size:22px}
+@media(max-width:650px){.n-toolbar{align-items:stretch;flex-direction:column}.n-toolbar input{min-width:0;width:100%;box-sizing:border-box}}
+</style>
+<style>
+/* Student Portal visual consistency fix */
+.sidebar-brand img{
+  width:46px !important;
+  height:46px !important;
+  border-radius:50% !important;
+  object-fit:cover !important;
+  background:#ffffff !important;
+  padding:2px !important;
+  border:1px solid rgba(255,255,255,.65) !important;
+  box-shadow:0 4px 12px rgba(0,0,0,.12) !important;
+  flex:0 0 46px !important;
+}
+</style>
+</head>
+<body><div class="app-shell">
+<aside class="sidebar" id="sidebar"><div class="sidebar-brand"><img src="assets/favicon.png"><div><strong>SATHYAGRAHI</strong><span>ACADEMY</span></div></div>
+<nav><a class="side-link" href="dashboard.html">Dashboard</a><a class="side-link" href="student-learning-progress.html">Learning Progress</a><a class="side-link" href="student-examinations.html">Examinations</a><a class="side-link" href="student-results.html">Results</a><a class="side-link" href="student-performance.html">Performance</a><a class="side-link" href="student-attendance.html">Attendance</a><a class="side-link" href="student-study-material.html">Study Material</a><a class="side-link active" href="student-notifications.html">Notifications</a><a class="side-link" href="student-help-feedback.html">Help & Feedback</a><a class="side-link" href="student-my-profile.html">My Profile</a></nav>
+<div class="sidebar-help"><strong>Need Help?</strong><span>+91 9059995537</span></div></aside>
+<main class="main"><header class="topbar"><button class="menu-btn" id="menuBtn">☰</button><div><h1>Notifications</h1><p>Academy notices and important updates.</p></div><div class="student-area"><div class="student-meta"><strong id="studentName">Student</strong><span id="studentCode">—</span></div><button id="logoutBtn" class="logout-btn">LOGOUT</button></div></header>
+<section class="content n-wrap"><section class="n-hero"><span class="card-label">ACADEMY UPDATES</span><h2>Latest Notifications</h2><p>Exam notices, study updates, announcements and academy information.</p></section>
+<div class="n-toolbar"><strong id="count">0 Notifications</strong><input id="search" placeholder="Search notifications..."></div><div id="list" class="n-list"><div class="empty">Loading notifications...</div></div></section>
+<footer>© 2026 Sathyagrahi Academy. All Rights Reserved.</footer></main></div>
+<div class="poster-modal" id="posterModal"><button id="closePoster">×</button><img id="posterFull" alt="Notification poster"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-config.js"></script><script src="student-notifications.js"></script></body></html>

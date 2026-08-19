@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#082a63">
+<title>Notifications | Sathyagrahi Academy</title>
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="stylesheet" href="styles.css">
+<style>
+.public-notice-page{max-width:1050px;margin:0 auto;padding:42px 20px 60px}
+.public-notice-head{margin-bottom:18px}
+.public-notice-head h1{color:#0b2d61;margin:0 0 7px}
+.public-notice-head p{color:#69778a;margin:0}
+.public-notice-list{display:grid;gap:14px}
+.public-notice-card{background:#fff;border:1px solid #e0e7ef;border-radius:14px;padding:18px;box-shadow:0 8px 22px rgba(20,47,78,.05)}
+.public-notice-card h2{font-size:18px;color:#123b68;margin:0 0 6px}
+.public-notice-card time{font-size:11px;color:#78869a}
+.public-notice-card p{color:#526274;line-height:1.65;white-space:pre-line}
+.public-notice-card img{display:block;max-width:100%;max-height:620px;object-fit:contain;margin-top:14px;border-radius:10px;border:1px solid #e1e8ef}
+.public-empty{padding:40px;text-align:center;background:#fff;border:1px solid #e1e8ef;border-radius:14px;color:#6c7b8d}
+.back-home{display:inline-block;margin-bottom:18px;color:#123b68;font-weight:800;text-decoration:none}
+</style>
+</head>
+<body>
+<header class="site-header">
+<div class="ticker"><div class="ticker-text">★ &nbsp; Every Dream Deserves the Right Direction &nbsp; ★</div></div>
+<div class="brand-wrap"><img class="brand-image" src="assets/header-brand.png" alt="Sathyagrahi Academy"></div>
+</header>
+<main class="public-notice-page">
+<a class="back-home" href="index.html">← HOME</a>
+<div class="public-notice-head"><h1>Academy Notifications</h1><p>Official announcements from Sathyagrahi Academy.</p></div>
+<div id="publicNoticeList" class="public-notice-list"><div class="public-empty">Loading notifications...</div></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="public-notifications.js"></script>
+</body></html>

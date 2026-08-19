@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#082a63" />
+  <title>Welcome | Sathyagrahi Academy</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <style>
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;font-family:Arial,Helvetica,sans-serif;background:#eef3f8;color:#0b2f63}
+    .topbar{
+      width:100%;
+      min-height:64px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      padding:12px 24px;
+      background:#fff;
+      border-bottom:1px solid #dfe7f0;
+      position:sticky;
+      top:0;
+      z-index:10;
+    }
+    .title{
+      font-size:16px;
+      font-weight:800;
+      letter-spacing:.02em;
+    }
+    .back{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:40px;
+      padding:0 18px;
+      border-radius:7px;
+      background:#0a356f;
+      color:#fff;
+      text-decoration:none;
+      font-size:13px;
+      font-weight:800;
+    }
+    .page{
+      min-height:calc(100vh - 64px);
+      padding:28px 18px 44px;
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+    }
+    .image-card{
+      width:min(920px,100%);
+      background:#fff;
+      border:1px solid #dce5ee;
+      border-radius:14px;
+      box-shadow:0 16px 42px rgba(8,42,99,.10);
+      padding:18px;
+    }
+    .image-card img{
+      display:block;
+      width:100%;
+      height:auto;
+      max-height:none;
+      object-fit:contain;
+      border-radius:8px;
+    }
+    @media(max-width:640px){
+      .topbar{padding:10px 14px}
+      .title{font-size:14px}
+      .back{padding:0 14px;font-size:12px}
+      .page{padding:16px 10px 30px}
+      .image-card{padding:8px;border-radius:10px}
+      .image-card img{border-radius:6px}
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="title">Welcome to Sathyagrahi Academy</div>
+    <a class="back" href="index.html">BACK TO HOME</a>
+  </header>
+
+  <main class="page">
+    <section class="image-card" aria-label="Welcome message">
+      <img src="assets/welcome-poster.png" alt="Welcome to Sathyagrahi Academy" />
+    </section>
+  </main>
+</body>
+</html>

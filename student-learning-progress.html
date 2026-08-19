@@ -1,0 +1,247 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#06275f"><title>Learning Progress | Sathyagrahi Academy</title><link rel="icon" href="assets/favicon.png"><link rel="stylesheet" href="dashboard.css"><style>
+.lp-wrap{max-width:1400px}.lp-hero{background:linear-gradient(135deg,#0c2f59,#164b82);color:#fff;border-radius:18px;padding:22px;margin-bottom:18px}.lp-hero h2{margin:5px 0}.lp-hero p{margin:0;color:#d7e4f1;font-size:14px;line-height:1.6}.lp-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0}.lp-stat{background:#fff;border:1px solid #e1e8ef;border-radius:13px;padding:15px}.lp-stat b{display:block;font-size:24px;color:#123b68}.lp-stat span{font-size:12px;color:#6c7a89}.lp-toolbar{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px}.lp-toolbar select,.lp-toolbar input{border:1px solid #ccd6e0;border-radius:8px;padding:10px 11px;background:#fff;font-size:12px}.lp-toolbar input{min-width:220px}.unit-card{background:#fff;border:1px solid #dfe7ef;border-radius:14px;margin-bottom:12px;overflow:hidden}.unit-head{display:flex;justify-content:space-between;align-items:center;padding:15px 17px;background:#f8fafc;cursor:pointer}.unit-head h3{margin:2px 0;font-size:18px}.unit-head span{font-size:12px;color:#6b7b8b}.unit-progress{display:flex;align-items:center;gap:8px}.unit-progress i{width:100px;height:7px;background:#e6edf4;border-radius:99px;overflow:hidden}.unit-progress em{display:block;height:100%;background:#123b68}.topics{display:none;padding:8px 14px 14px}.unit-card.open .topics{display:block}.topic-row{display:grid;grid-template-columns:1fr 110px 95px 95px;gap:9px;align-items:center;padding:11px 4px;border-bottom:1px solid #edf1f5}.topic-row:last-child{border-bottom:0}.topic-title strong{display:block;font-size:15px}.topic-title small{font-size:12px;color:#788696;line-height:1.5}.status{border-radius:99px;padding:6px 10px;font-size:11px;font-weight:800;text-align:center;background:#eef3f8;color:#53667a}.status.completed{background:#e7f5ec;color:#267447}.status.studying{background:#fff4df;color:#9a6514}.status.practice{background:#e9f0ff;color:#345e9e}.topic-row button{border:1px solid #c9d4df;background:#fff;border-radius:7px;padding:8px 10px;font-size:10px;font-weight:800}.topic-row button.primary{background:#123b68;color:#fff}.lp-modal{position:fixed;inset:0;background:rgba(8,26,46,.65);display:none;place-items:center;z-index:100;padding:20px}.lp-modal.open{display:grid}.lp-modal-card{background:#fff;border-radius:15px;width:min(600px,96vw);padding:20px}.lp-form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.lp-form label{font-size:12px;font-weight:800}.lp-form input,.lp-form select{width:100%;box-sizing:border-box;padding:9px;border:1px solid #ccd6df;border-radius:7px;margin-top:4px}.lp-topic-name{background:#f7f9fc;padding:11px;border-radius:9px;margin:10px 0;font-size:15px}.lp-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}@media(max-width:800px){.lp-summary{grid-template-columns:1fr 1fr}.topic-row{grid-template-columns:1fr 90px}.topic-row button{grid-row:2}.unit-progress i{width:65px}}@media(max-width:500px){.lp-summary{grid-template-columns:1fr}}
+</style>
+<style>
+/* Student Portal visual consistency fix */
+.sidebar-brand img{
+  width:46px !important;
+  height:46px !important;
+  border-radius:50% !important;
+  object-fit:cover !important;
+  background:#ffffff !important;
+  padding:2px !important;
+  border:1px solid rgba(255,255,255,.65) !important;
+  box-shadow:0 4px 12px rgba(0,0,0,.12) !important;
+  flex:0 0 46px !important;
+}
+</style>
+
+<style>
+/* Make the Learning Progress hero label clearly visible */
+.lp-hero .card-label{
+  color:#e8f2ff !important;
+  opacity:1 !important;
+  text-shadow:0 1px 2px rgba(0,0,0,.18);
+}
+</style>
+
+<style>
+/* Learning Progress readability adjustment — font family and functionality unchanged */
+
+/* Page intro / hero */
+.lp-hero h2{font-size:25px !important;line-height:1.25 !important}
+.lp-hero p{font-size:14px !important;line-height:1.6 !important}
+
+/* Summary cards */
+.lp-metric span,.metric span,.metric small{font-size:11.5px !important}
+.lp-metric strong,.metric strong{font-size:23px !important}
+
+/* Physics / Chemistry / Biology cards */
+.lp-subject b{font-size:16px !important}
+.lp-subject strong{font-size:16px !important}
+.lp-subject small{font-size:12px !important;line-height:1.45 !important}
+
+/* Filters */
+.lp-toolbar select,.lp-toolbar input{
+  font-size:13px !important;
+  min-height:40px !important;
+}
+
+/* Unit / Chapter headers */
+.unit-head span{font-size:10.5px !important}
+.unit-head h3{font-size:19px !important;line-height:1.35 !important}
+.unit-progress b{font-size:12px !important}
+.unit-mini{font-size:11.5px !important}
+.unit-mini b{font-size:12px !important}
+
+/* Topic rows */
+.topic-title strong{font-size:14px !important;line-height:1.45 !important}
+.topic-title small{font-size:11px !important;line-height:1.5 !important}
+.topic-title-line strong{font-size:14px !important}
+
+/* Status */
+.status{font-size:10.5px !important;padding:5px 8px !important}
+
+/* Revision */
+.rev-chip{font-size:10.5px !important;padding:4px 6px !important}
+
+/* Exam chips */
+.topic-echip{
+  font-size:11.5px !important;
+  padding:6px 9px !important;
+}
+
+/* Topic action buttons */
+.topic-row button{
+  font-size:10.5px !important;
+  min-height:34px !important;
+  padding:7px 9px !important;
+}
+
+/* Exam detail panel */
+.exam-detail-head b{font-size:14px !important}
+.exam-detail-head small{font-size:11px !important}
+.exam-detail-head span{font-size:10.5px !important}
+.exam-detail-grid small{font-size:10.5px !important}
+.exam-detail-grid strong{font-size:12.5px !important}
+
+/* Chapter exam helper text */
+.exam-hint,.no-exam{font-size:11px !important;line-height:1.5 !important}
+
+/* Modal / Update popup */
+.modal-card h3,.modal h3{font-size:19px !important}
+.modal-card label,.modal label{font-size:12px !important}
+.modal-card input,.modal-card select,.modal input,.modal select{
+  font-size:13px !important;
+  min-height:40px !important;
+}
+.modal-card button,.modal button{font-size:12px !important}
+
+/* Empty state / toast */
+.empty-state,.empty,.toast{font-size:12px !important}
+
+@media(max-width:700px){
+  .unit-head h3{font-size:18px !important}
+  .topic-title strong,.topic-title-line strong{font-size:13.5px !important}
+  .lp-subject b{font-size:15.5px !important}
+}
+</style>
+
+
+<style>
+/* FINAL Learning Progress: study + completion + revision only */
+.lp-hero h2{font-size:25px !important}
+.lp-hero p{font-size:14px !important}
+
+.unit-card{margin-bottom:10px !important}
+.unit-head{display:grid !important;grid-template-columns:minmax(0,1fr) auto !important;gap:12px !important;align-items:center !important}
+.unit-head:hover{background:#f4f8fc !important}
+.unit-card.open .unit-head{background:#f5f9fe !important}
+
+.unit-head-main h3{font-size:18px !important;margin:2px 0 5px !important}
+.unit-head-main span{font-size:10.5px !important}
+.unit-head-stats{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.unit-head-stats span{font-size:11.5px;color:#65778b;white-space:nowrap}
+.unit-head-stats strong{color:#123b68;font-size:12px}
+.unit-arrow{font-size:15px;color:#718095;font-weight:900;transition:transform .18s ease}
+.unit-card.open .unit-arrow{transform:rotate(180deg)}
+
+.topic-row{
+  display:grid !important;
+  grid-template-columns:minmax(250px,1.45fr) 110px minmax(220px,1fr) 170px !important;
+  gap:10px !important;
+  align-items:center !important;
+  padding:12px 4px !important;
+}
+.topic-title strong{font-size:14px !important;line-height:1.45 !important}
+.topic-title small{font-size:11px !important;line-height:1.5 !important}
+.status{font-size:10.5px !important;padding:5px 8px !important}
+
+.revision-box{display:flex;flex-direction:column;gap:6px}
+.revision-line{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.rev-chip{font-size:10.5px !important;padding:4px 6px !important;border-radius:6px;background:#eef2f6;color:#64758a}
+.rev-chip.done{background:#eaf7ef;color:#2c7448}
+.rev-chip.due{background:#fff3e8;color:#9a5125}
+.rev-reminder{font-size:10.5px;color:#6d7d90;line-height:1.4}
+.rev-reminder.due{color:#a15320;font-weight:800}
+.rev-reminder.complete{color:#2b7549;font-weight:800}
+
+.topic-actions{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+.topic-actions button{font-size:10.5px !important;min-height:34px !important;padding:7px 9px !important}
+
+.subject-plain-note{font-size:11px;color:#718095;margin-top:7px}
+
+@media(max-width:1050px){
+  .topic-row{grid-template-columns:1fr 110px 1fr !important}
+  .topic-actions{grid-column:1/-1;justify-content:flex-start}
+}
+@media(max-width:760px){
+  .unit-head{grid-template-columns:1fr !important}
+  .unit-head-stats{justify-content:flex-start}
+  .topic-row{grid-template-columns:1fr 1fr !important}
+  .revision-box,.topic-actions{grid-column:1/-1}
+}
+@media(max-width:520px){
+  .topic-row{grid-template-columns:1fr !important}
+  .status{justify-self:start}
+}
+</style>
+
+
+<style>
+/* Learning Progress subject selector — compact tab row */
+.lp-subjects{
+  display:flex !important;
+  gap:6px !important;
+  align-items:center !important;
+  padding:5px !important;
+  margin:0 0 14px !important;
+  background:#eef3f8 !important;
+  border:1px solid #dbe4ed !important;
+  border-radius:12px !important;
+  overflow-x:auto !important;
+  scrollbar-width:thin;
+}
+
+.lp-subject{
+  flex:1 0 0 !important;
+  min-width:150px !important;
+  padding:10px 14px !important;
+  border:0 !important;
+  border-radius:9px !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  cursor:pointer !important;
+}
+
+.lp-subject:hover{
+  background:#f8fbff !important;
+}
+
+.lp-subject.active{
+  background:#123b68 !important;
+  box-shadow:0 3px 10px rgba(18,59,104,.16) !important;
+}
+
+.lp-subject-top{
+  display:flex !important;
+  justify-content:center !important;
+  align-items:center !important;
+  gap:8px !important;
+}
+
+.lp-subject b{
+  font-size:14px !important;
+  color:#173653 !important;
+}
+
+.lp-subject strong{
+  font-size:12px !important;
+  color:#5e7388 !important;
+}
+
+.lp-subject.active b,
+.lp-subject.active strong{
+  color:#fff !important;
+}
+
+.lp-subject-bar{
+  display:none !important;
+}
+
+.lp-subject small{
+  display:none !important;
+}
+
+@media(max-width:650px){
+  .lp-subjects{
+    justify-content:flex-start !important;
+  }
+  .lp-subject{
+    flex:0 0 auto !important;
+    min-width:135px !important;
+  }
+}
+</style>
+
+</head><body><div class="app-shell"><aside class="sidebar" id="sidebar"><div class="sidebar-brand"><img src="assets/favicon.png"><div><strong>SATHYAGRAHI</strong><span>ACADEMY</span></div></div><nav><a class="side-link" href="dashboard.html">Dashboard</a><a class="side-link active" href="student-learning-progress.html">Learning Progress</a><a class="side-link" href="student-examinations.html">Examinations</a><a class="side-link" href="student-results.html">Results</a><a class="side-link" href="student-performance.html">Performance</a><a class="side-link" href="student-attendance.html">Attendance</a><a class="side-link" href="student-study-material.html">Study Material</a><a class="side-link" href="student-notifications.html">Notifications</a><a class="side-link" href="student-help-feedback.html">Help & Feedback</a><a class="side-link" href="student-my-profile.html">My Profile</a></nav><div class="sidebar-help"><strong>Need Help?</strong><span>+91 9059995537</span></div></aside><main class="main"><header class="topbar"><button class="menu-btn" id="menuBtn">☰</button><div><h1>Learning Progress</h1><p>Learn with Clarity. Progress with Purpose.</p></div><div class="student-area"><div class="student-meta"><strong id="studentName">Student</strong><span id="studentCode">—</span></div><button id="logoutBtn" class="logout-btn">LOGOUT</button></div></header><section class="content lp-wrap"><section class="lp-hero"><span class="card-label">MY NEET SYLLABUS</span><h2>Learn → Revise → Practice → Complete</h2><p>Track what you completed, how many revisions are done, and what needs revision next.</p></section><div class="lp-summary"><div class="lp-stat"><b id="overall">0%</b><span>OVERALL COMPLETED</span></div><div class="lp-stat"><b id="done">0</b><span>TOPICS COMPLETED</span></div><div class="lp-stat"><b id="studying">0</b><span>CURRENTLY LEARNING</span></div><div class="lp-stat"><b id="revision">0</b><span>REVISION DUE</span></div></div><section class="section-card"><div class="section-heading"><div><span class="card-label">SYLLABUS TRACKER</span><h3>Choose subject and chapter</h3></div></div><div id="subjectCards" class="lp-subjects"></div><div class="lp-toolbar"><select id="subject" style="display:none"><option>Physics</option><option>Chemistry</option><option>Biology</option></select><select id="unit"><option value="all">All Chapters</option></select><select id="statusFilter"><option value="all">All Status</option><option value="not_started">Not Started</option><option value="studying">Learning</option><option value="practice">Practice</option><option value="completed">Completed</option></select><input id="search" placeholder="Search topic..."></div><div id="units"><div class="empty-state">Loading your syllabus...</div></div></section></section><footer>© 2026 Sathyagrahi Academy. All Rights Reserved.</footer></main></div><div class="lp-modal" id="modal"><div class="lp-modal-card"><div class="modal-head"><div><span class="card-label">UPDATE PROGRESS</span><h3>What did you do?</h3></div><button id="close">×</button></div><div class="lp-topic-name" id="modalTopic"></div><form id="form" class="lp-form"><label>Status<select id="mStatus"><option value="studying">Learning</option><option value="practice">Practice</option><option value="completed">Completed</option></select></label><label>Study Minutes<input id="mMinutes" type="number" min="0" value="0"></label><label>Questions Practised<input id="mQuestions" type="number" min="0" value="0"></label><label style="grid-column:1/-1"><input id="mRevision" type="checkbox" style="width:auto"> Mark one revision completed</label><div class="lp-actions" style="grid-column:1/-1"><button type="button" class="prep-btn" id="cancel">CANCEL</button><button class="prep-btn primary">SAVE PROGRESS</button></div></form></div></div><div class="toast" id="toast"></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-config.js"></script><script src="student-learning-progress.js"></script></body></html>

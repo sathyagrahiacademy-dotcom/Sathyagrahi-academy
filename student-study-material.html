@@ -1,0 +1,16 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Study Material | Sathyagrahi Academy</title><link rel="stylesheet" href="dashboard.css"><style>.wrap{padding:28px}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}.toolbar input,.toolbar select{padding:10px;border:1px solid #cbd5df;border-radius:7px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.mat{background:#fff;border:1px solid #e1e7ef;border-radius:12px;padding:16px}.mat h3{margin:6px 0}.tag{font-size:9px;font-weight:800;background:#eef3f8;padding:4px 7px;border-radius:12px}.meta{font-size:10px;color:#667085}.btn{display:inline-block;margin-top:10px;padding:9px 12px;background:#123b68;color:#fff;border-radius:7px;text-decoration:none;font-size:10px;font-weight:800}@media(max-width:850px){.grid{grid-template-columns:1fr 1fr}}@media(max-width:550px){.grid{grid-template-columns:1fr}}</style>
+<style>
+/* Student Portal visual consistency fix */
+.sidebar-brand img{
+  width:46px !important;
+  height:46px !important;
+  border-radius:50% !important;
+  object-fit:cover !important;
+  background:#ffffff !important;
+  padding:2px !important;
+  border:1px solid rgba(255,255,255,.65) !important;
+  box-shadow:0 4px 12px rgba(0,0,0,.12) !important;
+  flex:0 0 46px !important;
+}
+</style>
+</head><body><div class="app-shell"><aside class="sidebar"><div class="sidebar-brand"><img src="assets/favicon.png"><div><strong>SATHYAGRAHI</strong><span>ACADEMY</span></div></div><nav><a class="side-link" href="dashboard.html">Dashboard</a><a class="side-link" href="student-learning-progress.html">Learning Progress</a><a class="side-link" href="student-examinations.html">Examinations</a><a class="side-link" href="student-results.html">Results</a><a class="side-link" href="student-performance.html">Performance</a><a class="side-link" href="student-attendance.html">Attendance</a><a class="side-link active" href="student-study-material.html">Study Material</a><a class="side-link" href="student-notifications.html">Notifications</a><a class="side-link" href="student-help-feedback.html">Help & Feedback</a><a class="side-link" href="student-my-profile.html">My Profile</a></nav></aside><main class="main"><header class="topbar"><div><h1>Study Material</h1><p>Subject-wise notes and learning resources</p></div><div class="student-area"><div class="student-meta"><strong id="studentName">Student</strong><span id="studentCode">—</span></div><button id="logoutBtn" class="logout-btn">LOGOUT</button></div></header><section class="wrap"><div class="toolbar"><input id="search" placeholder="Search title or chapter"><select id="subject"><option value="all">All Subjects</option><option>Physics</option><option>Chemistry</option><option>Biology</option><option>General</option></select></div><div class="grid" id="grid"></div></section></main></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-config.js"></script><script src="student-study-material.js"></script></body></html>

@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#06275f">
+<title>My Profile | Sathyagrahi Academy</title>
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="stylesheet" href="dashboard.css">
+<style>
+.profile-wrap{max-width:1180px}
+.profile-hero{display:flex;align-items:center;gap:20px;background:linear-gradient(145deg,#0e315d,#174d83);color:#fff;border-radius:17px;padding:24px;margin-bottom:16px}
+.avatar-wrap{position:relative;flex:0 0 96px}.avatar{width:96px;height:96px;border-radius:50%;object-fit:cover;border:4px solid rgba(255,255,255,.92);background:#fff;box-shadow:0 9px 25px rgba(0,0,0,.16)}
+.avatar-fallback{width:96px;height:96px;border-radius:50%;display:grid;place-items:center;border:4px solid rgba(255,255,255,.92);background:#e9f1f8;color:#123b68;font-size:30px;font-weight:900;box-sizing:border-box}
+.avatar-btn{position:absolute;right:-3px;bottom:3px;width:31px;height:31px;border-radius:50%;border:2px solid #fff;background:#fff;color:#123b68;display:grid;place-items:center;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+.profile-hero-main{flex:1}.profile-hero .eyebrow{font-size:10px;font-weight:900;letter-spacing:.12em;color:#cedceb}.profile-hero h2{margin:5px 0 5px;font-size:28px}.profile-hero p{margin:0;color:#d9e5f1;font-size:13px}
+.hero-tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}.hero-tag{font-size:10px;font-weight:900;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);padding:6px 9px;border-radius:99px}.hero-tag.active{background:#e7f5ec;color:#246e48;border-color:#d2eadc}
+.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.profile-card{background:#fff;border:1px solid #e1e8ef;border-radius:14px;padding:18px}.profile-card.wide{grid-column:1/-1}
+.card-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:14px}.card-head h3{margin:0 0 4px;color:#143b67;font-size:18px}.muted{font-size:12px;color:#748294;line-height:1.55}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.info{border:1px solid #e4eaf0;border-radius:10px;padding:11px;background:#fbfcfe}.info span{display:block;font-size:10px;font-weight:900;color:#7b8898;letter-spacing:.04em}.info b{display:block;margin-top:4px;color:#334c64;font-size:14px;overflow-wrap:anywhere}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.form-grid label{font-size:12px;font-weight:900;color:#536476}.form-grid .wide{grid-column:1/-1}.form-grid input,.form-grid select{width:100%;box-sizing:border-box;margin-top:5px;border:1px solid #ccd7e2;border-radius:9px;padding:10px;font:inherit;font-size:13px;background:#fff}.form-grid input:focus,.form-grid select:focus{outline:none;border-color:#123b68;box-shadow:0 0 0 3px rgba(18,59,104,.07)}
+.profile-actions{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:14px}.profile-btn{border:1px solid #cbd6e1;background:#fff;border-radius:8px;padding:9px 12px;font-size:11px;font-weight:900;cursor:pointer}.profile-btn.primary{background:#123b68;color:#fff;border-color:#123b68}.profile-btn.danger{color:#982e2e}.profile-btn:disabled{opacity:.55;cursor:not-allowed}.status-msg{font-size:11px;flex:1}
+.password-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}.password-grid label{font-size:12px;font-weight:900;color:#536476}.password-grid input{width:100%;box-sizing:border-box;margin-top:5px;border:1px solid #ccd7e2;border-radius:9px;padding:10px;font:inherit;font-size:10px}
+.security-note{margin-top:11px;padding:10px;border:1px solid #dfe7ef;background:#f7f9fc;border-radius:9px;font-size:12px;color:#647486;line-height:1.6}
+.photo-note{font-size:11px;color:#738294;margin-top:6px}.photo-input{display:none}
+@media(max-width:850px){.profile-grid{grid-template-columns:1fr}.profile-card.wide{grid-column:auto}}
+@media(max-width:600px){.profile-hero{align-items:flex-start;flex-direction:column}.info-grid,.form-grid,.password-grid{grid-template-columns:1fr}.form-grid .wide{grid-column:auto}}
+</style>
+</head>
+<body>
+<div class="app-shell">
+<aside class="sidebar" id="sidebar">
+<div class="sidebar-brand"><img src="assets/favicon.png"><div><strong>SATHYAGRAHI</strong><span>ACADEMY</span></div></div>
+<nav>
+<a class="side-link" href="dashboard.html">Dashboard</a>
+<a class="side-link" href="student-learning-progress.html">Learning Progress</a>
+<a class="side-link" href="student-examinations.html">Examinations</a>
+<a class="side-link" href="student-results.html">Results</a>
+<a class="side-link" href="student-performance.html">Performance</a>
+<a class="side-link" href="student-attendance.html">Attendance</a>
+<a class="side-link" href="student-study-material.html">Study Material</a>
+<a class="side-link" href="student-notifications.html">Notifications</a>
+<a class="side-link" href="student-help-feedback.html">Help & Feedback</a>
+<a class="side-link active" href="student-my-profile.html">My Profile</a>
+</nav>
+<div class="sidebar-help"><strong>Need Help?</strong><span>+91 9059995537</span></div>
+</aside>
+
+<main class="main">
+<header class="topbar">
+<button class="menu-btn" id="menuBtn">☰</button>
+<div><h1>My Profile</h1><p>Your academy account and personal information.</p></div>
+<div class="student-area"><div class="student-meta"><strong id="studentNameTop">Student</strong><span id="studentCodeTop">—</span></div><button id="logoutBtn" class="logout-btn">LOGOUT</button></div>
+</header>
+
+<section class="content profile-wrap">
+<section class="profile-hero">
+<div class="avatar-wrap">
+  <img id="profilePhoto" class="avatar" alt="Student photo" style="display:none">
+  <div id="avatarFallback" class="avatar-fallback">S</div>
+  <button id="photoBtn" class="avatar-btn" type="button" title="Change photo">✎</button>
+  <input id="photoInput" class="photo-input" type="file" accept="image/jpeg,image/png,image/webp">
+</div>
+<div class="profile-hero-main">
+  <span class="eyebrow">SATHYAGRAHI ACADEMY STUDENT</span>
+  <h2 id="profileName">Student</h2>
+  <p id="profileSubtitle">Student ID: —</p>
+  <div class="hero-tags">
+    <span id="targetTag" class="hero-tag">NEET</span>
+    <span id="batchTag" class="hero-tag">Batch —</span>
+    <span id="statusTag" class="hero-tag active">ACTIVE ACCOUNT</span>
+  </div>
+  <div class="photo-note">Profile photo: JPG / PNG / WEBP · maximum 5 MB</div>
+</div>
+</section>
+
+<div class="profile-grid">
+<section class="profile-card">
+<div class="card-head"><div><h3>Academy Information</h3><div class="muted">These details are maintained by the Academy.</div></div></div>
+<div class="info-grid">
+<div class="info"><span>STUDENT NAME</span><b id="infoName">—</b></div>
+<div class="info"><span>ACADEMY STUDENT ID</span><b id="infoStudentId">—</b></div>
+<div class="info"><span>EMAIL</span><b id="infoEmail">—</b></div>
+<div class="info"><span>BATCH</span><b id="infoBatch">—</b></div>
+<div class="info"><span>TARGET EXAM</span><b id="infoTarget">—</b></div>
+<div class="info"><span>JOINED DATE</span><b id="infoJoined">—</b></div>
+<div class="info"><span>ACCOUNT TYPE</span><b>Student</b></div>
+<div class="info"><span>ACCOUNT STATUS</span><b id="infoStatus">—</b></div>
+</div>
+</section>
+
+<section class="profile-card">
+<div class="card-head"><div><h3>Contact & Personal Details</h3><div class="muted">You can keep these details updated.</div></div></div>
+<form id="profileForm">
+<div class="form-grid">
+<label>Mobile Number<input id="phone" inputmode="numeric" maxlength="15" placeholder="Mobile number"></label>
+<label>Current Class
+<select id="currentClass">
+<option value="">Select</option>
+<option>Class 10</option>
+<option>Class 11</option>
+<option>Class 12</option>
+<option>Intermediate 1st Year</option>
+<option>Intermediate 2nd Year</option>
+<option>Repeater / Dropper</option>
+<option>Other</option>
+</select></label>
+<label>Parent / Guardian Name<input id="parentName" maxlength="120" placeholder="Parent or guardian name"></label>
+<label>Parent Mobile<input id="parentPhone" inputmode="numeric" maxlength="15" placeholder="Parent mobile number"></label>
+<label class="wide">Location<input id="location" maxlength="180" placeholder="Village / Town / District"></label>
+</div>
+<div class="profile-actions"><div id="profileMsg" class="status-msg"></div><button id="saveProfileBtn" class="profile-btn primary" type="submit">SAVE PROFILE</button></div>
+</form>
+</section>
+
+<section class="profile-card wide">
+<div class="card-head"><div><h3>Change Password</h3><div class="muted">Use a strong password that you do not use elsewhere.</div></div></div>
+<form id="passwordForm">
+<div class="password-grid">
+<label>New Password<input id="newPassword" type="password" minlength="8" autocomplete="new-password" placeholder="Minimum 8 characters"></label>
+<label>Confirm New Password<input id="confirmPassword" type="password" minlength="8" autocomplete="new-password" placeholder="Enter the same password again"></label>
+</div>
+<div class="security-note">For security, never share your Student Portal password with anyone. Academy staff do not need your password to manage your account.</div>
+<div class="profile-actions"><div id="passwordMsg" class="status-msg"></div><button id="changePasswordBtn" class="profile-btn primary" type="submit">CHANGE PASSWORD</button></div>
+</form>
+</section>
+</div>
+</section>
+
+<footer>© 2026 Sathyagrahi Academy. All Rights Reserved.</footer>
+</main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="student-my-profile.js"></script>
+</body></html>

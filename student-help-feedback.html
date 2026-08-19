@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#06275f">
+<title>Help & Feedback | Sathyagrahi Academy</title>
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="stylesheet" href="dashboard.css">
+<style>
+.help-wrap{max-width:1180px}
+.help-hero{background:linear-gradient(145deg,#0e315d,#174d83);color:#fff;border-radius:16px;padding:22px;margin-bottom:16px}
+.help-hero h2{margin:5px 0 6px}.help-hero p{margin:0;color:#d9e5f1;font-size:14px;line-height:1.65}
+.help-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:16px}
+.help-card{background:#fff;border:1px solid #e1e8ef;border-radius:14px;padding:17px}
+.help-card h3{margin:0 0 5px;color:#173c68;font-size:18px}.muted{font-size:13px;color:#718093;line-height:1.6}
+.help-form{display:grid;gap:11px;margin-top:14px}.help-form label{font-size:12px;font-weight:800;color:#536476}
+.help-form input,.help-form select,.help-form textarea{width:100%;box-sizing:border-box;margin-top:5px;border:1px solid #ccd7e2;border-radius:9px;padding:10px;font:inherit;font-size:13px;background:#fff}
+.help-form textarea{min-height:120px;resize:vertical}.file-note{font-size:11px;color:#7a8795;margin-top:5px}
+.help-actions{display:flex;align-items:center;gap:10px;justify-content:flex-end}.help-btn{border:1px solid #cbd5e0;background:#fff;border-radius:8px;padding:9px 12px;font-size:11px;font-weight:900;cursor:pointer}.help-btn.primary{background:#123b68;color:#fff;border-color:#123b68}.help-btn:disabled{opacity:.55}
+#formMsg{font-size:11px;flex:1}.ticket-list{display:grid;gap:10px;max-height:650px;overflow:auto}
+.ticket{border:1px solid #e3e9ef;border-radius:12px;padding:13px}.ticket-head{display:flex;justify-content:space-between;gap:10px}.ticket h4{font-size:16px;margin:4px 0}.ticket p{font-size:13px;line-height:1.6;color:#5c6c7c;white-space:pre-line}.ticket small{font-size:11px;color:#778595}
+.chips{display:flex;gap:5px;flex-wrap:wrap}.chip{font-size:10px;font-weight:900;border-radius:99px;padding:5px 9px;background:#edf3f8;color:#52677e}.chip.new{background:#fff1d8;color:#876018}.chip.in_progress{background:#eaf1fb;color:#2d5d95}.chip.resolved{background:#e7f5ec;color:#28704a}
+.reply{margin-top:10px;padding:10px;border-radius:9px;background:#eef5fb;border:1px solid #d9e7f3}.reply b{display:block;font-size:11px;color:#123b68;margin-bottom:4px}.reply p{margin:0;color:#41576c}
+.attach{display:inline-block;margin-top:8px;font-size:11px;font-weight:900;color:#123b68;text-decoration:none}.empty{padding:28px;text-align:center;color:#718093;font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.stat{border:1px solid #e3e9ef;border-radius:10px;padding:10px}.stat span{display:block;font-size:10px;color:#748296;font-weight:900}.stat b{display:block;color:#123b68;font-size:24px;margin-top:4px}
+@media(max-width:900px){.help-grid{grid-template-columns:1fr}}@media(max-width:600px){.stats{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="app-shell">
+<aside class="sidebar" id="sidebar">
+<div class="sidebar-brand"><img src="assets/favicon.png"><div><strong>SATHYAGRAHI</strong><span>ACADEMY</span></div></div>
+<nav><a class="side-link" href="dashboard.html">Dashboard</a><a class="side-link" href="student-learning-progress.html">Learning Progress</a><a class="side-link" href="student-examinations.html">Examinations</a><a class="side-link" href="student-results.html">Results</a><a class="side-link" href="student-performance.html">Performance</a><a class="side-link" href="student-attendance.html">Attendance</a><a class="side-link" href="student-study-material.html">Study Material</a><a class="side-link" href="student-notifications.html">Notifications</a><a class="side-link active" href="student-help-feedback.html">Help & Feedback</a><a class="side-link" href="student-my-profile.html">My Profile</a></nav>
+<div class="sidebar-help"><strong>Need Help?</strong><span>+91 9059995537</span></div>
+</aside>
+<main class="main">
+<header class="topbar"><button class="menu-btn" id="menuBtn">☰</button><div><h1>Help & Feedback</h1><p>Ask for help, report an issue, or share feedback.</p></div><div class="student-area"><div class="student-meta"><strong id="studentName">Student</strong><span id="studentCode">—</span></div><button id="logoutBtn" class="logout-btn">LOGOUT</button></div></header>
+
+<section class="content help-wrap">
+<section class="help-hero"><span class="card-label">STUDENT SUPPORT</span><h2>How can we help?</h2><p>Send your question or issue to the Academy. You can track the status and read the Admin reply here.</p></section>
+
+<div class="stats">
+<div class="stat"><span>OPEN REQUESTS</span><b id="openCount">0</b></div>
+<div class="stat"><span>IN PROGRESS</span><b id="progressCount">0</b></div>
+<div class="stat"><span>RESOLVED</span><b id="resolvedCount">0</b></div>
+</div>
+
+<div class="help-grid">
+<section class="help-card">
+<h3>Send a Request</h3><div class="muted">For urgent matters, you may also use the Academy contact number shown in the sidebar.</div>
+<form id="feedbackForm" class="help-form">
+<label>Category
+<select id="category">
+<option>Academic Guidance</option>
+<option>Learning Progress</option>
+<option>Examination</option>
+<option>Results & Performance</option>
+<option>Attendance</option>
+<option>Study Material</option>
+<option>Technical Support</option>
+<option>Account / Profile</option>
+<option>General Feedback</option>
+</select></label>
+<label>Subject
+<input id="subject" maxlength="160" required placeholder="Short title for your request"></label>
+<label>Message
+<textarea id="message" maxlength="2500" required placeholder="Explain your question or issue clearly..."></textarea></label>
+<label>Optional Screenshot / PDF
+<input id="attachment" type="file" accept="image/jpeg,image/png,image/webp,application/pdf">
+<div class="file-note">Maximum 5 MB · JPG, PNG, WEBP or PDF</div>
+</label>
+<div class="help-actions"><div id="formMsg"></div><button id="submitBtn" class="help-btn primary" type="submit">SUBMIT REQUEST</button></div>
+</form>
+</section>
+
+<section class="help-card">
+<h3>My Requests</h3><div class="muted">Admin replies and request status will appear here.</div>
+<div id="ticketList" class="ticket-list"><div class="empty">Loading your requests...</div></div>
+</section>
+</div>
+</section>
+<footer>© 2026 Sathyagrahi Academy. All Rights Reserved.</footer>
+</main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="student-help-feedback.js"></script>
+</body></html>
