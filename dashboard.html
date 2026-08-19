@@ -4,6 +4,11 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#06275f"><title>Student Dashboard | Sathyagrahi Academy</title>
 <link rel="icon" type="image/png" href="assets/favicon.png"><link rel="stylesheet" href="dashboard.css">
+<style>
+/* Only the Study Log fields are enhanced. Dashboard layout remains unchanged. */
+#studyUnit,#studyTopic{width:100%;box-sizing:border-box}
+.completion-check{border:1px solid #e3e9ef;border-radius:9px;padding:10px;background:#f8fafc}
+</style>
 </head>
 <body>
 <div class="app-shell">
@@ -11,14 +16,15 @@
   <div class="sidebar-brand"><img src="assets/favicon.png" alt=""><div><strong>SATHYAGRAHI</strong><span>ACADEMY</span></div></div>
   <nav>
     <a class="side-link active" href="dashboard.html">Dashboard</a>
+    <a class="side-link" href="student-learning-progress.html">Learning Progress</a>
     <a class="side-link" href="student-examinations.html">Examinations</a>
     <a class="side-link" href="student-results.html">Results</a>
     <a class="side-link" href="student-performance.html">Performance</a>
     <a class="side-link" href="student-attendance.html">Attendance</a>
     <a class="side-link" href="student-study-material.html">Study Material</a>
-    <a class="side-link" href="#" data-coming>Notifications</a>
-    <a class="side-link" href="#" data-coming>Help & Feedback</a>
-    <a class="side-link" href="#" data-coming>My Profile</a>
+    <a class="side-link" href="student-notifications.html">Notifications</a>
+    <a class="side-link" href="student-help-feedback.html">Help & Feedback</a>
+    <a class="side-link" href="student-my-profile.html">My Profile</a>
   </nav>
   <div class="sidebar-help"><strong>Need Help?</strong><span>+91 9059995537</span></div>
 </aside>
@@ -144,7 +150,9 @@
 
   <section class="journey-grid">
     <article class="section-card">
-      <div class="section-heading"><div><span class="card-label">REVISION DUE</span><h3>What should I revise now?</h3></div></div>
+      <div class="section-heading">
+        <div><span class="card-label">REVISION DUE</span><h3>What should I revise now?</h3></div>
+      </div>
       <div id="revisionList" class="revision-list"><div class="empty-state">No revisions due now.</div></div>
     </article>
 
@@ -187,14 +195,30 @@
       <div class="form-grid">
         <label>Subject<select id="studySubject"><option>Physics</option><option>Chemistry</option><option>Biology</option></select></label>
         <label>What did you do?<select id="studyType"><option value="learning">Learning</option><option value="revision">Revision</option><option value="practice">Question Practice</option></select></label>
-        <label class="wide">Chapter<input id="studyChapter" required placeholder="e.g. Human Reproduction"></label>
-        <label class="wide">Topic<input id="studyTopic" required placeholder="e.g. Gametogenesis"></label>
-        <label>Study Time (minutes)<input id="studyMinutes" type="number" min="1" value="45"></label>
-        <label>Topic Status<select id="studyStatus"><option value="in_progress">Still Learning</option><option value="completed">Completed</option></select></label>
+
+        <label class="wide">Unit / Chapter
+          <select id="studyUnit" required></select>
+        </label>
+
+        <label class="wide">Official Syllabus Topic
+          <select id="studyTopic" required></select>
+        </label>
+
+        <label>Study Time (minutes)<input id="studyMinutes" type="number" min="1" max="1440" value="45"></label>
+
         <label class="practice-field">Questions Attempted<input id="studyQuestions" type="number" min="0" value="0"></label>
         <label class="practice-field">Correct Answers<input id="studyCorrect" type="number" min="0" value="0"></label>
+
+        <label class="wide completion-check">
+          <span>Topic Status</span>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+            <input id="studyCompleted" type="checkbox" style="width:auto">
+            <strong style="font-size:10px">Mark this official topic as Completed</strong>
+          </div>
+        </label>
       </div>
-      <p class="form-tip">If you mark a topic Completed, the first revision will be scheduled automatically for tomorrow.</p>
+
+      <p class="form-tip">Choose the official NEET syllabus topic. Study Log and Learning Progress update the same topic automatically.</p>
       <div class="modal-actions"><button type="button" class="prep-btn" id="cancelStudy">CANCEL</button><button class="prep-btn primary">SAVE STUDY LOG</button></div>
     </form>
   </div>
