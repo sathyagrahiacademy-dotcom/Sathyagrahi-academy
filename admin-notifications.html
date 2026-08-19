@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Notifications | Sathyagrahi Academy</title>
+<link rel="icon" href="assets/favicon.png">
+<link rel="stylesheet" href="admin-dashboard.css">
+<style>
+.page{padding:26px}.page-head{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:16px}
+.page-head h2{margin:0 0 5px}.muted{color:#6b7888;font-size:11px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}.stat{background:#fff;border:1px solid #e1e7ee;border-radius:12px;padding:14px}.stat span{display:block;font-size:8px;color:#6c7b8d;font-weight:800;letter-spacing:.06em}.stat b{display:block;font-size:25px;color:#123b68;margin-top:4px}
+.grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:16px}.panel{background:#fff;border:1px solid #e1e7ee;border-radius:14px;padding:17px}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:11px}.form label{font-size:9px;font-weight:800;color:#526579}.form .wide{grid-column:1/-1}.form input,.form select,.form textarea{width:100%;box-sizing:border-box;margin-top:5px;padding:10px;border:1px solid #cdd7e1;border-radius:8px;background:#fff;font:inherit;font-size:10px}.form textarea{min-height:110px;resize:vertical}
+.preview{display:none;margin-top:10px;border:1px solid #e1e8ef;border-radius:10px;padding:8px;background:#f8fafc}.preview img{width:100%;max-height:280px;object-fit:contain;border-radius:7px}
+.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:13px}.btn{border:1px solid #c8d3df;background:#fff;border-radius:8px;padding:9px 12px;font-size:9px;font-weight:900;cursor:pointer}.btn.primary{background:#123b68;color:#fff;border-color:#123b68}.btn.danger{color:#9a2f2f}.btn.good{color:#246d49}
+.notice-list{display:grid;gap:10px;max-height:680px;overflow:auto}.notice{border:1px solid #e4eaf0;border-radius:12px;padding:13px}.notice-top{display:flex;justify-content:space-between;gap:10px}.notice h4{margin:0 0 4px;font-size:12px}.notice p{font-size:10px;color:#5d6c7c;line-height:1.5;margin:7px 0}.chips{display:flex;gap:6px;flex-wrap:wrap}.chip{font-size:7px;font-weight:900;border-radius:99px;background:#eef3f8;color:#52667d;padding:4px 7px}.chip.live{background:#e7f5ec;color:#2c7449}.notice img{width:86px;height:70px;object-fit:cover;border-radius:8px;border:1px solid #e1e7ee}.notice-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.notice-actions button{padding:6px 8px;font-size:8px}.empty{padding:28px;text-align:center;color:#718093;font-size:10px}
+#msg{font-size:10px;margin-top:10px;min-height:14px}.publish-row{display:flex;align-items:center;gap:7px;background:#f7f9fc;border:1px solid #e4eaf0;border-radius:9px;padding:10px}.publish-row input{width:auto;margin:0}
+@media(max-width:980px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}}@media(max-width:600px){.form{grid-template-columns:1fr}.form .wide{grid-column:auto}.stats{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside>
+<div class="brand"><img src="assets/favicon.png"><b>SATHYAGRAHI<br><small>ACADEMY ADMIN</small></b></div>
+<nav><a href="admin-dashboard.html">Dashboard</a><a href="admin-students.html">Students</a><a href="admin-student-performance.html">Student Performance</a><a href="admin-preparation.html">Preparation Guide</a><a href="admin-enrollments.html">New Enrollments</a><a href="admin-exams.html">Examinations</a><a href="admin-question-bank.html">Question Bank</a><a href="admin-results.html">Results & Performance</a><a href="admin-attendance.html">Attendance</a><a href="admin-study-material.html">Study Material</a><a class="active" href="admin-notifications.html">Notifications</a><a href="admin-help-feedback.html">Help & Feedback</a><a href="admin-my-account.html">My Account</a><a href="admin-settings.html">Settings</a></nav>
+</aside>
+
+<main>
+<header><div><h1>Notifications</h1><p>Publish academy notices without editing website code.</p></div><button id="logout">LOGOUT</button></header>
+<section class="page">
+<div class="page-head"><div><h2>Notification Centre</h2><div class="muted">Create once. Publish to students, public website, or both.</div></div></div>
+<div class="stats">
+<div class="stat"><span>TOTAL</span><b id="sTotal">0</b></div>
+<div class="stat"><span>PUBLISHED</span><b id="sPublished">0</b></div>
+<div class="stat"><span>DRAFTS</span><b id="sDrafts">0</b></div>
+<div class="stat"><span>WITH POSTER</span><b id="sPoster">0</b></div>
+</div>
+
+<div class="grid">
+<section class="panel">
+<div class="page-head"><div><h3 id="formTitle">Create Notification</h3><div class="muted">Poster is optional. Max 10 MB image.</div></div></div>
+<form id="noticeForm" class="form">
+<label class="wide">Title<input id="title" maxlength="180" required placeholder="e.g. Weekly Test – Sunday"></label>
+<label>Audience<select id="audience"><option value="students">Students</option><option value="public">Public Website</option><option value="all">Students + Public</option></select></label>
+<label>Poster Image<input id="poster" type="file" accept="image/png,image/jpeg,image/webp"></label>
+<label class="wide">Message<textarea id="message" placeholder="Write the complete notification message..."></textarea></label>
+<label class="wide publish-row"><input id="publish" type="checkbox" checked><span>Publish immediately</span></label>
+</form>
+<div id="preview" class="preview"><img id="previewImg" alt="Poster preview"></div>
+<div id="msg"></div>
+<div class="actions"><button id="cancelEdit" class="btn" type="button" style="display:none">CANCEL EDIT</button><button id="saveBtn" class="btn primary" type="button">SAVE NOTIFICATION</button></div>
+</section>
+
+<section class="panel">
+<div class="page-head"><div><h3>Published & Draft Notifications</h3><div class="muted">Edit, publish/unpublish or delete from here.</div></div></div>
+<div id="noticeList" class="notice-list"><div class="empty">Loading notifications...</div></div>
+</section>
+</div>
+</section>
+</main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="admin-notifications.js"></script>
+</body></html>

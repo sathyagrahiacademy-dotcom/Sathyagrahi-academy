@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Settings | Sathyagrahi Academy</title>
+<link rel="icon" href="assets/favicon.png">
+<link rel="stylesheet" href="admin-dashboard.css">
+<style>
+.page{padding:26px}.page-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:16px}.page-head h2{margin:0 0 5px}.muted{font-size:10px;color:#6d7b8b;line-height:1.55}
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.card{background:#fff;border:1px solid #e1e8ef;border-radius:14px;padding:17px}
+.card.wide{grid-column:1/-1}.card h3{margin:0 0 4px;color:#123b68;font-size:14px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:14px}.form-grid .wide{grid-column:1/-1}.form-grid label{font-size:9px;font-weight:900;color:#536476}
+.form-grid input,.form-grid textarea{width:100%;box-sizing:border-box;margin-top:5px;border:1px solid #ccd7e2;border-radius:9px;padding:10px;font:inherit;font-size:10px;background:#fff}
+.form-grid textarea{min-height:76px;resize:vertical}.form-grid input:focus,.form-grid textarea:focus{outline:none;border-color:#123b68;box-shadow:0 0 0 3px rgba(18,59,104,.07)}
+.preview{background:linear-gradient(145deg,#0d315e,#174f86);color:#fff;border-radius:13px;padding:18px;margin-top:14px}.preview .academy{font-size:16px;font-weight:900}.preview .tagline{font-size:11px;color:#d7e4f0;margin-top:5px}.preview .quote{font-size:10px;color:#f2f6fb;margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,.15)}.preview .meta{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}.preview .chip{font-size:8px;font-weight:900;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.09);padding:5px 8px;border-radius:99px}
+.actions{display:flex;align-items:center;gap:10px;justify-content:flex-end;margin-top:15px}.btn{border:1px solid #cbd6e1;background:#fff;border-radius:8px;padding:9px 12px;font-size:9px;font-weight:900;cursor:pointer}.btn.primary{background:#123b68;color:#fff;border-color:#123b68}.btn:disabled{opacity:.55}.msg{font-size:9px;flex:1}
+.info-note{margin-top:12px;background:#f7f9fc;border:1px solid #e2e8ef;border-radius:9px;padding:10px;font-size:9px;color:#667789;line-height:1.6}
+@media(max-width:900px){.settings-grid{grid-template-columns:1fr}.card.wide{grid-column:auto}}@media(max-width:600px){.form-grid{grid-template-columns:1fr}.form-grid .wide{grid-column:auto}}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside>
+<div class="brand"><img src="assets/favicon.png"><b>SATHYAGRAHI<br><small>ACADEMY ADMIN</small></b></div>
+<nav><a href="admin-dashboard.html">Dashboard</a><a href="admin-students.html">Students</a><a href="admin-student-performance.html">Student Performance</a><a href="admin-preparation.html">Preparation Guide</a><a href="admin-enrollments.html">New Enrollments</a><a href="admin-exams.html">Examinations</a><a href="admin-question-bank.html">Question Bank</a><a href="admin-results.html">Results & Performance</a><a href="admin-attendance.html">Attendance</a><a href="admin-study-material.html">Study Material</a><a href="admin-notifications.html">Notifications</a><a href="admin-help-feedback.html">Help & Feedback</a><a href="admin-my-account.html">My Account</a><a class="active" href="admin-settings.html">Settings</a></nav>
+</aside>
+
+<main>
+<header><div><h1>Settings</h1><p>Manage common Academy information from one place.</p></div><button id="logout">LOGOUT</button></header>
+
+<section class="page">
+<div class="page-head">
+  <div><h2>Academy Settings</h2><div class="muted">These are public/common settings only. Passwords, API keys and private security values are never stored here.</div></div>
+</div>
+
+<form id="settingsForm">
+<div class="settings-grid">
+<section class="card">
+<h3>Academy Identity</h3><div class="muted">Core brand information.</div>
+<div class="form-grid">
+<label class="wide">Academy Name<input id="academyName" maxlength="120" required></label>
+<label class="wide">Main Tagline<input id="mainTagline" maxlength="220"></label>
+<label class="wide">Learning Philosophy<input id="learningPhilosophy" maxlength="220"></label>
+<label class="wide">Academy Quote<input id="academyQuote" maxlength="260"></label>
+</div>
+</section>
+
+<section class="card">
+<h3>Contact Information</h3><div class="muted">Official student-support and location details.</div>
+<div class="form-grid">
+<label>Support Phone<input id="supportPhone" maxlength="40"></label>
+<label>Support Email<input id="supportEmail" type="email" maxlength="180" placeholder="Optional"></label>
+<label class="wide">Location<input id="location" maxlength="220"></label>
+<label class="wide">Website URL<input id="websiteUrl" type="url" maxlength="240"></label>
+</div>
+</section>
+
+<section class="card">
+<h3>Target Examination</h3><div class="muted">Common target exam information used by the Academy.</div>
+<div class="form-grid">
+<label>Target Exam<input id="targetExam" maxlength="100" required></label>
+<label>Exam Date<input id="targetExamDate" type="date"></label>
+</div>
+<div class="info-note">Current student dashboard countdown can be connected to this Exam Date after this Settings page is verified. That avoids hard-coding the exam date in JavaScript.</div>
+</section>
+
+<section class="card">
+<h3>Live Preview</h3><div class="muted">Preview of the common information before saving.</div>
+<div class="preview">
+  <div id="previewAcademy" class="academy">Sathyagrahi Academy</div>
+  <div id="previewTagline" class="tagline">Empowering Students. Inspiring Excellence.</div>
+  <div id="previewQuote" class="quote">Every Dream Deserves the Right Direction.</div>
+  <div class="meta">
+    <span id="previewExam" class="chip">NEET 2027</span>
+    <span id="previewDate" class="chip">02 May 2027</span>
+    <span id="previewPhone" class="chip">+91 9059995537</span>
+  </div>
+</div>
+</section>
+
+<section class="card wide">
+<h3>Save Changes</h3><div class="muted">Changes are stored in Supabase and only Admin accounts can update them.</div>
+<div class="actions"><div id="msg" class="msg"></div><button id="saveBtn" class="btn primary" type="submit">SAVE SETTINGS</button></div>
+</section>
+</div>
+</form>
+</section>
+</main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="admin-settings.js"></script>
+</body></html>

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Student Performance | Sathyagrahi Academy</title>
+<link rel="icon" href="assets/favicon.png">
+<link rel="stylesheet" href="admin-dashboard.css">
+<style>
+.page{padding:24px;max-width:1280px;margin:auto}.monitor-grid{display:grid;grid-template-columns:310px 1fr;gap:16px}.card{background:#fff;border:1px solid #dfe7ef;border-radius:13px;padding:16px}.student-pane{position:sticky;top:98px;align-self:start;max-height:calc(100vh - 118px);overflow:auto}.student-pane h3,.detail h3{margin:0;color:#123b68;font-size:15px}.search{width:100%;box-sizing:border-box;margin:12px 0;border:1px solid #cdd8e3;border-radius:9px;padding:10px 11px;font:inherit;font-size:13px}.student-list{display:flex;flex-direction:column;gap:7px}.student-item{width:100%;text-align:left;border:1px solid #e2e8ef;background:#fff;border-radius:9px;padding:10px;cursor:pointer}.student-item:hover,.student-item.active{border-color:#174f86;background:#f2f7fd}.student-item b{display:block;font-size:13px;color:#172a43}.student-item small{display:block;font-size:11px;color:#738195;margin-top:3px}.student-item .mini{display:flex;justify-content:space-between;gap:8px;margin-top:7px;font-size:10px;color:#53687e}.empty{padding:20px;text-align:center;color:#758397;font-size:12px}.detail-head{display:flex;justify-content:space-between;gap:15px;align-items:flex-start}.student-title{display:flex;gap:12px;align-items:center}.avatar{width:54px;height:54px;border-radius:50%;object-fit:cover;border:1px solid #d5dfea;background:#fff}.student-title h2{margin:0;color:#123b68;font-size:20px}.student-title p{margin:4px 0 0;font-size:11px;color:#708094}.status-chip{font-size:10px;font-weight:900;border-radius:99px;padding:6px 9px;background:#edf5ff;color:#0d4b8c;border:1px solid #d5e7fb}.summary{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:15px 0}.summary article{background:#f8fafc;border:1px solid #e1e8ef;border-radius:10px;padding:12px}.summary span{font-size:10px;color:#718095;font-weight:800}.summary strong{display:block;font-size:20px;color:#123b68;margin-top:6px}.section{margin-top:14px}.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.section-head h3{font-size:14px}.subject-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.subject-card{border:1px solid #e1e8ef;border-radius:10px;padding:12px}.subject-card b{font-size:13px;color:#123b68}.subject-card .pct{float:right;font-size:13px;font-weight:900;color:#174f86}.bar{height:8px;background:#edf1f5;border-radius:99px;overflow:hidden;margin-top:10px}.bar i{display:block;height:100%;background:#174f86;border-radius:99px}.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}.revision-list,.completed-list{display:flex;flex-direction:column;gap:7px;max-height:285px;overflow:auto}.row-card{border:1px solid #e6ebf1;border-radius:9px;padding:10px}.row-card b{font-size:12px;color:#1c3554}.row-card small{font-size:10px;color:#748397;display:block;margin-top:4px;line-height:1.45}.due{color:#9a5125!important}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:11px}th,td{padding:9px;border-bottom:1px solid #edf1f5;text-align:left;vertical-align:top}th{font-size:10px;color:#617388;background:#fafbfd;position:sticky;top:0}.activity{font-size:9px;text-transform:uppercase;font-weight:900;border-radius:99px;padding:4px 7px;background:#eef4fb;color:#174f86;white-space:nowrap}.tabs-note{font-size:11px;color:#708095;margin-top:5px}.muted{font-size:11px;color:#718095}.loading{padding:30px;text-align:center;color:#708095}.attention{background:#fff7ed;color:#9a5125;border-color:#f1d4b4}.good{background:#eef9f2;color:#267447;border-color:#d4eadc}
+.subject-card{cursor:pointer;transition:.18s ease;position:relative}
+.subject-card:hover,.subject-card.selected{border-color:#174f86;background:#f5f9fe;box-shadow:0 4px 14px rgba(23,79,134,.08)}
+.subject-card .open-note{display:block;margin-top:8px;font-size:11px;color:#52708f;font-weight:800}
+.subject-detail{margin-top:12px;border-top:1px solid #edf1f5;padding-top:12px}
+.subject-detail-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}
+.subject-detail-head h3{margin:0;color:#123b68;font-size:17px}
+.subject-detail-head p{margin:4px 0 0;color:#708095;font-size:12px}
+.subject-mini-summary{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px}
+.subject-mini-summary div{border:1px solid #e3eaf1;background:#f8fafc;border-radius:9px;padding:10px}
+.subject-mini-summary span{display:block;font-size:10px;color:#748397;font-weight:800}
+.subject-mini-summary strong{display:block;margin-top:4px;color:#123b68;font-size:15px}
+.chapter-list{display:flex;flex-direction:column;gap:8px}
+.chapter-card{border:1px solid #e2e9f0;border-radius:10px;background:#fff;overflow:hidden}
+.chapter-head{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;text-align:left;border:0;background:#fff;padding:12px 13px;cursor:pointer;font:inherit}
+.chapter-head:hover{background:#f8fbff}
+.chapter-title small{display:block;color:#718095;font-size:10px;font-weight:800;margin-bottom:3px}
+.chapter-title b{display:block;color:#173653;font-size:13px}
+.chapter-stats{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.chapter-stats span{font-size:10px;color:#65778b;white-space:nowrap}
+.chapter-stats strong{color:#174f86;font-size:11px}
+.chapter-progress{height:5px;background:#edf1f5;border-radius:99px;overflow:hidden;margin-top:7px}
+.chapter-progress i{display:block;height:100%;background:#174f86}
+.chapter-body{display:none;border-top:1px solid #edf1f5;background:#fbfcfe;padding:8px 12px}
+.chapter-card.open .chapter-body{display:block}
+.topic-row{display:grid;grid-template-columns:minmax(220px,1.7fr) .8fr .8fr 1.25fr;gap:10px;align-items:center;padding:9px 4px;border-bottom:1px solid #edf1f5}
+.topic-row:last-child{border-bottom:0}
+.topic-name{font-size:12px;color:#243b55;line-height:1.4}
+.topic-meta{font-size:10px;color:#6f7f92}
+.topic-status{display:inline-block;padding:4px 7px;border-radius:99px;font-size:9px;font-weight:900;text-transform:uppercase;border:1px solid #dce6ef;background:#f4f7fa;color:#5e7083}
+.topic-status.completed{background:#eef9f2;color:#267447;border-color:#d4eadc}
+.topic-status.studying,.topic-status.practice{background:#edf5ff;color:#174f86;border-color:#d5e7fb}
+.revision-line{display:flex;gap:5px;flex-wrap:wrap}
+.rev-chip{font-size:9px;padding:3px 5px;border-radius:6px;background:#eef2f6;color:#64758a}
+.rev-chip.done{background:#eaf7ef;color:#2c7448}
+.rev-chip.due{background:#fff3e8;color:#9a5125}
+.subject-empty{padding:18px;text-align:center;color:#708095;font-size:12px;border:1px dashed #d9e2eb;border-radius:9px}
+
+.chapter-exams{margin:4px 0 10px;padding:9px 10px;border:1px solid #dfe8f1;background:#fff;border-radius:8px}
+.chapter-exams-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:6px}
+.chapter-exams-head b{font-size:11px;color:#173653}
+.chapter-exams-head span{font-size:9px;color:#708095}
+.exam-list{display:flex;flex-direction:column;gap:6px}
+.exam-item{display:grid;grid-template-columns:minmax(180px,1fr) auto auto;gap:8px;align-items:center;padding:7px 8px;border:1px solid #edf1f5;border-radius:7px;background:#fbfcfe}
+.exam-item b{font-size:11px;color:#203b59}
+.exam-item small{display:block;font-size:9px;color:#75859a;margin-top:2px}
+.exam-state{font-size:9px;font-weight:900;padding:4px 7px;border-radius:99px;background:#eef2f6;color:#66778b;white-space:nowrap}
+.exam-state.attempted{background:#eaf7ef;color:#2b7549}
+.exam-state.pending{background:#fff6e9;color:#95611f}
+.exam-score{font-size:10px;font-weight:900;color:#174f86;white-space:nowrap}
+.no-exam{font-size:10px;color:#7b8999;padding:5px 0}
+.topic-exam-line{margin-top:6px;font-size:9px;color:#526a82;line-height:1.5}
+.topic-exam-line b{color:#174f86}
+.unmapped-exams{margin:10px 0 12px;padding:10px;border:1px dashed #d7e1eb;border-radius:8px;background:#fafcfe}
+.unmapped-exams b{font-size:10px;color:#173653}
+.unmapped-exams span{display:block;margin-top:4px;font-size:9px;color:#718095}
+@media(max-width:720px){.exam-item{grid-template-columns:1fr}.exam-state,.exam-score{justify-self:start}}
+
+@media(max-width:900px){.subject-mini-summary{grid-template-columns:repeat(2,1fr)}.topic-row{grid-template-columns:1fr 1fr}.chapter-head{grid-template-columns:1fr}.chapter-stats{justify-content:flex-start}}
+@media(max-width:560px){.topic-row{grid-template-columns:1fr}.subject-detail-head{display:block}}
+
+@media(max-width:1050px){.summary{grid-template-columns:repeat(3,1fr)}.monitor-grid{grid-template-columns:260px 1fr}}@media(max-width:820px){.monitor-grid{grid-template-columns:1fr}.student-pane{position:static;max-height:330px}.subject-grid{grid-template-columns:1fr}.two-col{grid-template-columns:1fr}.summary{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.page{padding:14px}.summary{grid-template-columns:1fr 1fr}.detail-head{display:block}.status-chip{display:inline-block;margin-top:10px}}
+
+.exam-chip-row{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.exam-chip{border:1px solid #d8e2ec;background:#f3f6f9;color:#5f7185;border-radius:7px;padding:4px 7px;font-size:9px;font-weight:900;cursor:pointer;line-height:1}
+.exam-chip:hover{border-color:#174f86;color:#174f86;background:#edf5ff}
+.exam-chip.done{background:#eaf7ef;border-color:#cfe7d8;color:#267447}
+.exam-chip.pending{background:#fff4e8;border-color:#efd5b5;color:#95531f}
+.exam-chip-detail{display:none;margin:8px 0 11px;padding:11px;border:1px solid #dce6ef;background:#fff;border-radius:9px}
+.exam-chip-detail.open{display:block}
+.exam-detail-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:8px}
+.exam-detail-head b{font-size:12px;color:#173653}
+.exam-detail-head span{font-size:9px;font-weight:900;padding:4px 7px;border-radius:99px;background:#eef2f6;color:#65778b;white-space:nowrap}
+.exam-detail-head span.attempted{background:#eaf7ef;color:#267447}
+.exam-detail-head span.pending{background:#fff4e8;color:#95531f}
+.exam-detail-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.exam-detail-grid div{border:1px solid #edf1f5;background:#fafcfe;border-radius:7px;padding:8px}
+.exam-detail-grid small{display:block;font-size:9px;color:#748397;font-weight:800}
+.exam-detail-grid strong{display:block;margin-top:3px;font-size:11px;color:#173653}
+.exam-hint{font-size:9px;color:#718095;margin:5px 0 8px}
+.chapter-head{cursor:pointer}
+@media(max-width:760px){.exam-detail-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.exam-detail-grid{grid-template-columns:1fr}}
+
+
+.topic-title-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.topic-title-line .topic-name{margin:0}
+.topic-exam-chips{display:inline-flex;gap:4px;align-items:center;flex-wrap:wrap}
+.topic-exam-detail{display:none;grid-column:1 / -1;margin:2px 0 8px;padding:10px;border:1px solid #dce6ef;background:#fff;border-radius:9px}
+.topic-exam-detail.open{display:block}
+.topic-row.has-exam{background:#fcfdff}
+
+</style>
+</head>
+<body>
+<div class="shell">
+<aside>
+<div class="brand"><img src="assets/favicon.png"><b>SATHYAGRAHI<br><small>ACADEMY ADMIN</small></b></div>
+<nav><a href="admin-dashboard.html">Dashboard</a><a href="admin-students.html">Students</a><a class="active" href="admin-student-performance.html">Student Performance</a><a href="admin-preparation.html">Preparation Guide</a><a href="admin-enrollments.html">New Enrollments</a><a href="admin-exams.html">Examinations</a><a href="admin-question-bank.html">Question Bank</a><a href="admin-results.html">Results & Performance</a><a href="admin-attendance.html">Attendance</a><a href="admin-study-material.html">Study Material</a><a href="admin-notifications.html">Notifications</a><a href="admin-help-feedback.html">Help & Feedback</a><a href="admin-my-account.html">My Account</a><a href="admin-settings.html">Settings</a></nav>
+</aside>
+<main>
+<header><div><h1>Student Performance</h1><p>Monitor learning, revision, study logs, exams and attendance.</p></div><button id="logout">LOGOUT</button></header>
+<section class="page">
+<div class="monitor-grid">
+<section class="card student-pane">
+<h3>Students</h3><div class="muted">Choose a student to open the preparation record.</div>
+<input id="search" class="search" placeholder="Search name or Student ID">
+<div id="studentList" class="student-list"><div class="loading">Loading students...</div></div>
+</section>
+<section id="detail" class="detail"><div class="card empty">Select a student to view complete performance details.</div></section>
+</div>
+</section>
+</main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="admin-student-performance.js"></script>
+</body>
+</html>

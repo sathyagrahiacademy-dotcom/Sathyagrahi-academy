@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Exam Questions | Sathyagrahi Academy</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body{margin:0;background:#f7f9fc;font-family:'Trebuchet MS','Segoe UI',Arial,sans-serif;color:#172033}
+    .wrap{max-width:1100px;margin:32px auto;padding:0 18px}
+    .top{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:18px}
+    .card{background:#fff;border:1px solid #e4e8ef;border-radius:14px;padding:20px;box-shadow:0 4px 18px rgba(0,0,0,.04)}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .full{grid-column:1/-1}
+    label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}
+    input,textarea,select{width:100%;box-sizing:border-box;border:1px solid #d7dce5;border-radius:8px;padding:11px;font:inherit}
+    textarea{min-height:90px;resize:vertical}
+    button,.btn{border:0;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block}
+    .primary{background:#10213c;color:#fff}.secondary{background:#eef2f7;color:#172033}.danger{background:#fff0f0;color:#a11}
+    .msg{margin:12px 0;font-size:14px}.error{color:#b42318}.ok{color:#087443}
+    table{width:100%;border-collapse:collapse;margin-top:14px}th,td{text-align:left;padding:10px;border-bottom:1px solid #edf0f4;font-size:13px}
+    @media(max-width:700px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.top{align-items:flex-start;flex-direction:column}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="top">
+      <div><h1 style="margin:0">Manage Questions</h1><div id="examName" style="color:#667085;margin-top:5px">Loading exam...</div></div>
+      <div><a class="btn secondary" href="admin-question-bank.html">QUESTION BANK</a> <a class="btn secondary" href="admin-exams.html">← Back to Exams</a></div>
+    </div>
+    <section class="card">
+      <h2 style="margin-top:0">Add Question</h2>
+      <form id="questionForm" class="grid">
+        <div><label>Question No.</label><input id="questionNo" type="number" min="1" required></div>
+        <div><label>Correct Answer</label><select id="correctOption" required><option value="">Select</option><option>A</option><option>B</option><option>C</option><option>D</option></select></div>
+        <div class="full"><label>Question</label><textarea id="questionText" required></textarea></div>
+        <div><label>Option A</label><input id="optionA" required></div>
+        <div><label>Option B</label><input id="optionB" required></div>
+        <div><label>Option C</label><input id="optionC" required></div>
+        <div><label>Option D</label><input id="optionD" required></div>
+        <div><label>Marks</label><input id="marks" type="number" step=".01" value="4" min=".01" required></div>
+        <div><label>Negative Marks</label><input id="negativeMarks" type="number" step=".01" value="1" min="0" required></div>
+        <div class="full"><label>Explanation (optional)</label><textarea id="explanation"></textarea></div>
+        <div class="full"><button class="primary" id="saveQuestionBtn" type="submit">SAVE QUESTION</button> <button class="secondary" id="cancelEditQuestion" type="button" style="display:none">CANCEL EDIT</button></div>
+      </form>
+      <div id="message" class="msg"></div>
+    </section>
+
+    <section class="card" style="margin-top:18px">
+      <div class="top" style="margin-bottom:10px">
+        <div>
+          <h2 style="margin:0">Bulk Upload Questions</h2>
+          <div style="color:#667085;margin-top:5px">Upload Excel (.xlsx) or CSV. Use the template for error-free import.</div>
+        </div>
+        <button id="downloadTemplate" class="secondary" type="button">DOWNLOAD TEMPLATE</button>
+      </div>
+      <input id="bulkFile" type="file" accept=".xlsx,.xls,.csv">
+      <div id="bulkSummary" class="msg">No file selected.</div>
+      <div id="bulkErrors" class="msg error"></div>
+      <button id="importQuestions" class="primary" type="button" disabled>IMPORT ALL QUESTIONS</button>
+    </section>
+    <section class="card" style="margin-top:18px">
+      <h2 style="margin-top:0">Questions Added</h2>
+      <div id="count"></div>
+      <div style="overflow:auto"><table><thead><tr><th>No.</th><th>Question</th><th>Marks</th><th>Action</th></tr></thead><tbody id="questionsBody"></tbody></table></div>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="admin-exam-questions.js"></script>
+</body>
+</html>

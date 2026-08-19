@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Preparation Guide | Sathyagrahi Academy</title>
+<link rel="icon" href="assets/favicon.png">
+<link rel="stylesheet" href="admin-dashboard.css">
+<style>
+.content{padding:28px}.panel,.stat{background:#fff;border:1px solid #e1e7ef;border-radius:12px;padding:16px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}.stat{font-size:12px;color:#607086}.stat b{display:block;font-size:24px;color:#123b68;margin-top:5px}.form{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.form label{font-size:12px;font-weight:800;color:#41536a}.form input,.form select{width:100%;box-sizing:border-box;margin-top:6px;padding:10px 11px;border:1px solid #ccd5df;border-radius:8px;font:inherit;font-size:13px;background:#fff}.wide{grid-column:span 2}.btn{border:1px solid #bdc7d2;background:#fff;padding:10px 13px;border-radius:8px;font-weight:800;font-size:12px;cursor:pointer}.primary{background:#123b68;color:#fff;border-color:#123b68}.btn:disabled{opacity:.55;cursor:not-allowed}table{width:100%;border-collapse:collapse;font-size:12px;margin-top:15px}th,td{padding:10px;border-bottom:1px solid #edf1f5;text-align:left;vertical-align:top}th{font-size:11px;color:#52657b}.toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px}.helper{font-size:11px;color:#718096;margin-top:5px;line-height:1.5}.msg{font-size:12px;margin-top:10px}.official-note{background:#f4f8fd;border:1px solid #d8e4f1;border-radius:9px;padding:10px 12px;margin:12px 0 16px;font-size:12px;color:#52657b}.topic-preview{grid-column:1/-1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;font-size:12px;color:#4f6075;min-height:42px}.topic-preview b{color:#123b68}.locked{background:#f3f6f9!important;color:#6f7d8d}@media(max-width:900px){.stats{grid-template-columns:1fr 1fr}.form{grid-template-columns:1fr 1fr}.wide{grid-column:span 2}}@media(max-width:620px){.form{grid-template-columns:1fr}.wide{grid-column:auto}.stats{grid-template-columns:1fr 1fr}.toolbar{align-items:flex-start;flex-direction:column}table{font-size:11px}}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside>
+<div class="brand"><img src="assets/favicon.png"><b>SATHYAGRAHI<br><small>ACADEMY ADMIN</small></b></div>
+<nav><a href="admin-dashboard.html">Dashboard</a><a href="admin-students.html">Students</a><a href="admin-student-performance.html">Student Performance</a><a class="active" href="admin-preparation.html">Preparation Guide</a><a href="admin-enrollments.html">New Enrollments</a><a href="admin-exams.html">Examinations</a><a href="admin-question-bank.html">Question Bank</a><a href="admin-results.html">Results & Performance</a><a href="admin-attendance.html">Attendance</a><a href="admin-study-material.html">Study Material</a><a href="admin-notifications.html">Notifications</a><a href="admin-help-feedback.html">Help & Feedback</a><a href="admin-my-account.html">My Account</a><a href="admin-settings.html">Settings</a></nav>
+</aside>
+<main>
+<header><div><h1>Preparation Guide</h1><p>Assign tasks from the official NEET syllabus master.</p></div><button id="logout">LOGOUT</button></header>
+<div class="content">
+<div class="toolbar"><div><h2>Student Preparation Tasks</h2><p>Choose the student, subject, official unit and official topic. Manual chapter/topic typing is no longer required.</p></div></div>
+<div class="stats"><div class="stat">Pending<b id="pending">0</b></div><div class="stat">Completed<b id="completed">0</b></div><div class="stat">Due Today<b id="dueToday">0</b></div><div class="stat">Students<b id="studentCount">0</b></div></div>
+<section class="panel">
+<h3>Assign Student Task</h3>
+<div class="official-note"><b>Official Syllabus Link:</b> Subject → Unit / Chapter → Topic are loaded directly from the same NEET syllabus database used by Student Learning Progress.</div>
+<form id="taskForm" class="form">
+<label>Student<select id="student" required></select></label>
+<label>Subject<select id="subject" required><option value="Physics">Physics</option><option value="Chemistry">Chemistry</option><option value="Biology">Biology</option></select></label>
+<label>Task Type<select id="type"><option value="learning">Learning</option><option value="revision">Revision</option><option value="practice">Practice</option><option value="exam">Exam</option></select></label>
+<label class="wide">Unit / Chapter<select id="unit" required></select><div class="helper">Official NEET unit list</div></label>
+<label>Topic<select id="topic" required></select><div class="helper">Official topic list for the selected unit</div></label>
+<div id="topicPreview" class="topic-preview"><b>Selected topic:</b> Choose a unit and topic.</div>
+<label>Target Date<input id="date" type="date" required></label>
+<label>Target Minutes<input id="minutes" type="number" min="0" max="1440" value="60"></label>
+<label>Priority<select id="priority"><option value="normal">Normal</option><option value="high">High</option><option value="low">Low</option></select></label>
+<div><button id="assignBtn" class="btn primary" type="submit">ASSIGN TASK</button></div>
+</form>
+<div id="msg" class="msg"></div>
+</section>
+<section class="panel" style="margin-top:14px">
+<div class="toolbar"><h3>Preparation Tasks</h3><select id="filterStudent"></select></div>
+<table><thead><tr><th>Student</th><th>Date</th><th>Subject</th><th>Type</th><th>Official Topic</th><th>Priority</th><th>Status</th><th>Action</th></tr></thead><tbody id="rows"></tbody></table>
+</section>
+</div>
+</main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="admin-preparation.js"></script>
+</body>
+</html>

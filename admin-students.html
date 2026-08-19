@@ -1,0 +1,56 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Students | Sathyagrahi Academy Admin</title><link rel="icon" href="assets/favicon.png"><link rel="stylesheet" href="admin-dashboard.css">
+<style>
+.toolbar{display:flex;gap:10px;align-items:center;margin:20px 0}.toolbar input{flex:1;max-width:420px;padding:11px;border:1px solid #ccd7e5;border-radius:7px}.primary{background:#06275f!important;color:white!important;border-color:#06275f!important}
+.table-wrap{overflow:auto;background:#fff;border:1px solid #dce4ef;border-radius:10px}table{width:100%;border-collapse:collapse;min-width:760px}th,td{padding:13px 14px;text-align:left;border-bottom:1px solid #edf1f6;font-size:11px}th{font-size:9px;letter-spacing:.5px;color:#6f7d94;background:#f9fbfe}td strong{color:#102a55}.badge{display:inline-block;padding:5px 8px;border-radius:20px;font-size:9px;font-weight:800}.on{background:#eaf8f1;color:#087443}.off{background:#fff0ef;color:#b42318}.small-btn{border:1px solid #b8c8de;background:#fff;color:#07316d;border-radius:5px;padding:6px 9px;font-size:9px;font-weight:800;cursor:pointer}
+.modal{position:fixed;inset:0;background:#06152b88;display:none;place-items:center;padding:20px;z-index:50}.modal.open{display:grid}.form-card{width:min(560px,96vw);background:#fff;border-radius:12px;padding:24px}.form-card h3{margin-top:0;color:#06275f}.grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.field label{display:block;font-size:10px;font-weight:800;margin-bottom:5px}.field input{width:100%;padding:10px;border:1px solid #ccd7e5;border-radius:6px}.span2{grid-column:1/-1}.form-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}.form-actions button{padding:9px 13px;border-radius:6px;border:1px solid #b8c8de;background:#fff;font-size:10px;font-weight:800}.msg{min-height:18px;color:#b42318;font-size:10px;margin-top:10px}.subtle{font-size:10px;color:#78859a}.count-line{font-size:11px;color:#66758c;margin-bottom:10px}@media(max-width:600px){.grid{grid-template-columns:1fr}.span2{grid-column:auto}}
+.delete-btn{border-color:#d92d20!important;color:#b42318!important;background:#fff5f4!important}.delete-btn:hover{background:#fee4e2!important}
+.more-wrap{position:relative;display:inline-block}
+.more-btn{min-width:72px}
+.more-menu{position:absolute;right:0;top:34px;min-width:165px;background:#fff;border:1px solid #d9e1ea;border-radius:8px;box-shadow:0 10px 25px rgba(20,40,70,.14);padding:6px;display:none;z-index:30}
+.more-menu.open{display:block}
+.more-menu button{display:block;width:100%;text-align:left;border:0;background:#fff;padding:9px 10px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer}
+.more-menu button:hover{background:#f3f6fa}.more-menu .danger{color:#b42318}.more-menu .status{color:#7a4b00}
+.edit-modal{position:fixed;inset:0;background:#0b1b3099;display:none;place-items:center;padding:20px;z-index:70}.edit-modal.open{display:grid}
+.edit-card{width:min(620px,96vw);background:#fff;border-radius:12px;padding:22px;max-height:90vh;overflow:auto}
+.edit-card h3{margin-top:0;color:#102a43}.edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.edit-grid .full{grid-column:1/-1}
+.edit-card label{display:block;font-size:10px;font-weight:800;margin-bottom:5px}.edit-card input{width:100%;padding:10px;border:1px solid #cbd5df;border-radius:6px}
+.edit-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.edit-msg{font-size:11px;font-weight:700;margin-top:10px}
+@media(max-width:650px){.edit-grid{grid-template-columns:1fr}}
+</style></head><body>
+<div class="shell"><aside><div class="brand"><img src="assets/favicon.png"><b>SATHYAGRAHI<br><small>ACADEMY ADMIN</small></b></div>
+<nav><a href="admin-dashboard.html">Dashboard</a><a class="active" href="admin-students.html">Students</a><a href="admin-student-performance.html">Student Performance</a><a href="admin-preparation.html">Preparation Guide</a><a href="admin-enrollments.html">New Enrollments</a><a href="admin-exams.html">Examinations</a><a href="admin-question-bank.html">Question Bank</a><a href="admin-results.html">Results & Performance</a><a href="admin-attendance.html">Attendance</a><a href="admin-study-material.html">Study Material</a><a href="admin-notifications.html">Notifications</a><a href="admin-help-feedback.html">Help & Feedback</a><a href="admin-my-account.html">My Account</a><a href="admin-settings.html">Settings</a></nav></aside>
+<main><header><div><h1>Students Management</h1><p>Manage Sathyagrahi Academy student accounts</p></div><button id="logout">LOGOUT</button></header>
+<section class="content"><div class="toolbar"><input id="search" placeholder="Search by Student ID, name or email"><button class="primary" id="addBtn">+ ADD STUDENT</button></div>
+<div class="count-line" id="countLine">Loading students...</div>
+<div class="table-wrap"><table><thead><tr><th>STUDENT ID</th><th>STUDENT NAME</th><th>EMAIL</th><th>MOBILE</th><th>BATCH</th><th>STATUS</th><th>JOINED</th><th>ACTION</th></tr></thead><tbody id="rows"></tbody></table></div>
+</section></main></div>
+<div class="modal" id="modal"><form class="form-card" id="addForm"><h3>Add New Student</h3><p class="subtle">Create the student's login account. Password is stored securely by Supabase Auth, not in the student table.</p>
+<div class="grid">
+<div class="field"><label>10-Digit Student ID</label><input id="sid" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="e.g. 1901010003" required></div>
+<div class="field"><label>Student Name</label><input id="name" autocomplete="name" placeholder="Full student name" required></div>
+<div class="field"><label>Student Email</label><input id="studentEmail" type="email" autocomplete="email" placeholder="student@example.com" required></div>
+<div class="field"><label>Mobile Number</label><input id="studentPhone" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="tel" placeholder="10-digit mobile number"></div>
+<div class="field"><label>Program / Batch</label><input id="studentBatch" placeholder="e.g. NEET 2027 - Batch A"></div>
+<div class="field"><label>Joining Date</label><input id="joinedAt" type="date" required></div>
+<div class="field span2"><label>Initial Password</label><input id="studentPassword" type="password" minlength="8" autocomplete="new-password" placeholder="Minimum 8 characters" required></div>
+</div>
+<div class="msg" id="formMsg"></div><div class="form-actions"><button type="button" id="cancel">CANCEL</button><button class="primary" id="createBtn">CREATE STUDENT</button></div></form></div>
+<div id="toast"></div>
+<div class="edit-modal" id="editStudentModal">
+  <form class="edit-card" id="editStudentForm">
+    <h3>Edit Student</h3>
+    <div class="edit-grid">
+      <div><label>Student ID</label><input id="editStudentId" maxlength="10" required></div>
+      <div><label>Student Name</label><input id="editStudentName" required></div>
+      <div class="full"><label>Email</label><input id="editStudentEmail" type="email" required></div>
+      <div><label>Mobile</label><input id="editStudentMobile"></div>
+      <div><label>Batch</label><input id="editStudentBatch"></div>
+      <div class="full"><label>New Password (optional)</label><input id="editStudentPassword" type="password" placeholder="Leave blank to keep current password"></div>
+    </div>
+    <div class="edit-msg" id="editStudentMsg"></div>
+    <div class="edit-actions"><button type="button" id="cancelEditStudent">CANCEL</button><button class="primary" id="saveEditStudent">UPDATE STUDENT</button></div>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-config.js"></script><script src="admin-students.js"></script></body></html>
