@@ -7,6 +7,310 @@
   <title>Sathyagrahi Academy</title>
   <link rel="icon" type="image/png" href="assets/favicon.png" />
   <link rel="stylesheet" href="styles.css" />
+
+  <style>
+    /* Welcome section readability/alignment only */
+    .welcome-inner{max-width:520px}
+    .welcome-inner p{
+      max-width:500px;
+      margin:0 auto 28px;
+      text-align:justify;
+      text-justify:inter-word;
+      line-height:1.7;
+    }
+    .welcome-panel .primary-btn{
+      width:max-content;
+      text-decoration:none;
+    }
+    @media(max-width:700px){
+      .welcome-inner p{text-align:left}
+    }
+
+    /* Founder & Director message */
+    .founder-section{
+      max-width:1180px;
+      margin:26px auto 34px;
+      padding:0 18px;
+    }
+    .founder-card{
+      position:relative;
+      overflow:hidden;
+      display:grid;
+      grid-template-columns:260px 1fr;
+      gap:0;
+      background:#fff;
+      border:1px solid #dbe5ef;
+      border-radius:20px;
+      box-shadow:0 12px 34px rgba(8,42,99,.08);
+    }
+    .founder-card:before{
+      content:"";
+      position:absolute;
+      left:0;right:0;top:0;
+      height:4px;
+      background:linear-gradient(90deg,#082a63,#0b4a8b,#d6a05c);
+    }
+    .founder-identity{
+      background:linear-gradient(150deg,#082a63,#0b4a8b);
+      color:#fff;
+      padding:34px 28px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      min-height:360px;
+    }
+    .founder-kicker{
+      font-size:10px;
+      font-weight:900;
+      letter-spacing:.16em;
+      color:#cfe0ef;
+      margin-bottom:18px;
+    }
+    .founder-name{
+      margin:0;
+      font-size:25px;
+      line-height:1.2;
+      font-weight:900;
+      letter-spacing:-.02em;
+    }
+    .founder-role{
+      margin:8px 0 0;
+      font-size:13px;
+      line-height:1.5;
+      font-weight:800;
+      color:#e5eef7;
+    }
+    .founder-qualifications{
+      margin-top:22px;
+      padding-top:18px;
+      border-top:1px solid rgba(255,255,255,.18);
+      font-size:11px;
+      line-height:1.8;
+      font-weight:800;
+      color:#d7e6f3;
+    }
+    .founder-academy{
+      margin-top:20px;
+      font-size:11px;
+      font-weight:900;
+      letter-spacing:.06em;
+      color:#f2c98c;
+    }
+    .founder-message{
+      padding:38px 42px 34px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+    }
+    .founder-message-label{
+      font-size:10px;
+      font-weight:900;
+      letter-spacing:.14em;
+      color:#0b4a8b;
+      margin-bottom:10px;
+    }
+    .founder-message h2{
+      margin:0 0 18px;
+      color:#123b68;
+      font-size:30px;
+      line-height:1.15;
+      letter-spacing:-.025em;
+    }
+    .founder-message p{
+      margin:0 0 13px;
+      color:#5f7388;
+      font-size:14px;
+      line-height:1.82;
+      text-align:justify;
+      text-justify:inter-word;
+    }
+    .founder-highlight{
+      margin:7px 0 2px !important;
+      padding:14px 16px;
+      background:#f3f7fb;
+      border-left:4px solid #0b4a8b;
+      border-radius:0 9px 9px 0;
+      color:#244b70 !important;
+      font-weight:800;
+    }
+    .founder-quote{
+      margin-top:18px;
+      color:#082a63;
+      font-size:15px;
+      font-weight:900;
+      letter-spacing:.01em;
+    }
+    .founder-tagline{
+      margin-top:7px;
+      color:#8a6a3d;
+      font-size:10px;
+      font-weight:900;
+      letter-spacing:.10em;
+      text-transform:uppercase;
+    }
+    @media(max-width:850px){
+      .founder-card{grid-template-columns:1fr}
+      .founder-identity{min-height:auto;padding:28px 24px}
+      .founder-message{padding:28px 24px}
+      .founder-message h2{font-size:25px}
+    }
+    @media(max-width:700px){
+      .founder-section{margin-top:20px;padding:0 12px}
+      .founder-message p{text-align:left}
+    }
+
+    /* =========================================================
+       HOMEPAGE TYPOGRAPHY — FINAL PROFESSIONAL SIZE BALANCE
+       ========================================================= */
+    body{
+      font-size:15px;
+      line-height:1.6;
+      -webkit-text-size-adjust:100%;
+    }
+
+    .ticker-text{
+      font-size:12px !important;
+      font-weight:800 !important;
+      letter-spacing:.025em;
+    }
+
+    .main-nav .nav-item{
+      font-size:12px !important;
+      font-weight:800 !important;
+      letter-spacing:.025em;
+    }
+    .main-nav .nav-svg{
+      width:16px !important;
+      height:16px !important;
+    }
+
+    .panel-title{
+      font-size:13px !important;
+      font-weight:900 !important;
+      letter-spacing:.025em;
+    }
+    .panel-title .nav-svg{
+      width:18px !important;
+      height:18px !important;
+    }
+
+    .notice strong{
+      font-size:13px !important;
+      line-height:1.45 !important;
+    }
+    .notice small,
+    .notice time{
+      font-size:10.5px !important;
+      line-height:1.45 !important;
+    }
+
+    .welcome-inner h1{
+      font-size:29px !important;
+      line-height:1.14 !important;
+      letter-spacing:-.02em;
+    }
+    .welcome-inner h1 span{
+      font-size:31px !important;
+      font-weight:900 !important;
+    }
+    .welcome-inner p{
+      font-size:14.5px !important;
+      line-height:1.78 !important;
+    }
+
+    .outline-btn,
+    .primary-btn,
+    .login-btn{
+      font-size:11.5px !important;
+      font-weight:900 !important;
+      letter-spacing:.04em;
+    }
+
+    .login-form label{
+      font-size:12px !important;
+      font-weight:800 !important;
+    }
+    .login-form input{
+      font-size:13.5px !important;
+    }
+    .login-options,
+    .login-options label,
+    .login-options a{
+      font-size:11px !important;
+    }
+    .login-message{
+      font-size:11.5px !important;
+      line-height:1.45 !important;
+    }
+
+    .founder-kicker,
+    .founder-message-label{
+      font-size:10px !important;
+    }
+    .founder-name{
+      font-size:25px !important;
+    }
+    .founder-role{
+      font-size:13px !important;
+    }
+    .founder-qualifications{
+      font-size:11.5px !important;
+    }
+    .founder-message h2{
+      font-size:29px !important;
+    }
+    .founder-message p{
+      font-size:14px !important;
+      line-height:1.8 !important;
+    }
+    .founder-quote{
+      font-size:15px !important;
+    }
+    .founder-tagline{
+      font-size:10px !important;
+    }
+
+    .site-footer h2{
+      font-size:18px !important;
+      line-height:1.25 !important;
+    }
+    .site-footer h3{
+      font-size:12px !important;
+      letter-spacing:.05em;
+    }
+    .site-footer p,
+    .site-footer a{
+      font-size:11.5px !important;
+      line-height:1.65 !important;
+    }
+    .footer-bottom,
+    .footer-bottom a{
+      font-size:10.5px !important;
+    }
+
+    @media(max-width:900px){
+      .main-nav .nav-item{font-size:11px !important}
+      .welcome-inner h1{font-size:27px !important}
+      .welcome-inner h1 span{font-size:29px !important}
+    }
+
+    @media(max-width:700px){
+      body{font-size:14px}
+      .ticker-text{font-size:10.5px !important}
+      .main-nav .nav-item{font-size:10.5px !important}
+      .panel-title{font-size:12.5px !important}
+      .welcome-inner h1{font-size:24px !important}
+      .welcome-inner h1 span{font-size:26px !important}
+      .welcome-inner p{font-size:13.5px !important;line-height:1.72 !important}
+      .login-form input{font-size:13px !important}
+      .founder-name{font-size:23px !important}
+      .founder-message h2{font-size:24px !important}
+      .founder-message p{font-size:13.5px !important;line-height:1.72 !important}
+      .site-footer h2{font-size:17px !important}
+      .site-footer p,.site-footer a{font-size:11px !important}
+    }
+
+  </style>
 </head>
 <body>
   <header class="site-header">
@@ -20,12 +324,11 @@
 
     <nav class="main-nav" aria-label="Primary navigation">
       <a class="nav-item active" href="#home"><svg class="nav-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.8 12 3l9 7.8v9.7a.5.5 0 0 1-.5.5H15v-6H9v6H3.5a.5.5 0 0 1-.5-.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>HOME</span></a>
-      <a class="nav-item" href="#about">ABOUT US</a>
-      <a class="nav-item" href="#courses">COURSES</a>
-      <a class="nav-item" href="#exams">ONLINE EXAMS</a>
-      <a class="nav-item" href="#material">STUDY MATERIAL</a>
-      <a class="nav-item" href="#results">RESULTS</a>
-      <a class="nav-item" href="#contact">CONTACT US</a>
+      <a class="nav-item" href="about-us.html">ABOUT US</a>
+      <a class="nav-item" href="programs.html">PROGRAMS</a>
+      <a class="nav-item" href="student-portal.html">STUDENT PORTAL</a>
+      <a class="nav-item" href="enroll-now.html">ENROLL NOW</a>
+      <a class="nav-item" href="contact-us.html">CONTACT US</a>
     </nav>
   </header>
 
@@ -39,41 +342,77 @@
         <div class="panel-title">🔔 <span>NOTIFICATIONS</span></div>
         <div class="notifications-window" id="notificationsWindow" tabindex="0" aria-label="Scrolling notifications">
           <div class="notifications-list" id="notificationsList">
-            <div class="notice"><span class="dot"></span><div><strong>NEET Full Syllabus Test – 01</strong><small>will be conducted on 25 May 2025</small></div><time>20 May 2025</time></div>
-            <div class="notice"><span class="dot"></span><div><strong>Study Material – Physics</strong><small>New Chapter Notes Uploaded</small></div><time>19 May 2025</time></div>
-            <div class="notice"><span class="dot"></span><div><strong>Chemistry Practice Test – 05</strong><small>Results Published</small></div><time>18 May 2025</time></div>
-            <div class="notice"><span class="dot"></span><div><strong>Academy Holiday</strong><small>26 May 2025 (Monday)</small></div><time>17 May 2025</time></div>
-            <div class="notice"><span class="dot"></span><div><strong>New Batch Admission</strong><small>NEET admission window open</small></div><time>15 May 2025</time></div>
+            <div class="notice">
+              <span class="dot"></span>
+              <div>
+                <strong>Loading latest notifications...</strong>
+                <small>Please wait</small>
+              </div>
+              <time></time>
+            </div>
           </div>
         </div>
-        <button class="outline-btn" type="button">VIEW ALL</button>
+        <button class="outline-btn" id="homeViewAllNotifications" type="button">VIEW ALL</button>
       </article>
 
       <article class="panel welcome-panel" id="about">
         <div class="welcome-inner">
           <h1>WELCOME TO<br /><span>SATHYAGRAHI ACADEMY</span></h1>
           <div class="accent-line" aria-hidden="true"></div>
-          <p>Sathyagrahi Academy is a student-focused learning platform dedicated to NEET aspirants. We provide high-quality study material, online exams, performance analysis and personal guidance to help every student achieve their dream.</p>
-          <button class="primary-btn" id="openWelcome" type="button">VIEW MORE</button>
+          <p>Sathyagrahi Academy is founded on a simple but powerful belief — every student can move closer to success with the right guidance, clear understanding, disciplined practice and a purposeful learning path.</p>
+          <a class="primary-btn" href="welcome.html">VIEW MORE</a>
         </div>
       </article>
 
-      <article class="panel login-panel" id="exams">
+      <article class="panel login-panel" id="student-portal">
         <div class="panel-title"><svg class="nav-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 20c.5-4 2.7-6.2 6.5-6.2s6 2.2 6.5 6.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>STUDENT LOGIN</span></div>
-        <form class="login-form" onsubmit="return false;">
+        <form class="login-form" id="studentLoginForm">
           <label for="studentId">Student ID</label>
-          <div class="input-wrap"><span aria-hidden="true">♙</span><input id="studentId" inputmode="numeric" maxlength="8" placeholder="Enter your 8 digit Student ID" /></div>
+          <div class="input-wrap"><span aria-hidden="true">♙</span><input id="studentId" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" autocomplete="username" placeholder="Enter your 10 digit Student ID" required /></div>
 
           <label for="password">Password</label>
-          <div class="input-wrap"><span aria-hidden="true">▣</span><input id="password" type="password" placeholder="Enter your password" /><button class="eye-btn" id="togglePassword" type="button" aria-label="Show password">◉</button></div>
+          <div class="input-wrap"><span aria-hidden="true">▣</span><input id="password" type="password" autocomplete="current-password" placeholder="Enter your password" required /><button class="eye-btn" id="togglePassword" type="button" aria-label="Show password">◉</button></div>
 
           <div class="login-options">
             <label class="remember"><input type="checkbox" /> <span>Remember Me</span></label>
-            <a href="#" onclick="return false;">Forgot Password?</a>
+            <a href="#" id="forgotPasswordLink">Forgot Password?</a>
           </div>
-          <button class="login-btn" type="submit">LOGIN</button>
+          <div class="login-message" id="loginMessage" role="status" aria-live="polite"></div>
+          <button class="login-btn" id="loginButton" type="submit">LOGIN</button>
         </form>
       </article>
+    </section>
+
+    <section class="founder-section" aria-labelledby="founderMessageTitle">
+      <div class="founder-card">
+        <aside class="founder-identity" aria-label="Founder details">
+          <div class="founder-kicker">FOUNDER &amp; DIRECTOR</div>
+          <h2 class="founder-name">D. Shravan Kumar</h2>
+          <p class="founder-role">Founder &amp; Director<br>Sathyagrahi Academy</p>
+          <div class="founder-qualifications">
+            M.A. (Telugu)<br>
+            M.A. (Philosophy)<br>
+            M.Ed.
+          </div>
+          <div class="founder-academy">SATHYAGRAHI ACADEMY</div>
+        </aside>
+
+        <article class="founder-message">
+          <div class="founder-message-label">FOUNDER'S MESSAGE</div>
+          <h2 id="founderMessageTitle">Direction Turns Effort Into Progress.</h2>
+
+          <p>At Sathyagrahi Academy, we believe that a student does not need pressure — a student needs the right direction, clear understanding, consistent guidance and the confidence to keep moving forward.</p>
+
+          <p>Our aim is to create a learning environment where every student understands what to learn, why it matters, how to improve, and how to measure progress with clarity. We want preparation to become more organised, purposeful and meaningful — not just a race to complete chapters.</p>
+
+          <p class="founder-highlight">Every guide, learning resource and student-support feature at Sathyagrahi Academy is being developed with one responsibility in mind: to help students turn effort into progress, progress into confidence, and confidence into achievement.</p>
+
+          <p>We may not be able to choose a student's dream, but we can help them find the right path to reach it.</p>
+
+          <div class="founder-quote">Every Dream Deserves the Right Direction.</div>
+          <div class="founder-tagline">Empowering Students. Inspiring Excellence.</div>
+        </article>
+      </div>
     </section>
   </main>
 
@@ -85,7 +424,7 @@
       </section>
       <section>
         <h3>QUICK LINKS</h3>
-        <a href="#home">Home</a><a href="#about">About Us</a><a href="#courses">Courses</a><a href="#exams">Online Exams</a><a href="#material">Study Material</a><a href="#results">Results</a><a href="#contact">Contact Us</a>
+        <a href="#home">Home</a><a href="about-us.html">About Us</a><a href="programs.html">Programs</a><a href="student-portal.html">Student Portal</a><a href="enroll-now.html">Enroll Now</a><a href="contact-us.html">Contact Us</a>
       </section>
       <section>
         <h3>FOLLOW US</h3>
@@ -100,16 +439,9 @@
     </div>
     <div class="footer-bottom"><span>© 2026 Sathyagrahi Academy. All Rights Reserved.</span><span><a href="#">Privacy Policy</a><i></i><a href="#">Terms &amp; Conditions</a></span></div>
   </footer>
-
-  <div class="modal" id="welcomeModal" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Welcome to Sathyagrahi Academy">
-    <div class="modal-backdrop" data-close-modal></div>
-    <div class="modal-card">
-      <button class="modal-close" type="button" data-close-modal aria-label="Close">×</button>
-      <div class="modal-toolbar"><strong>Welcome to Sathyagrahi Academy</strong><button id="openPosterTab" type="button">OPEN FULL IMAGE</button></div>
-      <div class="poster-stage"><img src="assets/welcome-poster.png" alt="Welcome to Sathyagrahi Academy full message" /></div>
-    </div>
-  </div>
-
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
   <script src="main.js"></script>
+  <script src="home-notifications.js"></script>
 </body>
 </html>
