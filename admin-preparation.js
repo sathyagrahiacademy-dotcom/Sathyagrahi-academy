@@ -33,14 +33,26 @@
   function renderTopics(){
     const unitId=Number($('unit').value||0);
     const list=topics.filter(x=>Number(x.unit_id)===unitId);
-    $('topic').innerHTML=list.map(x=>`<option value="${x.id}">${esc(x.topic_title)}</option>`).join('');
+    const isExam=$('type').value==='exam';
+    $('topic').innerHTML=(isExam?'<option value="__ALL__">ALL TOPICS — FULL CHAPTER EXAM</option>':'')
+      +list.map(x=>`<option value="${x.id}">${esc(x.topic_title)}</option>`).join('');
+    if($('topicHelper'))$('topicHelper').textContent=isExam
+      ? 'Choose ALL TOPICS for a full chapter exam, or choose one topic for a topic-level exam.'
+      : 'Official topic list for the selected unit';
     updatePreview();
   }
 
   function updatePreview(){
     const unit=units.find(x=>String(x.id)===$('unit').value);
-    const topic=topics.find(x=>String(x.id)===$('topic').value);
-    $('topicPreview').innerHTML=topic?`<b>Selected topic:</b> ${esc(unit?.unit_title||'')} → ${esc(topic.topic_title)}${topic.official_detail?`<div class="helper">${esc(topic.official_detail)}</div>`:''}`:'<b>Selected topic:</b> Choose a unit and topic.';
+    const selected=$('topic').value;
+    const topic=topics.find(x=>String(x.id)===selected);
+    if($('type').value==='exam'&&selected==='__ALL__'){
+      $('topicPreview').innerHTML=`<b>Exam Scope:</b> ${esc(unit?.unit_title||'')} → <b>FULL CHAPTER EXAM</b>`;
+      return;
+    }
+    $('topicPreview').innerHTML=topic
+      ? `<b>${$('type').value==='exam'?'Exam Scope':'Selected topic'}:</b> ${esc(unit?.unit_title||'')} → ${esc(topic.topic_title)}${topic.official_detail?`<div class="helper">${esc(topic.official_detail)}</div>`:''}`
+      : '<b>Selected topic:</b> Choose a unit and topic.';
   }
 
   async function load(){
@@ -67,26 +79,32 @@
     $('completed').textContent=tasks.filter(x=>x.status==='completed').length;
     $('dueToday').textContent=tasks.filter(x=>x.status==='pending'&&x.target_date<=todayIST()).length;
     $('studentCount').textContent=students.length;
-    $('rows').innerHTML=a.length?a.map(x=>`<tr><td>${esc(name(x.student_id))}</td><td>${esc(x.target_date||'')}</td><td>${esc(x.subject||'')}</td><td>${esc(x.task_type||'')}</td><td><b>${esc(x.topic||'')}</b><br><small>${esc(x.chapter||'')}</small></td><td>${esc(x.priority||'')}</td><td>${esc(x.status||'')}</td><td><button class="btn" data-del="${x.id}">DELETE</button></td></tr>`).join(''):'<tr><td colspan="8">No preparation tasks found.</td></tr>';
+    $('rows').innerHTML=a.length?a.map(x=>`<tr><td>${esc(name(x.student_id))}</td><td>${esc(x.target_date||'')}</td><td>${esc(x.subject||'')}</td><td>${esc(x.task_type||'')}</td><td><b>${x.scope_type==='chapter'&&x.task_type==='exam'?'FULL CHAPTER EXAM':esc(x.topic||'')}</b><br><small>${esc(x.chapter||'')}</small></td><td>${esc(x.priority||'')}</td><td>${esc(x.status||'')}</td><td><button class="btn" data-del="${x.id}">DELETE</button></td></tr>`).join(''):'<tr><td colspan="8">No preparation tasks found.</td></tr>';
   }
 
   $('subject').onchange=renderUnits;
   $('unit').onchange=renderTopics;
+  $('type').onchange=renderTopics;
   $('topic').onchange=updatePreview;
   $('filterStudent').onchange=render;
 
   $('taskForm').onsubmit=async e=>{
     e.preventDefault();
     const unit=units.find(x=>String(x.id)===$('unit').value);
-    const topic=topics.find(x=>String(x.id)===$('topic').value);
-    if(!unit||!topic)return msg('Please select an official Unit and Topic.');
+    const selected=$('topic').value;
+    const topic=topics.find(x=>String(x.id)===selected);
+    const isExam=$('type').value==='exam';
+    const chapterExam=isExam&&selected==='__ALL__';
+    if(!unit||(!chapterExam&&!topic))return msg('Please select an official Unit and exam scope/topic.');
     $('assignBtn').disabled=true;msg('Assigning task...');
     const payload={
       student_id:$('student').value,
       subject:unit.subject,
       chapter:unit.unit_title,
-      topic:topic.topic_title,
-      topic_id:topic.id,
+      topic:chapterExam?'ALL TOPICS — FULL CHAPTER EXAM':topic.topic_title,
+      topic_id:chapterExam?null:topic.id,
+      unit_id:unit.id,
+      scope_type:chapterExam?'chapter':'topic',
       task_type:$('type').value,
       target_date:$('date').value,
       target_minutes:Number($('minutes').value||0),

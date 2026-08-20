@@ -18,7 +18,7 @@
 <main>
 <header><div><h1>Preparation Guide</h1><p>Assign tasks from the official NEET syllabus master.</p></div><button id="logout">LOGOUT</button></header>
 <div class="content">
-<div class="toolbar"><div><h2>Student Preparation Tasks</h2><p>Choose the student, subject, official unit and official topic. Manual chapter/topic typing is no longer required.</p></div></div>
+<div class="toolbar"><div><h2>Student Preparation Tasks</h2><p>Choose the student, subject and official unit. For Exam tasks, assign either a Full Chapter Exam or a specific Topic Exam.</p></div></div>
 <div class="stats"><div class="stat">Pending<b id="pending">0</b></div><div class="stat">Completed<b id="completed">0</b></div><div class="stat">Due Today<b id="dueToday">0</b></div><div class="stat">Students<b id="studentCount">0</b></div></div>
 <section class="panel">
 <h3>Assign Student Task</h3>
@@ -28,7 +28,7 @@
 <label>Subject<select id="subject" required><option value="Physics">Physics</option><option value="Chemistry">Chemistry</option><option value="Biology">Biology</option></select></label>
 <label>Task Type<select id="type"><option value="learning">Learning</option><option value="revision">Revision</option><option value="practice">Practice</option><option value="exam">Exam</option></select></label>
 <label class="wide">Unit / Chapter<select id="unit" required></select><div class="helper">Official NEET unit list</div></label>
-<label>Topic<select id="topic" required></select><div class="helper">Official topic list for the selected unit</div></label>
+<label>Topic / Exam Scope<select id="topic" required></select><div class="helper" id="topicHelper">Official topic list for the selected unit</div></label>
 <div id="topicPreview" class="topic-preview"><b>Selected topic:</b> Choose a unit and topic.</div>
 <label>Target Date<input id="date" type="date" required></label>
 <label>Target Minutes<input id="minutes" type="number" min="0" max="1440" value="60"></label>
