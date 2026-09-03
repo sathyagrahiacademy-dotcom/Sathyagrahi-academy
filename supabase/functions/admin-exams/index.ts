@@ -1,6 +1,8 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'jsr:@supabase/supabase-js@2/cors'
 import { normaliseAudience, nextMaxAttempts } from './audience-policy.mjs'
+import { validateExamMapping } from '../_shared/exam-mapping-logic.mjs'
+import { canPublishExam } from './publish-validation.mjs'
 
 function json(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
@@ -55,6 +57,39 @@ async function ensureEligibleAssignment(admin:any, examId:string, studentId:stri
   const { data: a } = await admin.from('exam_student_assignments').select('student_id,is_assigned,max_attempts').eq('exam_id',examId).eq('student_id',studentId).maybeSingle()
   if (exam.audience_mode === 'selected' && !a?.is_assigned) return { ok:false, error:'Student is not assigned to this exam' }
   return { ok:true, assignment:a || null }
+}
+
+async function loadPublishValidation(admin: any, examId: string) {
+  const { data: exam, error: examErr } = await admin.from('exams').select('id,total_marks').eq('id', examId).maybeSingle()
+  if (examErr) throw new Error(examErr.message)
+  if (!exam) throw new Error('Exam not found')
+
+  const { data: questions, error: qErr } = await admin.from('exam_questions').select('id,exam_id,question_no,marks').eq('exam_id', examId).order('question_no')
+  if (qErr) throw new Error(qErr.message)
+  const questionIds = (questions || []).map((q:any)=>q.id)
+
+  let answerKeys:any[] = []
+  if (questionIds.length) {
+    const r = await admin.from('exam_answer_keys').select('question_id,correct_option').in('question_id', questionIds)
+    if (r.error) throw new Error(r.error.message)
+    answerKeys = r.data || []
+  }
+
+  const { data: mappingRowsRaw, error: mapErr } = await admin.from('exam_question_syllabus_map').select('question_id,exam_id,subtopic_id').eq('exam_id', examId)
+  if (mapErr) throw new Error(mapErr.message)
+  const questionNo = new Map((questions || []).map((q:any)=>[String(q.id),q.question_no]))
+  const mappingRows = (mappingRowsRaw || []).map((row:any)=>({...row,question_no:questionNo.get(String(row.question_id))}))
+
+  const { data: approvedRows, error: subErr } = await admin.from('neet_syllabus_subtopics').select('id').eq('status','approved')
+  if (subErr) throw new Error(subErr.message)
+
+  return validateExamMapping({
+    questions:questions || [],
+    answerKeys,
+    mappingRows,
+    approvedSubtopicIds:(approvedRows || []).map((row:any)=>row.id),
+    totalMarks:exam.total_marks
+  })
 }
 
 Deno.serve(async (req: Request) => {
@@ -149,6 +184,10 @@ Deno.serve(async (req: Request) => {
 
     if (action === 'publish') {
       const examId = String(body.examId || '')
+      const mappingValidation = await loadPublishValidation(admin, examId)
+      const gate = canPublishExam({ mappingValidation })
+      if (!gate.ok) return json({error:gate.error,validation:gate.validation},409)
+
       if (body.audienceMode != null) {
         const applied = await applyAudience(admin,examId,String(body.audienceMode),body.studentIds)
         if (!applied.ok) return json({error:applied.error},400)
