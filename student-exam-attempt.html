@@ -10,7 +10,7 @@
 *{box-sizing:border-box}body{margin:0;font-family:'Trebuchet MS','Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text)}
 .top{height:60px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 18px;position:sticky;top:0;z-index:20}
 .brand{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--nav)}.brand img{width:34px;height:34px}.brand small{display:block;font-size:10px;font-weight:600;color:var(--muted)}
-.top-right{display:flex;align-items:center;gap:16px}.timerbox{font-weight:800;color:#b42318;font-size:19px}.candidate{font-size:11px;text-align:right}.candidate strong{display:block}
+.top-right{display:flex;align-items:center;gap:16px}.timerbox{font-weight:800;color:#b42318;font-size:19px}.candidate{font-size:11px;text-align:right}.candidate strong{display:block}.savestate{font-size:10px;font-weight:700;color:var(--green);min-width:92px;text-align:center}.savestate.saving{color:var(--orange)}.savestate.error{color:var(--red)}
 .exam-shell{display:grid;grid-template-columns:minmax(0,1fr) 330px;min-height:calc(100vh - 60px)}
 .main{background:#fff;margin:12px 6px 12px 12px;border:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
 .subjectbar{background:var(--nav);color:#fff;padding:11px 16px;font-weight:700;display:flex;justify-content:space-between;align-items:center}.subjectbar span{font-size:12px;font-weight:500}
@@ -25,13 +25,13 @@ button{border:1px solid #b8c2cf;background:#fff;padding:10px 14px;border-radius:
 .side-actions{padding:12px;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr;gap:8px}.side-actions button{font-size:10px}
 .modal{position:fixed;inset:0;background:#0b1220aa;display:none;place-items:center;z-index:50;padding:20px}.modal.open{display:grid}.modal-card{width:min(760px,96vw);max-height:88vh;overflow:auto;background:#fff;border-radius:8px;padding:22px}.modal-card h2{margin-top:0;color:var(--nav)}.modal-card p,.modal-card li{font-size:13px;line-height:1.6}.modal-actions{text-align:right;margin-top:18px}
 .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}.summary div{border:1px solid var(--line);padding:12px;border-radius:6px;text-align:center}.summary strong{display:block;font-size:20px}
-@media(max-width:900px){.exam-shell{grid-template-columns:1fr}.side{margin:0 12px 12px}.main{margin:12px}.palette{grid-template-columns:repeat(8,1fr)}}@media(max-width:600px){.top{height:auto;padding:9px 12px}.brand small{display:none}.candidate{display:none}.exam-shell{min-height:auto}.question-area{padding:18px 14px}.question-text{font-size:16px}.palette{grid-template-columns:repeat(5,1fr)}.summary{grid-template-columns:1fr 1fr}}
+@media(max-width:900px){.exam-shell{grid-template-columns:1fr}.side{margin:0 12px 12px}.main{margin:12px}.palette{grid-template-columns:repeat(8,1fr)}}@media(max-width:600px){.top{height:auto;padding:9px 12px}.brand small{display:none}.candidate{display:none}.savestate{display:none}.exam-shell{min-height:auto}.question-area{padding:18px 14px}.question-text{font-size:16px}.palette{grid-template-columns:repeat(5,1fr)}.summary{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
 <header class="top">
   <div class="brand"><img src="assets/favicon.png"><div>SATHYAGRAHI ACADEMY<small>Online Examination Portal</small></div></div>
-  <div class="top-right"><div class="timerbox">Time Left: <span id="timer">--:--:--</span></div><div class="candidate"><strong id="candidateName">Student</strong><span id="candidateId">—</span></div></div>
+  <div class="top-right"><div class="timerbox">Time Left: <span id="timer">--:--:--</span></div><span id="saveState" class="savestate" aria-live="polite">All answers saved</span><div class="candidate"><strong id="candidateName">Student</strong><span id="candidateId">—</span></div></div>
 </header>
 <div class="exam-shell">
   <section class="main">
@@ -66,6 +66,7 @@ button{border:1px solid #b8c2cf;background:#fff;padding:10px 14px;border-radius:
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
-<script src="student-exam-attempt.js"></script>
+<script src="exam-attempt-sync-utils.js?v=20260904-1"></script>
+<script src="student-exam-attempt.js?v=20260904-1"></script>
 </body>
 </html>
