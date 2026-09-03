@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'jsr:@supabase/supabase-js@2/cors'
 import { validateSnapshotCoverage } from './sync-logic.mjs'
+import { decideAttempt } from './attempt-policy.mjs'
 
 const FINAL_SYNC_GRACE_MS = 15_000
 
@@ -97,13 +98,25 @@ Deno.serve(async (req: Request) => {
 
     if (action === 'start') {
       const examId = String(body.examId || '')
-      const { data: exam } = await admin.from('exams').select('id,title,subject,syllabus,duration_minutes,total_marks,negative_marking,instructions,is_published,status').eq('id', examId).maybeSingle()
+      const { data: exam } = await admin.from('exams').select('id,title,subject,syllabus,duration_minutes,total_marks,negative_marking,instructions,is_published,status,audience_mode').eq('id', examId).maybeSingle()
       if (!exam || !exam.is_published || exam.status === 'completed') return json({ error: 'This exam is not currently available' }, 403)
 
-      let { data: attempt } = await admin.from('exam_attempts').select('id,student_id,exam_id,started_at,submitted_at,status').eq('exam_id', examId).eq('student_id', user.id).maybeSingle()
-      if (attempt && ['submitted','auto_submitted','graded'].includes(attempt.status)) return json({ error: 'You have already submitted this exam' }, 409)
-      if (!attempt) {
-        const res = await admin.from('exam_attempts').insert({ exam_id: examId, student_id: user.id, status: 'in_progress' }).select('id,student_id,exam_id,started_at,submitted_at,status').single()
+      let { data: assignment } = await admin.from('exam_student_assignments').select('student_id,is_assigned,max_attempts').eq('exam_id',examId).eq('student_id',user.id).maybeSingle()
+      if (exam.audience_mode === 'selected' && !assignment?.is_assigned) return json({ error:'This exam is not assigned to you' },403)
+      if (exam.audience_mode === 'all' && (!assignment || !assignment.is_assigned)) {
+        const res = await admin.from('exam_student_assignments').upsert({exam_id:examId,student_id:user.id,is_assigned:true,max_attempts:Math.max(1,Number(assignment?.max_attempts)||1),updated_at:new Date().toISOString()},{onConflict:'exam_id,student_id'}).select('student_id,is_assigned,max_attempts').single()
+        if (res.error || !res.data) return json({error:res.error?.message||'Could not prepare exam access'},400)
+        assignment = res.data
+      }
+
+      const { data: attempts, error: attemptsErr } = await admin.from('exam_attempts').select('id,student_id,exam_id,attempt_no,started_at,submitted_at,status').eq('exam_id',examId).eq('student_id',user.id).order('attempt_no')
+      if (attemptsErr) return json({error:attemptsErr.message},400)
+      const decision = decideAttempt(attempts || [], Number(assignment?.max_attempts || 1))
+      if (decision.action === 'block') return json({error:'You have used all allowed attempts for this exam'},409)
+
+      let attempt:any = decision.action === 'resume' ? decision.attempt : null
+      if (decision.action === 'create') {
+        const res = await admin.from('exam_attempts').insert({ exam_id: examId, student_id: user.id, attempt_no:decision.attemptNo, status: 'in_progress' }).select('id,student_id,exam_id,attempt_no,started_at,submitted_at,status').single()
         if (res.error || !res.data) return json({ error: res.error?.message || 'Could not start exam' }, 400)
         attempt = res.data
       }
