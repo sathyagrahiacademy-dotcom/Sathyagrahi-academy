@@ -4,7 +4,7 @@
 
 **Goal:** Add reliable NEET syllabus range mapping to Academy exams and automatically generate student-wise Unit/Chapter/Topic performance with E1/E2/E3 sequencing, while preserving Phase-1 answer reliability, Phase-2 audience/re-exam/reset behavior, and all historical results.
 
-**Architecture:** Keep existing exam question CRUD intact. Add a separate mapping subsystem whose Admin UI accepts friendly ranges but expands them into one authoritative syllabus row per question. Add server-side publish validation before audience/publish mutation. Extract grading and scope aggregation into pure testable modules, then materialize per-attempt scope performance and derive E-number dynamically. Add protected Admin/Student read APIs so unpublished performance is never exposed to students.
+**Architecture:** Keep existing exam question CRUD intact. Add a separate mapping subsystem whose Admin UI accepts friendly ranges but expands them into one authoritative syllabus row per question. Add server-side publish validation before audience/publish mutation. Extract grading and scope aggregation into pure testable modules, materialize per-attempt scope performance, and derive E-number dynamically. Expose performance only through a JWT-protected Edge Function; direct `anon`/`authenticated` reads of the new mapping/performance tables are revoked.
 
 **Tech Stack:** Vanilla HTML/CSS/JavaScript, Supabase Postgres + RLS, Supabase Edge Functions (Deno/TypeScript), Node built-in test runner, SheetJS for the existing Excel question import.
 
@@ -15,13 +15,13 @@
 - Preserve the current stable exam flow; do not rebuild the Examinations module.
 - Preserve Phase-1 final snapshot synchronization and server response-count verification exactly.
 - Preserve Phase-2 All/Selected audience enforcement, attempt quota, RESET, RE-EXAM, and typed-delete semantics.
-- Existing `neet_syllabus_units` and `neet_syllabus_topics` data must not be renamed, deleted, or rewritten. In this feature, `neet_syllabus_topics.topic_title` is interpreted as Chapter.
+- Existing `neet_syllabus_units` and `neet_syllabus_topics` data must not be renamed, deleted, or rewritten. `neet_syllabus_topics.topic_title` is the Chapter level for this feature.
 - One exam question has exactly one primary scoring subtopic. Never double-count one question in multiple Topics.
-- Historical attempts/results stay unchanged. An old unmapped exam must continue to grade/display as a raw result and must not receive fabricated syllabus performance.
-- Newly published exams require complete mapping and answer-key/marks validation.
-- Student performance data must be filtered server-side/RLS, not only hidden in JavaScript.
+- Historical attempts/results stay unchanged. An old unmapped exam continues as a raw result and receives no fabricated syllabus performance.
+- Newly published exams require complete mapping, approved subtopics, complete answer keys, and marks consistency.
+- Students never query the new mapping/performance tables directly. Student performance is returned by the protected `exam-performance` function only after matching result publication.
 - Use small commits after each green task. Do not apply the production migration or deploy Edge Functions until all local regression tests are green.
-- Before deploying the modified grading Edge Function, production must have zero `in_progress` attempts.
+- Before deploying the modified `student-exam-attempt` grading function, production must have zero `in_progress` attempts.
 
 ---
 
@@ -31,9 +31,7 @@
 - Create: `EXAM_MAPPING_PERFORMANCE_MIGRATION.sql`
 - Create: `exam-mapping-schema.test.mjs`
 
-**Step 1: Write the failing migration-contract test**
-
-Create `exam-mapping-schema.test.mjs` using Node's built-in test runner. It should read the SQL file and assert the required tables, cascade paths, RLS, and E-sequence view exist. Core assertions:
+### Step 1: Write the failing migration-contract test
 
 ```js
 import test from 'node:test';
@@ -42,39 +40,35 @@ import fs from 'node:fs';
 
 const sql = fs.readFileSync('EXAM_MAPPING_PERFORMANCE_MIGRATION.sql', 'utf8').toLowerCase();
 
-test('migration creates the four Phase-3 data tables', () => {
-  for (const name of [
-    'neet_syllabus_subtopics',
-    'exam_mapping_groups',
-    'exam_question_syllabus_map',
-    'exam_scope_performance'
-  ]) assert.match(sql, new RegExp(`create table(?: if not exists)?\\s+${name}`));
+test('migration creates Phase-3 data tables', () => {
+  for (const name of ['neet_syllabus_subtopics','exam_mapping_groups','exam_question_syllabus_map','exam_scope_performance']) {
+    assert.match(sql, new RegExp(`create table(?: if not exists)?\\s+${name}`));
+  }
 });
 
-test('question mapping is one-to-one and attempts cascade to performance', () => {
+test('mapping is one question to one topic and attempt delete cascades performance', () => {
   assert.match(sql, /question_id[\s\S]{0,160}primary key/);
   assert.match(sql, /attempt_id[\s\S]{0,180}references\s+exam_attempts\s*\(id\)[\s\S]{0,80}on delete cascade/);
 });
 
-test('new tables use RLS and E sequence is derived', () => {
+test('RLS and dynamic E sequence are defined', () => {
   assert.match(sql, /enable row level security/);
   assert.match(sql, /row_number\s*\(\s*\)\s*over/i);
+  assert.match(sql, /revoke\s+select[\s\S]+authenticated/i);
 });
 ```
 
-**Step 2: Run the test and confirm RED**
-
-Run:
+### Step 2: Confirm RED
 
 ```bash
 node --test exam-mapping-schema.test.mjs
 ```
 
-Expected: FAIL because `EXAM_MAPPING_PERFORMANCE_MIGRATION.sql` does not exist yet.
+Expected: FAIL because the SQL file does not exist.
 
-**Step 3: Implement the migration**
+### Step 3: Implement `EXAM_MAPPING_PERFORMANCE_MIGRATION.sql`
 
-Create `EXAM_MAPPING_PERFORMANCE_MIGRATION.sql` with:
+Create:
 
 1. `neet_syllabus_subtopics`
    - `id bigint generated by default as identity primary key`
@@ -84,59 +78,61 @@ Create `EXAM_MAPPING_PERFORMANCE_MIGRATION.sql` with:
    - `status text not null default 'suggested' check (status in ('suggested','approved','disabled'))`
    - `source text not null default 'auto' check (source in ('auto','admin'))`
    - timestamps
-   - case-insensitive active-title uniqueness within a chapter via an expression unique index on `(chapter_id, lower(subtopic_title))` where `status <> 'disabled'`.
+   - unique active title index on `(chapter_id, lower(subtopic_title)) where status <> 'disabled'`.
 
 2. `exam_mapping_groups`
    - UUID primary key default `gen_random_uuid()`
    - `exam_id uuid not null references exams(id) on delete cascade`
    - `subtopic_id bigint not null references neet_syllabus_subtopics(id)`
-   - coverage `full|partial`
-   - selector text, sort order, creator, timestamps.
+   - `coverage text not null check (coverage in ('full','partial'))`
+   - `selector_text text not null`
+   - sort order
+   - `created_by uuid not null references profiles(id)`
+   - timestamps.
 
 3. `exam_question_syllabus_map`
    - `question_id uuid primary key references exam_questions(id) on delete cascade`
    - `exam_id uuid not null references exams(id) on delete cascade`
    - `mapping_group_id uuid not null references exam_mapping_groups(id) on delete cascade`
    - `subtopic_id bigint not null references neet_syllabus_subtopics(id)`
-   - timestamps
-   - indexes on exam/group/subtopic.
+   - timestamps and indexes on exam/group/subtopic.
 
 4. `exam_scope_performance`
    - UUID primary key
-   - `attempt_id` cascade FK
-   - `exam_id` cascade FK
-   - `student_id` cascade FK
+   - attempt/exam/student cascade FKs
    - `scope_level` check `unit|chapter|topic`
-   - `unit_id` not null; chapter/subtopic nullable by level
-   - coverage, counts, max/earned marks, percentage, created/updated timestamps
-   - check constraints enforcing the correct ID shape by `scope_level`
-   - uniqueness expressed with three partial unique indexes:
-     - `(attempt_id, unit_id)` for unit rows
-     - `(attempt_id, chapter_id)` for chapter rows
-     - `(attempt_id, subtopic_id)` for topic rows.
+   - `unit_id` not null; `chapter_id` and `subtopic_id` nullable by scope level
+   - `coverage` full/partial
+   - question count, max marks, earned marks, correct/wrong/unattempted counts, percentage, timestamps
+   - level-shape check constraints
+   - partial unique indexes for `(attempt_id,unit_id)`, `(attempt_id,chapter_id)`, `(attempt_id,subtopic_id)` by level.
 
-5. `exam_scope_performance_sequenced` view
-   - Join attempts for `submitted_at` and `attempt_no`.
-   - `row_number()` partitions by student + scope level + the appropriate exact scope ID.
-   - Order by `submitted_at`, `attempt_no`, `attempt_id`.
-   - This derived number is the displayed `exam_sequence`; it is never stored as a mutable counter.
+5. `replace_exam_mapping_group(...)` service-only Postgres function
+   - accepts exam/group metadata plus exact question UUID array;
+   - validates question ownership by exam;
+   - validates approved subtopic;
+   - atomically inserts/updates the group and replaces that group's expanded map rows;
+   - a question PK conflict rejects cross-group overlap.
 
-6. Security
-   - Enable RLS on all four tables.
-   - Revoke direct mutation privileges from `anon` and `authenticated` for mapping/performance tables.
-   - Service role retains server mutation capability.
-   - Student direct read policy, if included, must require `student_id = auth.uid()` AND a matching published `exam_results` row. Otherwise keep performance reads server-only and expose through the Phase-3 read function in Task 8.
-   - Mapping tables should not be directly readable by students unless required for the UI; Admin mutation goes through Edge Functions.
+6. `exam_scope_performance_sequenced` view
+   - joins `exam_attempts` for `submitted_at` and `attempt_no`;
+   - `row_number()` partition = `student_id + scope_level + exact scope id`;
+   - order = `submitted_at, attempt_no, attempt_id`;
+   - exposes derived `exam_sequence` only; no mutable E counter column.
 
-**Step 4: Run schema contract test GREEN**
+7. Security
+   - enable RLS on all four tables;
+   - revoke `SELECT/INSERT/UPDATE/DELETE` on all four tables from `anon` and `authenticated`;
+   - revoke execution of mapping RPC from public/authenticated; service role only;
+   - all client-visible reads/writes go through JWT-protected Edge Functions.
+
+### Step 4: GREEN
 
 ```bash
 node --test exam-mapping-schema.test.mjs
 ```
 
-Expected: PASS.
-
-**Step 5: Commit**
+### Step 5: Commit
 
 ```bash
 git add EXAM_MAPPING_PERFORMANCE_MIGRATION.sql exam-mapping-schema.test.mjs
@@ -151,91 +147,67 @@ git commit -m "feat: add exam mapping performance schema"
 - Create: `supabase/functions/_shared/exam-mapping-logic.mjs`
 - Create: `exam-mapping-logic.test.mjs`
 
-**Public interface:**
+**Interfaces:**
 
 ```js
-parseQuestionSelector(selector) -> { ok, numbers, normalized, error? }
-buildQuestionMappings({ selector, questionByNo, mappingGroupId, examId, subtopicId }) -> { ok, rows, error? }
-validateExamMapping({ questions, answerKeys, mappingRows, approvedSubtopicIds, totalMarks }) -> {
-  ok,
-  totalQuestions,
-  mappedQuestions,
-  unmappedQuestionNos,
-  invalidQuestionNos,
-  duplicateQuestionIds,
-  invalidSubtopicQuestionNos,
-  answerKeyMissingQuestionNos,
-  questionMarksTotal,
-  totalMarks,
-  marksMatch,
-  errors
-}
+parseQuestionSelector(selector)
+// -> { ok, numbers, normalized, error? }
+
+buildQuestionMappings({selector, questionByNo, mappingGroupId, examId, subtopicId})
+// -> { ok, rows, error? }
+
+validateExamMapping({questions, answerKeys, mappingRows, approvedSubtopicIds, totalMarks})
+// -> {ok,totalQuestions,mappedQuestions,unmappedQuestionNos,invalidQuestionNos,
+//     duplicateQuestionIds,invalidSubtopicQuestionNos,answerKeyMissingQuestionNos,
+//     questionMarksTotal,totalMarks,marksMatch,errors}
 ```
 
-**Step 1: Write failing parser tests**
-
-Cover at minimum:
+### Step 1: Write failing tests
 
 ```js
 assert.deepEqual(parseQuestionSelector('1-10').numbers, [1,2,3,4,5,6,7,8,9,10]);
 assert.deepEqual(parseQuestionSelector('Q1-Q3, Q7, 10-11').numbers, [1,2,3,7,10,11]);
 assert.equal(parseQuestionSelector('8-3').ok, false);
-assert.equal(parseQuestionSelector('1-3,3').ok, false); // duplicate inside selector
+assert.equal(parseQuestionSelector('1-3,3').ok, false);
 assert.equal(parseQuestionSelector('1,,2').ok, false);
 ```
 
-Add validation cases for:
-- unmapped question,
-- mapping row pointing to another exam/nonexistent question,
-- two mapping rows for the same question in supplied data,
-- unapproved/disabled subtopic,
-- missing answer key,
-- question marks sum not equal to `exams.total_marks`,
-- perfect mapping returns `ok:true`.
+Also assert unmapped, foreign/nonexistent question, duplicate question mapping, unapproved subtopic, missing key, marks mismatch, and a fully valid exam.
 
-**Step 2: Run RED**
+### Step 2: Confirm RED
 
 ```bash
 node --test exam-mapping-logic.test.mjs
 ```
 
-**Step 3: Implement the smallest pure module**
+### Step 3: Implement minimal pure logic
 
-Parsing rules:
-- trim spaces;
-- permit optional `Q`/`q` before each number;
-- comma separates tokens;
-- token is one positive integer or `start-end`;
-- reject zero/negative/reversed/duplicate values;
-- output sorted unique question numbers and canonical selector, e.g. `1-3,7,10-11`.
+Parser rules:
+- optional `Q/q` prefix;
+- comma-separated positive integer or `start-end` tokens;
+- reject zero, negative, reversed range, duplicate value, empty token, malformed token;
+- return sorted unique numbers and canonical selector such as `1-3,7,10-11`.
 
-Validation must use question UUIDs as truth after selector expansion. Do not calculate student performance from selector text.
+Validation uses question UUID rows as the scoring truth. Selector text is Admin convenience only.
 
-**Step 4: Run GREEN**
+### Step 4: GREEN and commit
 
 ```bash
 node --test exam-mapping-logic.test.mjs
-```
-
-**Step 5: Commit**
-
-```bash
 git add supabase/functions/_shared/exam-mapping-logic.mjs exam-mapping-logic.test.mjs
 git commit -m "feat: add exam range mapping validation logic"
 ```
 
 ---
 
-## Task 3: Add deterministic subtopic suggestions and Admin mapping API
+## Task 3: Add subtopic suggestions and the Admin mapping Edge Function
 
 **Files:**
 - Create: `supabase/functions/admin-exam-mapping/index.ts`
 - Create: `supabase/functions/admin-exam-mapping/subtopic-suggestions.mjs`
 - Create: `exam-subtopic-suggestions.test.mjs`
 
-**Step 1: Write failing suggestion tests**
-
-Test deterministic segmentation from representative `official_detail` content:
+### Step 1: Write failing suggestion tests
 
 ```js
 const out = suggestSubtopics('Gametogenesis; Menstrual Cycle; Fertilisation, implantation, pregnancy and placenta; Parturition; Lactation.');
@@ -245,71 +217,51 @@ assert.ok(out.some(x => /fertilisation/i.test(x)));
 assert.equal(new Set(out.map(x => x.toLowerCase())).size, out.length);
 ```
 
-Also test empty/null detail returns `[]`, whitespace is normalized, and duplicate clauses collapse.
+Also test null/empty detail, whitespace normalization, bullet removal, and duplicate collapse.
 
-**Step 2: Run RED**
+### Step 2: Confirm RED
 
 ```bash
 node --test exam-subtopic-suggestions.test.mjs
 ```
 
-**Step 3: Implement `suggestSubtopics(officialDetail)`**
+### Step 3: Implement deterministic `suggestSubtopics(officialDetail)`
 
-Keep the first version deterministic and dependency-free:
 - normalize whitespace/newlines;
-- split primarily on semicolons and strong sentence boundaries;
-- only split comma lists when the clause is clearly list-like; do not blindly fragment phrases;
-- strip leading bullets/numbering;
+- split on semicolons and strong sentence boundaries;
+- preserve official terminology;
+- remove bullet/number prefixes;
 - deduplicate case-insensitively;
-- preserve official terminology as much as possible;
-- never auto-approve suggestions.
+- generated rows remain `suggested`, never auto-approved;
+- no external AI/API dependency in Phase-3.
 
-**Step 4: Implement `admin-exam-mapping` Edge Function**
+### Step 4: Implement `admin-exam-mapping/index.ts`
 
-Use the same active-Admin JWT guard pattern as `supabase/functions/admin-exams/index.ts`.
+Use the active-Admin JWT guard already used by `admin-exams`.
 
-Supported actions and contracts:
+Actions:
 
-- `tree {examId}`
-  - returns exam questions, syllabus Units → Chapters → Subtopics, existing mapping groups, expanded question mappings, and current validation summary.
-- `generate_subtopics {chapterId}`
-  - reads `neet_syllabus_topics.official_detail`, inserts missing rows with `status='suggested', source='auto'`, returns suggestions.
-- `upsert_subtopic {chapterId, subtopicId?, title, status}`
-  - validates chapter/title; Admin-created row uses `source='admin'`; permit only `suggested|approved` on active edit.
-- `disable_subtopic {subtopicId}`
-  - reject if currently referenced by a mapping group; otherwise mark disabled.
-- `save_mapping {examId, mappingGroupId?, selector, subtopicId, coverage}`
-  - only draft/unpublished exam is editable;
-  - require approved subtopic;
-  - parse selector;
-  - load exact exam questions;
-  - reject out-of-range numbers and overlap with another group;
-  - write/update group and expanded rows safely; on update, replace only that group's rows.
-- `delete_mapping {examId, mappingGroupId}`
-  - delete the group and rely on cascade for question map rows.
-- `validate {examId}`
-  - return the structured validation object from the shared validator.
+- `tree {examId}`: questions + Unit→Chapter→Subtopic tree + groups + expanded mappings + validation.
+- `generate_subtopics {chapterId}`: create missing `suggested/auto` rows from `official_detail`.
+- `upsert_subtopic {chapterId, subtopicId?, title, status}`: Add/Rename/Approve; Admin-created rows use `source='admin'`.
+- `disable_subtopic {subtopicId}`: reject while referenced by an active mapping; otherwise mark disabled.
+- `split_subtopic {subtopicId, titles[]}`: allowed only when source has no mapping references; disable source and create replacement suggested rows in one Chapter.
+- `merge_subtopics {chapterId, subtopicIds[], title}`: create/choose one approved target; atomically repoint mapping groups and question map rows to target, then disable source rows. All source IDs must belong to the same Chapter.
+- `save_mapping {examId,mappingGroupId?,selector,subtopicId,coverage}`: draft/unpublished only; approved subtopic only; parse selector; reject foreign/out-of-range numbers; call `replace_exam_mapping_group(...)` for atomic replacement.
+- `delete_mapping {examId,mappingGroupId}`: draft/unpublished only; delete group, cascade expanded rows.
+- `validate {examId}`: return shared validation summary.
 
-Mutation safety:
-- Fetch/validate all inputs before deleting old rows during edit.
-- Because Supabase JS calls are not a multi-statement transaction by default, use a Postgres RPC defined in the migration for `replace_exam_mapping_group(...)` if atomic replace cannot be guaranteed with direct calls. The RPC must accept canonical selector/group metadata plus an array of question UUIDs and perform group + expanded-row replacement in one transaction. Restrict RPC execution to service role.
-
-**Step 5: Run suggestion + mapping logic tests GREEN**
+### Step 5: GREEN and commit
 
 ```bash
 node --test exam-subtopic-suggestions.test.mjs exam-mapping-logic.test.mjs
-```
-
-**Step 6: Commit**
-
-```bash
-git add supabase/functions/admin-exam-mapping exam-subtopic-suggestions.test.mjs EXAM_MAPPING_PERFORMANCE_MIGRATION.sql
+git add supabase/functions/admin-exam-mapping supabase/functions/_shared/exam-mapping-logic.mjs exam-subtopic-suggestions.test.mjs EXAM_MAPPING_PERFORMANCE_MIGRATION.sql
 git commit -m "feat: add admin exam mapping service"
 ```
 
 ---
 
-## Task 4: Add Range Mapping to the existing question-management page
+## Task 4: Add Range Mapping to existing question management
 
 **Files:**
 - Modify: `admin-exam-questions.html`
@@ -317,72 +269,63 @@ git commit -m "feat: add admin exam mapping service"
 - Create: `exam-mapping-ui-utils.js`
 - Create: `exam-mapping-ui-utils.test.mjs`
 
-**Step 1: Write failing UI-helper tests**
+### Step 1: Write failing helper tests
 
-Pure helper interface:
+Interfaces:
 
 ```js
-mappingCoverageLabel(summary) -> string
-availableSubtopics(tree, unitId, chapterId) -> array
-mappingRowText(group, lookup) -> string
+mappingCoverageLabel(summary)
+availableSubtopics(tree, unitId, chapterId)
+mappingRowText(group, lookup)
 ```
 
-Examples:
+Example:
 
 ```js
-assert.equal(mappingCoverageLabel({mappedQuestions:180,totalQuestions:180,errors:[]}), 'Mapped 180/180 • Ready to Publish');
+assert.equal(
+  mappingCoverageLabel({mappedQuestions:180,totalQuestions:180,errors:[]}),
+  'Mapped 180/180 • Ready to Publish'
+);
 assert.match(mappingCoverageLabel({mappedQuestions:176,totalQuestions:180,errors:['4 unmapped']}), /176\/180/);
 ```
 
-**Step 2: Run RED**
+### Step 2: RED
 
 ```bash
 node --test exam-mapping-ui-utils.test.mjs
 ```
 
-**Step 3: Implement helper, then extend HTML without disturbing question CRUD/import**
+### Step 3: Add one new card after `Questions Added`
 
-Add a new card after `Questions Added` titled **Syllabus Range Mapping** containing:
-- validation summary chips: Total, Mapped, Unmapped, Invalid, Marks;
+**Syllabus Range Mapping** contains:
+- Total / Mapped / Unmapped / Invalid / Marks status;
 - selector input (`Q1-Q10, Q17, Q22-Q28`);
-- cascading Subject / Unit / Chapter / Topic-Subtopic controls;
-- FULL/PARTIAL selector;
-- Save Mapping button;
-- existing mappings table with Edit/Delete;
-- a Chapter Subtopics review panel, shown when selected Chapter has no approved subtopics;
-- Generate Suggestions button;
-- Suggested rows with Approve/Rename/Disable and Add Topic manually.
+- Subject, Unit, Chapter, approved Topic/Subtopic dropdowns;
+- FULL/PARTIAL;
+- Save Mapping;
+- mapping list with Edit/Delete;
+- Generate Suggestions;
+- suggested Topic rows with Approve/Rename/Split/Merge/Disable;
+- Add Topic manually.
 
-Use current blue/white Academy style; do not create a new dashboard/sidebar.
+Keep the current page and existing question CRUD/import unchanged.
 
-**Step 4: Wire `admin-exam-questions.js`**
+### Step 4: Wire JS
 
-Add a second invocation helper for `admin-exam-mapping`; do not change the existing `admin-exam-questions` CRUD contract.
+Add a separate `admin-exam-mapping` invocation helper. After question add/update/delete/import, reload mapping validation. A deleted question loses its mapping by cascade and the summary becomes incomplete.
 
-After any question add/update/delete/bulk import:
-- reload question list;
-- reload mapping validation;
-- if a question was deleted, its mapping disappears by cascade and summary becomes incomplete.
-
-Mapping save/delete/subtopic actions reload only mapping state unless questions changed.
-
-**Step 5: Run helper + existing regression tests**
+### Step 5: GREEN and commit
 
 ```bash
 node --test exam-mapping-ui-utils.test.mjs exam-mapping-logic.test.mjs
 node --test exam-attempt-sync-utils.test.js exam-submit-sync.test.mjs
-```
-
-**Step 6: Commit**
-
-```bash
 git add admin-exam-questions.html admin-exam-questions.js exam-mapping-ui-utils.js exam-mapping-ui-utils.test.mjs
 git commit -m "feat: add syllabus range mapping admin UI"
 ```
 
 ---
 
-## Task 5: Enforce mapping validation in the server-side publish path
+## Task 5: Enforce server-side publish validation
 
 **Files:**
 - Create: `supabase/functions/admin-exams/publish-validation.mjs`
@@ -390,238 +333,153 @@ git commit -m "feat: add syllabus range mapping admin UI"
 - Modify: `supabase/functions/admin-exams/index.ts`
 - Modify: `admin-exams.js`
 
-**Step 1: Write failing publish-validation tests**
+### Step 1: Write failing tests
 
-Pure interface:
+Interface:
 
 ```js
-canPublishExam({ mappingValidation, audienceValidation? }) -> { ok, error, validation }
+canPublishExam({mappingValidation})
+// -> {ok,error,validation}
 ```
 
-Test:
-- zero questions blocked;
-- unmapped blocked;
-- missing answer key blocked;
-- marks mismatch blocked;
-- invalid/unapproved subtopic blocked;
-- fully valid mapping passes.
+Test zero questions, unmapped question, missing key, marks mismatch, unapproved subtopic, and fully valid paper.
 
-**Step 2: Run RED**
+### Step 2: RED
 
 ```bash
 node --test exam-publish-validation.test.mjs
 ```
 
-**Step 3: Implement validation adapter**
+### Step 3: Implement publish gate before audience mutation
 
-`publish-validation.mjs` should convert the shared mapping validation summary into a stable API response; it must not duplicate the parser/validator logic.
+The `publish` action order becomes:
 
-**Step 4: Modify `admin-exams/index.ts` publish order**
+1. load exam/questions/keys/mappings/approved subtopics;
+2. run shared mapping validation;
+3. on failure return HTTP 409 with structured `validation`;
+4. only after validation passes, run the existing Phase-2 `applyAudience` logic;
+5. publish exam.
 
-Current publish behavior applies audience before marking the exam published. Change the sequence to:
+This prevents a failed publish from partially changing audience assignment.
 
-1. Load exam + questions + keys + mappings + approved subtopics.
-2. Run syllabus/marks/key validation.
-3. If invalid, return HTTP 409:
+### Step 4: Render actionable Admin error
 
-```json
-{
-  "error": "Exam is not ready to publish",
-  "validation": {
-    "mappedQuestions": 176,
-    "totalQuestions": 180,
-    "unmappedQuestionNos": [177,178,179,180],
-    "marksMatch": true,
-    "errors": ["4 questions are not mapped"]
-  }
-}
-```
+`admin-exams.js` shows mapped/total and the validation errors, with the existing Questions route as the correction path. Never add a client bypass.
 
-4. Only after validation passes, apply existing Phase-2 audience logic.
-5. Publish the exam.
-
-This order prevents a failed publish from partially changing the selected audience.
-
-**Step 5: Update `admin-exams.js` error rendering**
-
-On a validation response, show concise actionable text and offer the existing `QUESTIONS` route to fix Range Mapping. Do not bypass the server gate.
-
-**Step 6: Run tests**
+### Step 5: GREEN and commit
 
 ```bash
 node --test exam-publish-validation.test.mjs exam-mapping-logic.test.mjs
 node --test exam-audience-policy.test.mjs exam-student-audience.test.mjs exam-attempt-policy.test.mjs
-```
-
-Expected: all PASS.
-
-**Step 7: Commit**
-
-```bash
 git add supabase/functions/admin-exams/index.ts supabase/functions/admin-exams/publish-validation.mjs admin-exams.js exam-publish-validation.test.mjs
 git commit -m "feat: require syllabus validation before exam publish"
 ```
 
 ---
 
-## Task 6: Correct grading semantics and build pure scope aggregation
+## Task 6: Correct grading and build pure weighted scope aggregation
 
 **Files:**
 - Create: `supabase/functions/student-exam-attempt/grading-logic.mjs`
 - Create: `supabase/functions/student-exam-attempt/performance-logic.mjs`
 - Create: `exam-grading-performance.test.mjs`
 
-**Step 1: Write failing grading tests**
+### Step 1: Write failing grading tests
 
-Public grading interface:
-
-```js
-gradeQuestions({ questions, answerKeys, responses, negativeMarking, totalMarks })
-```
-
-Required tests:
+Interface:
 
 ```js
-// negative marking ON: wrong 4/-1 question subtracts 1
-// negative marking OFF: same wrong answer subtracts 0
-// blank response is unattempted, no deduction
-// score may be negative
-// percentage uses supplied validated totalMarks
+gradeQuestions({questions, answerKeys, responses, negativeMarking, totalMarks})
 ```
 
-**Step 2: Write failing performance tests**
+Assert:
+- negative marking ON subtracts per-question penalty;
+- negative marking OFF subtracts zero;
+- blank = unattempted/no deduction;
+- total and percentage may be negative;
+- percentage denominator is supplied validated `totalMarks`.
 
-Public aggregation interface:
+### Step 2: Write failing scope tests
+
+Interface:
 
 ```js
 buildScopePerformance({
   attemptId, examId, studentId,
   questions, answerKeys, responses,
-  mappings, subtopics, chapters, units,
-  negativeMarking
-}) -> Array<ScopePerformanceRow>
+  mappings, mappingGroups, subtopics, chapters, units,
+  approvedSubtopicsByChapter, negativeMarking
+})
 ```
 
-Fixture example:
-- Topic A: 2 × 4 marks, one correct + one wrong => 3/8 with negative marking ON.
-- Topic B: 1 × 4 marks correct => 4/4.
-- Chapter containing both => 7/12 = 58.333..., not average of Topic percentages.
-- Unit containing Chapter => same weighted value.
-- If Topic A is PARTIAL, Chapter/Unit are PARTIAL unless all approved descendants are represented FULL.
-- A scope can have negative `earned_marks` and percentage.
+Fixture:
+- Topic A = two 4-mark questions, one correct + one wrong => `3/8` with -1 penalty;
+- Topic B = one 4-mark correct => `4/4`;
+- same Chapter => `7/12 = 58.333...`, not average of Topic percentages;
+- Unit roll-up uses the same actual question marks;
+- PARTIAL child makes Chapter/Unit PARTIAL unless every approved descendant required by that scope is represented FULL;
+- negative Topic earned marks remain negative.
 
-**Step 3: Run RED**
+### Step 3: RED
 
 ```bash
 node --test exam-grading-performance.test.mjs
 ```
 
-**Step 4: Implement `grading-logic.mjs`**
+### Step 4: Implement pure modules
 
-Return:
-
-```js
-{
-  total_score,
-  correct_count,
-  wrong_count,
-  unattempted_count,
-  percentage,
-  perQuestion: Map/question array with earned marks and state
-}
-```
-
-Wrong-answer deduction must be:
+`grading-logic.mjs` returns overall summary plus per-question earned state. Wrong penalty is exactly:
 
 ```js
 const penalty = negativeMarking ? Number(question.negative_marks || 0) : 0;
 ```
 
-Do not clamp total or percentage to zero.
+`performance-logic.mjs` groups question-grade rows by subtopic and rolls the same unique question identities up to Chapter and Unit. Never average percentages and never count a question twice at one hierarchy level.
 
-**Step 5: Implement `performance-logic.mjs`**
-
-- Group per-question grade rows by mapped subtopic.
-- Build Topic rows from actual question marks.
-- Roll Topic question rows upward to Chapter and Unit by question identity, not by averaging child percentages.
-- Ensure each question contributes once per hierarchy level.
-- Topic coverage comes from mapping group coverage.
-- Chapter FULL requires every approved active subtopic under that Chapter to be present and FULL.
-- Unit FULL requires every approved descendant in that Unit to satisfy the same rule; otherwise PARTIAL.
-
-**Step 6: Run GREEN**
+### Step 5: GREEN and commit
 
 ```bash
 node --test exam-grading-performance.test.mjs
-```
-
-**Step 7: Commit**
-
-```bash
 git add supabase/functions/student-exam-attempt/grading-logic.mjs supabase/functions/student-exam-attempt/performance-logic.mjs exam-grading-performance.test.mjs
 git commit -m "fix: align grading and syllabus performance semantics"
 ```
 
 ---
 
-## Task 7: Integrate automatic performance generation into submission
+## Task 7: Integrate performance generation into student submission
 
 **Files:**
 - Modify: `supabase/functions/student-exam-attempt/index.ts`
-- Modify if needed: `exam-grading-performance.test.mjs`
-- Modify only if regression requires: `exam-submit-sync.test.mjs`
+- Extend: `exam-grading-performance.test.mjs`
+- Modify only to preserve tested contract: `exam-submit-sync.test.mjs`
 
-**Step 1: Add a failing integration-level contract test**
+### Step 1: Add failing integration contract
 
-The test should statically/importably verify `student-exam-attempt/index.ts` uses the pure grader and performance builder rather than retaining unconditional negative subtraction. At minimum assert source imports `gradeQuestions` and does not contain the old unconditional line `score -= Number(q.negative_marks || 0)`.
+Assert source imports `gradeQuestions`/`buildScopePerformance` and no longer contains unconditional `score -= Number(q.negative_marks || 0)`.
 
-**Step 2: Run RED**
+### Step 2: RED
 
 ```bash
 node --test exam-grading-performance.test.mjs exam-submit-sync.test.mjs
 ```
 
-**Step 3: Refactor `gradeAttempt` with minimal behavior surface change**
+### Step 3: Refactor `gradeAttempt` minimally
 
-- Load `duration_minutes,total_marks,negative_marking` from exam.
-- Keep existing full-response synchronization untouched.
-- Use `gradeQuestions` for result summary.
-- Update attempt status/submitted time exactly as before.
-- Upsert `exam_results` exactly as before, with corrected score semantics.
+- load `negative_marking` with existing exam fields;
+- leave `syncCompleteSnapshot` and response-count verification unchanged;
+- use pure grader for `exam_results`;
+- load mapping/hierarchy and build performance after grading;
+- mapped exam: replace/upsert all scope rows for that attempt idempotently;
+- legacy exam with zero mapping rows: skip scope generation and keep successful raw grading;
+- performance write failure returns integrity error rather than false complete success;
+- retry/already-submitted path repairs missing mapped performance rows before returning success;
+- never duplicate rows because partial unique indexes key each attempt/scope.
 
-Then load question mappings/hierarchy:
-- `exam_question_syllabus_map`
-- mapping group coverage
-- subtopics and their Chapters
-- Chapters and Units
-- all approved subtopics needed for coverage roll-up.
-
-If zero mapping rows exist (legacy old exam), skip `exam_scope_performance` generation and return successful raw grading. Do not fabricate scopes.
-
-For a mapped exam:
-- build scope rows;
-- replace/upsert all rows belonging to that `attempt_id` idempotently;
-- a retry of submission cannot duplicate scope rows because of unique constraints;
-- if performance write fails, return an integrity error rather than claiming complete success. Existing `exam_results` may already exist; repeated submit/recovery must safely finish performance generation using the same attempt.
-
-For already-submitted attempt behavior:
-- if result exists but mapped performance rows are missing, run a safe performance-repair helper before returning success, or return a recoverable `performance_pending` flag handled by the client. Prefer repair because it makes retries self-healing.
-
-**Step 4: Verify Phase-1 sync semantics are unchanged**
+### Step 4: Regression GREEN and commit
 
 ```bash
 node --test exam-submit-sync.test.mjs exam-attempt-sync-utils.test.js
-```
-
-Also run:
-
-```bash
 node --test exam-grading-performance.test.mjs exam-attempt-policy.test.mjs
-```
-
-**Step 5: Commit**
-
-```bash
 git add supabase/functions/student-exam-attempt/index.ts exam-grading-performance.test.mjs exam-submit-sync.test.mjs
 git commit -m "feat: generate syllabus performance on exam submit"
 ```
@@ -635,64 +493,47 @@ git commit -m "feat: generate syllabus performance on exam submit"
 - Create: `supabase/functions/exam-performance/visibility-policy.mjs`
 - Create: `exam-performance-visibility.test.mjs`
 
-**Step 1: Write failing visibility tests**
+### Step 1: Write failing visibility tests
 
-Pure policy interface:
+Interface:
 
 ```js
-canReadPerformance({ requesterRole, requesterId, rowStudentId, resultPublished }) -> boolean
+canReadPerformance({requesterRole, requesterId, rowStudentId, resultPublished})
 ```
 
-Assertions:
-- active Admin can read any row, published or unpublished;
-- Student can read own row only when result is published;
-- Student cannot read own unpublished row;
+Assert:
+- Admin reads published/unpublished;
+- Student reads own published only;
+- Student cannot read own unpublished;
 - Student cannot read another student's published row.
 
-**Step 2: Run RED**
+### Step 2: RED
 
 ```bash
 node --test exam-performance-visibility.test.mjs
 ```
 
-**Step 3: Implement policy and Edge Function**
+### Step 3: Implement JWT-protected `exam-performance`
 
-Use authenticated JWT and active profile guard. Supported actions:
+Actions:
 
-- `admin_list {filters}`
-  - Admin only.
-  - return sequenced scope rows joined to student, exam, unit, chapter, subtopic labels.
-  - filters: student, subject, unit, chapter, subtopic, exam, coverage.
-- `student_list {subject?}`
-  - Student only.
-  - server forces `student_id = auth.uid()`.
-  - include only rows whose matching `exam_results.is_published = true`.
-- `rebuild_exam {examId}`
-  - Admin only.
-  - require exam to have valid mapping before rebuild.
-  - load existing submitted/auto-submitted attempts and saved responses/answer keys.
-  - regenerate scope performance using the same pure grading/performance modules.
-  - never change historical `exam_results`, attempt status, score, or answers.
-  - return `{attemptsScanned, rowsWritten}`.
+- `admin_list {filters}`: Admin only; sequenced scope rows joined to student/exam/unit/chapter/subtopic labels. Filters: student, subject, unit, chapter, subtopic, exam, coverage.
+- `student_list {subject?}`: Student only; server forces `student_id = auth.uid()` and joins `exam_results` so only `is_published=true` records are returned.
+- `rebuild_exam {examId}`: Admin only; require valid mapping; regenerate scope rows from saved answers/keys for submitted attempts using the same pure grading/performance modules; **do not change `exam_results`, answers, attempt status, or existing raw scores**.
 
-E-sequence must come from the sequenced view/query; do not assign sequence counters in JavaScript.
+Read derived `exam_sequence` from the sequenced view/query; do not compute E numbers from UI array index.
 
-**Step 4: Run GREEN**
+### Step 4: GREEN and commit
 
 ```bash
 node --test exam-performance-visibility.test.mjs exam-grading-performance.test.mjs
-```
-
-**Step 5: Commit**
-
-```bash
 git add supabase/functions/exam-performance exam-performance-visibility.test.mjs
 git commit -m "feat: add protected syllabus performance API"
 ```
 
 ---
 
-## Task 9: Add syllabus E-history to Admin Performance without replacing the current dashboard
+## Task 9: Add syllabus E-history to Admin Performance
 
 **Files:**
 - Modify: `admin-performance.html`
@@ -700,126 +541,107 @@ git commit -m "feat: add protected syllabus performance API"
 - Create: `exam-performance-ui-utils.js`
 - Create: `exam-performance-ui-utils.test.mjs`
 
-**Step 1: Write failing presentation-helper tests**
+### Step 1: Write failing UI-data tests
 
-Public helpers:
+Interfaces:
 
 ```js
 groupPerformanceByScope(rows)
 formatEHistoryRow(row)
 filterScopeRows(rows, filters)
+buildStudentHierarchy(rows)
 ```
 
-Assert ordering E1→E2→E3 and exact-scope grouping. Include a negative score and PARTIAL badge case.
+Assert exact-scope grouping, E1→E2→E3 ordering, PARTIAL/FULL retention, and negative percentage retention.
 
-**Step 2: Run RED**
+### Step 2: RED
 
 ```bash
 node --test exam-performance-ui-utils.test.mjs
 ```
 
-**Step 3: Preserve existing analytics and append a new section**
+### Step 3: Preserve current dashboard; append `Syllabus Performance / E-History`
 
-Do not rewrite existing cards/trend/student/exam analysis. Add **Syllabus Performance / E-History** after the current Weakness Analysis with:
-- Student selector/search
+Add filters:
+- Student
 - Subject
 - Unit
 - Chapter
 - Topic/Subtopic
 - Exam
-- FULL/PARTIAL
-- grouped scope cards/table showing E-number, exam, question count, earned/max, percentage, coverage, submitted date.
-- source Attempt/Result link where existing routing supports it.
-- Admin-only **Rebuild Performance** button for a selected mapped legacy exam.
+- FULL/PARTIAL.
 
-`admin-performance.js` should continue loading current `exam_results` for the existing overview and separately call `exam-performance` for syllabus rows.
+Rows/cards show E-number, source exam, question count, earned/max, percentage, coverage, submitted date, and existing attempt/result drill-through. Add **Rebuild Performance** for a selected mapped legacy exam.
 
-**Step 4: Run tests**
+`admin-performance.js` keeps existing `exam_results` overview logic and separately invokes `exam-performance -> admin_list` for syllabus history.
+
+### Step 4: GREEN and commit
 
 ```bash
 node --test exam-performance-ui-utils.test.mjs exam-performance-visibility.test.mjs
-```
-
-**Step 5: Commit**
-
-```bash
 git add admin-performance.html admin-performance.js exam-performance-ui-utils.js exam-performance-ui-utils.test.mjs
 git commit -m "feat: show syllabus E history to admins"
 ```
 
 ---
 
-## Task 10: Replace unreliable Student E chips with actual published syllabus performance
+## Task 10: Replace Student's inferred E chips with published scope performance
 
 **Files:**
 - Modify: `student-performance.html`
 - Modify: `student-performance.js`
-- Reuse: `exam-performance-ui-utils.js`
+- Reuse/extend: `exam-performance-ui-utils.js`
 - Extend: `exam-performance-ui-utils.test.mjs`
 
-**Step 1: Add failing hierarchy-render data tests**
+### Step 1: Add failing hierarchy test
 
-Test a pure transformation that takes server rows and builds:
+`buildStudentHierarchy(rows)` must produce:
 
-```js
+```text
 Subject -> Unit -> Chapter -> Subtopic -> [E1, E2, ...]
 ```
 
-Requirements:
-- E numbers use returned `exam_sequence`.
-- PARTIAL/FULL retained.
-- Negative percentage retained.
-- no inferred E numbers from array index, preparation tasks, or exam creation order.
+E number comes from returned `exam_sequence`, never task count or array position. Preserve PARTIAL/FULL and negative scores.
 
-**Step 2: Run RED**
+### Step 2: RED
 
 ```bash
 node --test exam-performance-ui-utils.test.mjs
 ```
 
-**Step 3: Modify Student page conservatively**
+### Step 3: Modify only the E-history/drilldown source
 
 Preserve:
-- current overall published-result metrics;
-- overall exam result history table;
-- existing student login/active-profile guard.
+- current published overall result metrics;
+- current exam history table;
+- current student auth/active-profile guard.
 
-Replace only the current task/RPC-based `E1/E2/E3` drill-down source with `exam-performance` → `student_list`.
+Replace the current `preparation_tasks` / `get_my_subject_exam_coverage` inferred E-chip drilldown with `exam-performance -> student_list`.
 
-Render:
-- Subject → Unit → Chapter → Topic/Subtopic drilldown;
-- E1/E2/E3 history per exact scope;
-- FULL/PARTIAL badge;
+Render Subject→Unit→Chapter→Topic/Subtopic with:
+- E1/E2/E3;
+- FULL/PARTIAL;
 - question count;
 - earned/max marks;
 - percentage;
-- simple improvement indication from chronological values.
+- simple chronological improvement indicator.
 
-Do not query unpublished performance directly from tables. The endpoint must return only published rows.
+No direct query to new performance/mapping tables.
 
-**Step 4: Run tests**
+### Step 4: GREEN and commit
 
 ```bash
 node --test exam-performance-ui-utils.test.mjs exam-performance-visibility.test.mjs
 node --test exam-submit-sync.test.mjs exam-attempt-sync-utils.test.js
-```
-
-**Step 5: Commit**
-
-```bash
 git add student-performance.html student-performance.js exam-performance-ui-utils.js exam-performance-ui-utils.test.mjs
 git commit -m "feat: show published syllabus E history to students"
 ```
 
 ---
 
-## Task 11: Full regression, migration preflight, deployment, and production verification
+## Task 11: Full regression, production preflight, migration, deploy, and verification
 
-**Files:**
-- No new product file required unless verification reveals a defect.
-- Update this plan only if a deployment-specific command/result needs permanent documentation.
-
-**Step 1: Run the complete new test suite**
+### Step 1: Run all new Phase-3 tests
 
 ```bash
 node --test \
@@ -833,9 +655,9 @@ node --test \
   exam-performance-ui-utils.test.mjs
 ```
 
-Expected: all PASS, zero failures.
+Expected: zero failures.
 
-**Step 2: Run all existing exam regressions**
+### Step 2: Run all existing exam regressions
 
 ```bash
 node --test \
@@ -846,106 +668,103 @@ node --test \
   exam-attempt-sync-utils.test.js
 ```
 
-Expected: all PASS. Any Phase-1/Phase-2 regression blocks deployment.
+Any failure blocks deployment.
 
-**Step 3: Source sanity checks**
+### Step 3: Static sanity
 
-- Check changed JS/MJS with Node syntax/import tests where applicable.
-- Inspect `git diff --check`.
-- Review the final diff specifically for accidental changes to answer sync, audience, reset/re-exam, and delete behavior.
+```bash
+git diff --check
+```
 
-**Step 4: Production database preflight before migration**
+Review final diff for accidental changes to answer sync, audience, reset/re-exam, and delete semantics.
 
-Record counts:
+### Step 4: Production preflight
+
+Record exact baseline counts for:
 - `exam_attempts`
 - `exam_responses`
 - `exam_results`
-- number of `in_progress` attempts.
+- `in_progress` attempts.
 
-Do not modify historical rows during the migration. The schema migration must be additive.
+Migration is additive and must not change those counts.
 
-**Step 5: Apply `EXAM_MAPPING_PERFORMANCE_MIGRATION.sql`**
+### Step 5: Apply migration and verify
 
-After apply, verify:
+Apply `EXAM_MAPPING_PERFORMANCE_MIGRATION.sql`, then verify:
 - four tables exist;
-- indexes/constraints exist;
-- RLS enabled;
-- sequenced view returns no fabricated rows when `exam_scope_performance` is empty;
-- original attempts/responses/results counts are unchanged.
+- expected indexes/constraints/RLS exist;
+- sequencing view exists;
+- direct anon/authenticated access is revoked;
+- baseline attempts/responses/results counts are unchanged;
+- no legacy scope rows were fabricated.
 
-**Step 6: Deploy Edge Functions in low-risk order**
+### Step 6: Deploy Edge Functions in this order
 
 1. `admin-exam-mapping`
 2. `admin-exams`
 3. `exam-performance`
-4. `student-exam-attempt` **last**
+4. `student-exam-attempt` last.
 
-Keep `verify_jwt=true` for all.
+All use `verify_jwt=true`.
 
-Before step 4, verify production `in_progress` attempts = 0. If not zero, stop and wait for those active attempts to finish; do not swap grading behavior mid-exam.
+Immediately before deploying step 4, re-check `in_progress = 0`. A nonzero count stops grading deployment until attempts finish.
 
-**Step 7: Post-deploy functional verification**
+### Step 7: Controlled draft-exam verification
 
-Use a controlled draft exam, not historical production data:
-- mapping with unmapped question → publish blocked;
-- complete mapping + marks/key validity → publish succeeds;
-- selected audience still excludes unassigned student;
-- student starts, answers, navigates, submits; response count remains full;
-- result score reflects `negative_marking` setting;
-- Admin immediately sees Topic/Chapter/Unit scope performance;
-- Student cannot see it before result publish;
-- after result publish, Student sees E1;
-- genuine RE-EXAM creates E2 while preserving E1;
-- technical RESET removes invalid attempt/performance and derived sequence closes correctly;
-- deleting the controlled exam cascades its mapping/performance only.
+Verify with a new controlled draft exam:
+- incomplete mapping blocks publish;
+- complete valid mapping permits publish;
+- selected audience still excludes unassigned students;
+- student answer navigation/final submit preserves full response count;
+- negative marking ON/OFF produces correct server score;
+- Admin sees Topic/Chapter/Unit performance immediately;
+- Student cannot see performance before result publication;
+- Student sees E1 after result publication;
+- genuine RE-EXAM preserves E1 and creates E2;
+- technical RESET removes invalid attempt/performance and derived E sequence closes correctly;
+- deleting the controlled exam cascades only its own mapping/performance.
 
-**Step 8: Legacy safety verification**
+### Step 8: Legacy safety
 
-For the existing historical exam(s):
-- confirm raw result count and values did not change;
-- confirm no automatic scope-performance rows were invented;
-- only test `Rebuild Performance` after manually mapping a chosen legacy exam and explicitly deciding to create its syllabus history.
+Confirm old raw result count/values are unchanged and no legacy scope history exists until Admin maps that exam and explicitly runs **Rebuild Performance**.
 
-**Step 9: Final verification before PR**
+### Step 9: Fresh final verification
 
-Re-run both complete test commands from Steps 1 and 2 after all fixes. Do not claim completion from an earlier run.
+Re-run both complete test commands from Steps 1 and 2 after all deployment-driven fixes. Only these fresh results can support a completion claim.
 
-**Step 10: Commit final verification-only fixes if any, then prepare PR**
+### Step 10: Prepare PR
 
-PR description must call out:
-- schema added;
-- publish now requires 100% syllabus mapping;
-- negative marking semantics corrected;
-- automatic scope performance + dynamic E sequence;
+PR description records:
+- schema/mapping additions;
+- 100% server publish gate;
+- corrected negative-marking semantics;
+- automatic weighted Unit/Chapter/Topic performance;
+- dynamic student/scope E sequence;
 - Admin immediate vs Student published-only visibility;
-- legacy data preserved;
-- production preflight counts and zero-active-attempt check;
-- full regression results.
+- legacy data protection;
+- preflight/postflight counts;
+- zero-active-attempt deployment check;
+- full new + regression test results.
 
 ---
 
-## Dependency Order and Checkpoints
+## Execution Checkpoints
 
-Tasks 1–3 establish the data and mapping service. Task 4 exposes mapping to Admin. Task 5 makes that mapping mandatory for new publication. Tasks 6–8 create trustworthy score/performance data and access controls. Tasks 9–10 consume that data without replacing the current overall dashboards. Task 11 is the only point where production migration/deployment is allowed.
-
-Recommended execution checkpoints:
-
-- **Checkpoint A — Mapping foundation:** Tasks 1–5 green. Draft exams can be mapped and publish validation works; no student grading deployment yet.
-- **Checkpoint B — Performance engine:** Tasks 6–8 green. Pure grading/performance and protected APIs verified; still no production grading deployment if any attempt is active.
-- **Checkpoint C — UI + production:** Tasks 9–11 green, production preflight safe, migration/functions deployed and post-deploy invariants verified.
+- **Checkpoint A — Mapping Foundation:** Tasks 1–5 green. Mapping + publish gate works; student grading deployment has not changed.
+- **Checkpoint B — Performance Engine:** Tasks 6–8 green. Grading, weighted scope aggregation, visibility, and rebuild are tested.
+- **Checkpoint C — UI + Production:** Tasks 9–11 green, migration/deployment completed only after safe preflight.
 
 ## Definition of Done
 
-Phase-3 is complete only when all of the following are evidenced by fresh verification:
+Phase-3 is complete only with fresh evidence that:
 
-- Admin can create/approve subtopics under existing Chapter rows without altering official syllabus source data.
-- Simple and mixed question ranges expand to exact one-question/one-subtopic mappings.
-- Publish is server-blocked unless every question is mapped, every key exists, mapped subtopics are approved, and question marks equal exam total marks.
-- Negative marking OFF truly deducts zero; negative marking ON uses per-question penalty.
-- Submit automatically produces weighted Topic, Chapter, and Unit scope rows.
-- E1/E2/E3 is dynamically student-wise + exact-scope-wise and respects RESET vs RE-EXAM semantics.
-- Admin sees scope performance immediately after submission.
-- Student sees scope performance only after result publication.
-- Existing raw results stay untouched and unmapped historical exams receive no guessed performance.
-- Existing Phase-1 answer synchronization and Phase-2 access/re-exam tests remain green.
-- Production migration/deployment has fresh preflight/postflight evidence, not assumptions.
+- Admin can generate, Approve, Rename, Split, Merge, Disable, and manually Add subtopics under preserved official Chapter rows.
+- Simple/mixed ranges expand to exact one-question/one-subtopic mappings.
+- Server blocks publish unless mapping is 100%, answer keys complete, subtopics approved, and marks total matches exam total.
+- Negative marking OFF deducts zero; ON uses per-question penalty; negative scores remain negative.
+- Successful mapped submit creates weighted Topic, Chapter, and Unit performance.
+- E1/E2/E3 is dynamically student-wise + exact-scope-wise and correctly handles RESET vs RE-EXAM.
+- Admin sees scope performance immediately; Student sees it only after result publication through the protected API.
+- Historical raw results remain unchanged and unmapped legacy exams get no guessed performance.
+- Phase-1 answer sync and Phase-2 access/re-exam/reset regressions remain green.
+- Production migration/deployment has recorded preflight/postflight evidence.
