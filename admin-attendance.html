@@ -1,1 +1,48 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Attendance | Sathyagrahi Academy</title><link rel="stylesheet" href="admin-dashboard.css"><style>.content{padding:28px}.head{display:flex;justify-content:space-between}.panel,.card{background:#fff;border:1px solid #e1e7ef;border-radius:11px;padding:16px}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}.toolbar input{padding:10px}.btn{padding:9px 12px;border:1px solid #b8c2cf;background:#fff;border-radius:6px;font-weight:800}.primary{background:#123b68;color:#fff}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}.card b{display:block;font-size:24px}.status{display:flex;gap:8px}.status label{padding:7px 10px;border:1px solid #ccd5df;border-radius:16px;font-size:10px;font-weight:700}table{width:100%;border-collapse:collapse;font-size:11px}th,td{padding:10px;border-bottom:1px solid #edf1f5;text-align:left}.msg{font-size:11px;font-weight:700}@media(max-width:800px){.cards{grid-template-columns:1fr 1fr}}</style></head><body><div class="shell"><aside><div class="brand"><img src="assets/favicon.png"><b>SATHYAGRAHI<br><small>ACADEMY ADMIN</small></b></div><nav><a href="admin-dashboard.html">Dashboard</a><a href="admin-students.html">Students</a><a href="admin-student-performance.html">Student Performance</a><a href="admin-preparation.html">Preparation Guide</a><a href="admin-enrollments.html">New Enrollments</a><a href="admin-exams.html">Examinations</a><a href="admin-question-bank.html">Question Bank</a><a href="admin-results.html">Results & Performance</a><a class="active" href="admin-attendance.html">Attendance</a><a href="admin-study-material.html">Study Material</a><a href="admin-notifications.html">Notifications</a><a href="admin-help-feedback.html">Help & Feedback</a><a href="admin-my-account.html">My Account</a><a href="admin-settings.html">Settings</a></nav></aside><main><div class="content"><div class="head"><div><h2>Attendance</h2><p>Mark daily attendance and update it anytime.</p></div><button class="btn" id="logout">LOGOUT</button></div><div class="toolbar"><input type="date" id="date"><button class="btn" id="allPresent">MARK ALL PRESENT</button><button class="btn primary" id="save">SAVE / UPDATE ATTENDANCE</button><span class="msg" id="msg"></span></div><div class="cards"><div class="card">Total Students<b id="total">0</b></div><div class="card">Present<b id="present">0</b></div><div class="card">Absent<b id="absent">0</b></div><div class="card">Attendance<b id="percent">0%</b></div></div><section class="panel"><table><thead><tr><th>Student ID</th><th>Student</th><th>Batch</th><th>Status</th><th>Marked Time</th></tr></thead><tbody id="rows"></tbody></table></section></div></main></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-config.js"></script><script src="admin-attendance.js"></script></body></html>
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Attendance | Sathyagrahi Academy</title>
+<link rel="stylesheet" href="admin-dashboard.css">
+<style>
+.content{padding:28px}.head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.head h2{margin-bottom:6px}.panel,.card{background:#fff;border:1px solid #e1e7ef;border-radius:11px;padding:16px}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0;align-items:center}.toolbar input,.toolbar select{padding:10px;border:1px solid #ccd5df;border-radius:7px;background:#fff}.btn{padding:9px 12px;border:1px solid #b8c2cf;background:#fff;border-radius:6px;font-weight:800;cursor:pointer}.btn:hover{border-color:#123b68}.primary{background:#123b68;color:#fff;border-color:#123b68}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}.card b{display:block;font-size:24px;margin-top:4px}.status{display:flex;gap:8px;flex-wrap:wrap}.status label{padding:7px 10px;border:1px solid #ccd5df;border-radius:16px;font-size:10px;font-weight:700}.tabs{display:flex;gap:8px;margin:18px 0 12px}.tab{border:1px solid #cbd5e1;background:#fff;color:#123b68;border-radius:8px;padding:10px 14px;font-weight:800;cursor:pointer}.tab.active{background:#123b68;color:#fff;border-color:#123b68}.view{display:none}.view.active{display:block}table{width:100%;border-collapse:collapse;font-size:11px}th,td{padding:10px;border-bottom:1px solid #edf1f5;text-align:left;vertical-align:middle}th{background:#f8fafc;color:#334155;font-size:10px;text-transform:uppercase;letter-spacing:.02em}.msg{font-size:11px;font-weight:700}.report-title{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:12px}.report-title h3{margin:0}.report-actions{display:flex;gap:8px;flex-wrap:wrap}.metric-present{color:#067647}.metric-absent{color:#b42318}.metric-leave{color:#c25a00}.metric-unmarked{color:#64748b}.percent-pill{display:inline-block;background:#eef4fb;color:#123b68;border-radius:999px;padding:5px 9px;font-weight:800}.empty{text-align:center;color:#64748b;padding:24px}.small{font-size:10px;color:#64748b}.pdf-btn{white-space:nowrap}.table-wrap{overflow-x:auto}.report-card{min-width:145px}.report-grid{grid-template-columns:repeat(5,1fr)}
+@media(max-width:1000px){.report-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:800px){.content{padding:18px}.head{flex-direction:column}.cards,.report-grid{grid-template-columns:1fr 1fr}.report-title{align-items:flex-start;flex-direction:column}}
+@media(max-width:520px){.cards,.report-grid{grid-template-columns:1fr}.tabs{flex-direction:column}.tab{width:100%}}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside>
+<div class="brand"><img src="assets/favicon.png"><b>SATHYAGRAHI<br><small>ACADEMY ADMIN</small></b></div>
+<nav><a href="admin-dashboard.html">Dashboard</a><a href="admin-students.html">Students</a><a href="admin-student-performance.html">Student Performance</a><a href="admin-preparation.html">Preparation Guide</a><a href="admin-enrollments.html">New Enrollments</a><a href="admin-exams.html">Examinations</a><a href="admin-question-bank.html">Question Bank</a><a href="admin-results.html">Results & Performance</a><a class="active" href="admin-attendance.html">Attendance</a><a href="admin-study-material.html">Study Material</a><a href="admin-notifications.html">Notifications</a><a href="admin-help-feedback.html">Help & Feedback</a><a href="admin-my-account.html">My Account</a><a href="admin-settings.html">Settings</a></nav>
+</aside>
+<main>
+<div class="content">
+<div class="head"><div><h2>Attendance</h2><p>Mark daily attendance and review month-wise student reports.</p></div><button class="btn" id="logout">LOGOUT</button></div>
+<div class="tabs" role="tablist" aria-label="Attendance views"><button class="tab active" id="dailyTab" type="button">Daily Attendance</button><button class="tab" id="monthlyTab" type="button">Monthly Reports</button></div>
+<section id="dailyView" class="view active">
+<div class="toolbar"><input type="date" id="date"><button class="btn" id="allPresent">MARK ALL PRESENT</button><button class="btn primary" id="save">SAVE / UPDATE ATTENDANCE</button><span class="msg" id="msg"></span></div>
+<div class="cards"><div class="card">Total Students<b id="total">0</b></div><div class="card">Present<b id="present">0</b></div><div class="card">Absent<b id="absent">0</b></div><div class="card">Attendance<b id="percent">0%</b></div></div>
+<section class="panel table-wrap"><table><thead><tr><th>Student ID</th><th>Student</th><th>Batch</th><th>Status</th><th>Marked Time</th></tr></thead><tbody id="rows"></tbody></table></section>
+</section>
+<section id="monthlyView" class="view">
+<div class="toolbar"><label><b>Month</b><br><input type="month" id="reportMonth"></label><button class="btn primary" id="generateReport">GENERATE REPORT</button><span class="msg" id="reportMsg"></span></div>
+<div class="cards report-grid"><div class="card report-card">Working Days<b id="workingDays">0</b></div><div class="card report-card">Students<b id="reportStudents">0</b></div><div class="card report-card">Present Entries<b id="monthPresent">0</b></div><div class="card report-card">Absent Entries<b id="monthAbsent">0</b></div><div class="card report-card">Overall Attendance<b id="monthPercent">0%</b></div></div>
+<section class="panel">
+<div class="report-title"><div><h3 id="monthHeading">Monthly Attendance Report</h3><div class="small">Working days are based on dates where attendance was recorded.</div></div><div class="report-actions"><button class="btn" id="downloadAllPdf" type="button" disabled>DOWNLOAD ALL STUDENTS PDF</button></div></div>
+<div class="table-wrap"><table><thead><tr><th>Student ID</th><th>Student</th><th>Batch</th><th>Working Days</th><th>Present</th><th>Absent</th><th>Leave</th><th>Unmarked</th><th>Attendance</th><th>Report</th></tr></thead><tbody id="reportRows"><tr><td colspan="10" class="empty">Select a month and generate report.</td></tr></tbody></table></div>
+</section>
+</section>
+</div>
+</main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
+<script src="supabase-config.js"></script>
+<script src="attendance-report-utils.js"></script>
+<script src="admin-attendance.js"></script>
+</body>
+</html>
