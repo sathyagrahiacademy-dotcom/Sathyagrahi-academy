@@ -1,6 +1,6 @@
 (() => {
-const c=window.sgaSupabase,$=id=>document.getElementById(id);
-let exam=null,attempt=null,questions=[],responses={},visited=new Set(),current=0,endsAt=0,timerId=null,submitting=false;
+const c=window.sgaSupabase,$=id=>document.getElementById(id),u=window.sgaExamAttemptSync;
+let exam=null,attempt=null,questions=[],responses={},confirmed={},visited=new Set(),current=0,endsAt=0,timerId=null,submitting=false,navigating=false;
 
 async function invoke(body){
   const {data,error}=await c.functions.invoke('student-exam-attempt',{body});
@@ -14,13 +14,27 @@ async function guard(){
   $('candidateName').textContent=p.full_name||'Student';$('candidateId').textContent='ID: '+(p.student_id||'—');return true;
 }
 function responseFor(qid){return responses[qid]||{selected_option:null,marked_for_review:false}}
+function setSaveState(text,kind=''){
+  const el=$('saveState');if(!el)return;el.textContent=text;el.className='savestate'+(kind?' '+kind:'');
+}
+function showRecoverableSaveError(e){setSaveState('Save failed — retry','error');console.error(e)}
+function updateSaveIndicator(){if(saveQueue.hasPending())setSaveState('Saving...','saving');else setSaveState('All answers saved')}
+const saveQueue=u.createSaveQueue(async(questionId,state)=>{
+  setSaveState('Saving...','saving');
+  await invoke({action:'save',attemptId:attempt.id,questionId,selectedOption:state.selected_option,markedForReview:state.marked_for_review});
+  confirmed[questionId]={...state};
+  renderPalette();
+});
+function queueState(qid,state){
+  responses[qid]={selected_option:u.normaliseAnswer(state.selected_option),marked_for_review:Boolean(state.marked_for_review)};
+  renderPalette();
+  const p=saveQueue.enqueue(qid,responses[qid]);
+  p.then(updateSaveIndicator).catch(showRecoverableSaveError);
+  return p;
+}
 function statusFor(i){
   const q=questions[i],r=responseFor(q.id),v=visited.has(q.id);
-  if(r.marked_for_review&&r.selected_option)return'reviewanswered';
-  if(r.marked_for_review)return'review';
-  if(r.selected_option)return'answered';
-  if(v)return'notanswered';
-  return'notvisited';
+  return u.statusForQuestion({questionId:q.id,response:r,visited:v,confirmedCurrent:u.isConfirmedCurrent(q.id,responses,confirmed)});
 }
 function renderPalette(){
   $('palette').innerHTML=questions.map((q,i)=>`<button class="pbtn ${statusFor(i)} ${i===current?'current':''}" data-i="${i}">${q.question_no}</button>`).join('');
@@ -33,20 +47,44 @@ function render(){
   $('marksInfo').textContent=`+${Number(q.marks)} / -${Number(q.negative_marks)}`;
   const r=responseFor(q.id);
   $('options').innerHTML=['A','B','C','D'].map(k=>{const txt=q['option_'+k.toLowerCase()];return `<label class="option ${r.selected_option===k?'selected':''}"><input type="radio" name="answer" value="${k}" ${r.selected_option===k?'checked':''}><span class="letter">${k}</span><span>${escapeHtml(txt)}</span></label>`}).join('');
-  document.querySelectorAll('input[name=answer]').forEach(el=>el.onchange=e=>{responses[q.id]={...responseFor(q.id),selected_option:e.target.value};render();});
+  document.querySelectorAll('input[name=answer]').forEach(el=>el.onchange=e=>{
+    const latest={...responseFor(q.id),selected_option:e.target.value};
+    responses[q.id]=latest;
+    render();
+    queueState(q.id,latest).catch(()=>{});
+  });
   $('prevBtn').disabled=current===0;
   $('saveNextBtn').textContent=current===questions.length-1?'SAVE':'SAVE & NEXT';
   renderPalette();
 }
 function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]))}
+async function flushQuestion(qid){
+  if(Object.prototype.hasOwnProperty.call(responses,qid)&&!u.isConfirmedCurrent(qid,responses,confirmed))queueState(qid,responseFor(qid)).catch(()=>{});
+  await saveQueue.flush(qid);
+  if(Object.prototype.hasOwnProperty.call(responses,qid)&&!u.isConfirmedCurrent(qid,responses,confirmed)){
+    queueState(qid,responseFor(qid)).catch(()=>{});
+    await saveQueue.flush(qid);
+  }
+  updateSaveIndicator();
+}
+async function flushCurrent(){const q=questions[current];if(q)await flushQuestion(q.id)}
+async function flushAllPending(){
+  Object.keys(responses).forEach(qid=>{if(!u.isConfirmedCurrent(qid,responses,confirmed))queueState(qid,responseFor(qid)).catch(()=>{})});
+  await saveQueue.flushAll();
+  for(const qid of Object.keys(responses))if(!u.isConfirmedCurrent(qid,responses,confirmed))throw new Error('Some answers are not yet saved. Please retry.');
+  updateSaveIndicator();
+}
 async function saveCurrent(markedOverride=null){
   const q=questions[current],r=responseFor(q.id);
-  const marked=markedOverride===null?r.marked_for_review:markedOverride;
-  await invoke({action:'save',attemptId:attempt.id,questionId:q.id,selectedOption:r.selected_option,markedForReview:marked});
-  responses[q.id]={...r,marked_for_review:marked};
-  renderPalette();
+  const state={...r,marked_for_review:markedOverride===null?r.marked_for_review:markedOverride};
+  queueState(q.id,state).catch(()=>{});
+  await flushQuestion(q.id);
 }
 function next(){if(current<questions.length-1){current++;render()}}
+async function goTo(index){
+  if(navigating||index===current)return;navigating=true;
+  try{await flushCurrent();current=index;render()}catch(e){alert(e.message||'Could not save this answer. Please retry.')}finally{navigating=false}
+}
 function fmt(sec){sec=Math.max(0,sec);const h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60;return [h,m,s].map(x=>String(x).padStart(2,'0')).join(':')}
 function startTimer(){
   const tick=async()=>{const sec=Math.floor((endsAt-Date.now())/1000);$('timer').textContent=fmt(sec);if(sec<=0){clearInterval(timerId);await submit(true)}};
@@ -61,33 +99,36 @@ function summary(){
 async function submit(auto=false){
   if(submitting)return;submitting=true;
   try{
-    try{await saveCurrent()}catch(_){}
-    const data=await invoke({action:'submit',attemptId:attempt.id,auto});
+    if(auto){try{await flushAllPending()}catch(e){showRecoverableSaveError(e)}}else await flushAllPending();
+    const snapshot=u.buildFullSnapshot(questions,responses);
+    await invoke({action:'submit',attemptId:attempt.id,auto,responses:snapshot});
     sessionStorage.removeItem('sga_active_exam_id');sessionStorage.removeItem('sga_verified_exam');
     alert(auto?'Time is over. Your exam has been auto-submitted.':'Your exam has been submitted successfully.');
     location.replace('dashboard.html');
-  }catch(e){alert(e.message||'Could not submit exam.');submitting=false}
+  }catch(e){alert(e.message||'Could not submit exam.');submitting=false;if(auto)setTimeout(()=>submit(true),3000)}
 }
-$('saveNextBtn').onclick=async()=>{try{await saveCurrent(false);next()}catch(e){alert(e.message)}};
-$('reviewBtn').onclick=async()=>{try{await saveCurrent(true);next()}catch(e){alert(e.message)}};
-$('clearBtn').onclick=async()=>{const q=questions[current];responses[q.id]={selected_option:null,marked_for_review:false};render();try{await saveCurrent(false)}catch(e){alert(e.message)}};
-$('prevBtn').onclick=()=>{if(current>0){current--;render()}};
-$('palette').onclick=e=>{const b=e.target.closest('[data-i]');if(!b)return;current=Number(b.dataset.i);render()};
-$('submitBtn').onclick=()=>{summary();open('submitModal')};$('confirmSubmit').onclick=()=>submit(false);
+$('saveNextBtn').onclick=async()=>{if(navigating)return;navigating=true;try{await saveCurrent(false);next()}catch(e){alert(e.message||'Could not save this answer. Please retry.')}finally{navigating=false}};
+$('reviewBtn').onclick=async()=>{if(navigating)return;navigating=true;try{await saveCurrent(true);next()}catch(e){alert(e.message||'Could not save this answer. Please retry.')}finally{navigating=false}};
+$('clearBtn').onclick=async()=>{if(navigating)return;navigating=true;const q=questions[current];responses[q.id]={selected_option:null,marked_for_review:false};render();try{queueState(q.id,responses[q.id]).catch(()=>{});await flushQuestion(q.id)}catch(e){alert(e.message||'Could not clear this answer. Please retry.')}finally{navigating=false}};
+$('prevBtn').onclick=()=>{if(current>0)goTo(current-1)};
+$('palette').onclick=e=>{const b=e.target.closest('[data-i]');if(!b)return;goTo(Number(b.dataset.i))};
+$('submitBtn').onclick=async()=>{try{await flushAllPending();summary();open('submitModal')}catch(e){alert(e.message||'Could not synchronize answers. Please retry.')}};
+$('confirmSubmit').onclick=()=>submit(false);
 $('instructionsBtn').onclick=()=>open('instructionsModal');$('paperBtn').onclick=()=>open('paperModal');
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>close(b.dataset.close));
 
 (async()=>{
+  if(!u){alert('Exam save module failed to load. Please refresh the page.');return}
   if(!await guard())return;
   const examId=sessionStorage.getItem('sga_active_exam_id');if(!examId){location.replace('student-examinations.html');return}
   try{
     const data=await invoke({action:'start',examId});
     exam=data.exam;attempt=data.attempt;questions=data.questions;endsAt=new Date(data.ends_at).getTime();
-    (data.responses||[]).forEach(r=>responses[r.question_id]=r);
+    (data.responses||[]).forEach(r=>{const state={selected_option:u.normaliseAnswer(r.selected_option),marked_for_review:Boolean(r.marked_for_review)};responses[r.question_id]={...state};confirmed[r.question_id]={...state}});
     $('examTitle').textContent=exam.title;$('subjectName').textContent=exam.subject+(exam.syllabus?' • '+exam.syllabus:'');
-    $('instructionsContent').innerHTML=`<p><strong>${escapeHtml(exam.title)}</strong></p><ul><li>Duration: ${exam.duration_minutes} minutes.</li><li>Total Marks: ${exam.total_marks}.</li><li>${exam.negative_marking?'Negative marking is enabled.':'No negative marking.'}</li><li>Use SAVE & NEXT to save an answer and continue.</li><li>Use MARK FOR REVIEW & NEXT when you want to revisit a question.</li><li>The test auto-submits when the timer reaches zero.</li></ul>${exam.instructions?`<p>${escapeHtml(exam.instructions)}</p>`:''}`;
+    $('instructionsContent').innerHTML=`<p><strong>${escapeHtml(exam.title)}</strong></p><ul><li>Duration: ${exam.duration_minutes} minutes.</li><li>Total Marks: ${exam.total_marks}.</li><li>${exam.negative_marking?'Negative marking is enabled.':'No negative marking.'}</li><li>Your selected option is auto-saved. A question turns Answered only after the server confirms the save.</li><li>Navigation waits for any pending answer save.</li><li>FINAL SUBMIT performs a complete answer synchronization before grading.</li><li>The test auto-submits when the timer reaches zero.</li></ul>${exam.instructions?`<p>${escapeHtml(exam.instructions)}</p>`:''}`;
     $('paperContent').innerHTML=questions.map(q=>`<p><strong>Q${q.question_no}.</strong> ${escapeHtml(q.question_text)}</p>`).join('');
-    current=0;render();startTimer();
+    current=0;setSaveState('All answers saved');render();startTimer();
   }catch(e){alert(e.message||'Unable to start exam.');location.replace('student-examinations.html')}
 })();
 })();
