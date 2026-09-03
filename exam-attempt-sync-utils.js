@@ -35,5 +35,39 @@
     if(visited)return'notanswered';
     return'notvisited';
   }
-  return{normaliseAnswer,buildFullSnapshot,snapshotQuestionIds,isConfirmedCurrent,statusForQuestion};
+  function createSaveQueue(saveFn){
+    const desired=new Map();
+    const workers=new Map();
+    const clone=state=>({selected_option:normaliseAnswer(state?.selected_option),marked_for_review:Boolean(state?.marked_for_review)});
+    function start(questionId){
+      if(workers.has(questionId))return workers.get(questionId);
+      const worker=(async()=>{
+        while(desired.has(questionId)){
+          const state=clone(desired.get(questionId));
+          desired.delete(questionId);
+          try{await saveFn(questionId,state)}catch(e){desired.set(questionId,state);throw e}
+        }
+      })().finally(()=>workers.delete(questionId));
+      workers.set(questionId,worker);
+      return worker;
+    }
+    function enqueue(questionId,state){
+      desired.set(String(questionId),clone(state));
+      return start(String(questionId));
+    }
+    async function flush(questionId){
+      const id=String(questionId);
+      while(desired.has(id)||workers.has(id)){
+        if(desired.has(id)&&!workers.has(id))start(id);
+        if(workers.has(id))await workers.get(id);
+      }
+    }
+    async function flushAll(){
+      const ids=new Set([...desired.keys(),...workers.keys()]);
+      await Promise.all([...ids].map(flush));
+    }
+    function hasPending(){return desired.size>0||workers.size>0;}
+    return{enqueue,flush,flushAll,hasPending};
+  }
+  return{normaliseAnswer,buildFullSnapshot,snapshotQuestionIds,isConfirmedCurrent,statusForQuestion,createSaveQueue};
 });
