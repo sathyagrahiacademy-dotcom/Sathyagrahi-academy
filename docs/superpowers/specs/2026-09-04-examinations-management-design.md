@@ -56,20 +56,25 @@ Admin can later add or remove assigned students without rebuilding the exam.
 
 ### 3.3 Exam deletion and reset
 
-There are three distinct admin operations.
+There are three distinct admin cleanup operations.
 
 #### Individual Student Reset
 
+Use this for a technical/faulty attempt that must not remain in official history.
+
 For one selected student:
 
-- Delete that student's attempt for this exam
+- Delete that student's faulty attempt for this exam
 - Delete that student's saved responses
 - Delete that student's exam result
-- Remove derived exam-performance records for that attempt
+- Remove derived exam-performance records for that faulty attempt
 - Keep the exam, questions, answer keys, code/password, and other students' data
-- Allow the selected student to take a fresh attempt
+- Allow the selected student to take a fresh replacement attempt
+- The deleted faulty attempt must not count as E1/E2/E3
 
 #### Reset All Students
+
+Use this when the entire conduct of the exam is invalid because of a technical or administrative issue.
 
 For the exam:
 
@@ -78,7 +83,8 @@ For the exam:
 - Delete all results
 - Remove all derived exam-performance records
 - Keep the exam, questions, answer keys, code/password, and mapping
-- Allow the assigned students to take the exam again
+- Allow the assigned students to take fresh replacement attempts
+- Deleted invalid attempts must not count in E1/E2/E3
 
 #### Delete Exam Completely
 
@@ -88,7 +94,7 @@ Delete the exam and every dependent record, including:
 - exam questions
 - answer keys
 - assignments
-- attempts
+- attempts and re-exam rounds
 - responses
 - results
 - derived performance records
@@ -99,23 +105,31 @@ Existing database cascade relationships should be used where appropriate, but ba
 
 ## 4. Re-Exam
 
-Re-Exam is a first-class admin action, not a manual database workaround.
+Re-Exam is different from Reset.
+
+- Reset = replace an invalid/technical attempt and remove it from official history.
+- Re-Exam = conduct another valid assessment round while preserving previous valid performance.
 
 ### Selected Student Re-Exam
 
-- Clear only the selected student's prior attempt/result/performance for this exam
-- Keep the exam and questions unchanged
-- Create fresh eligibility for a new attempt
-- Timer starts fresh on the new attempt
+For a student who already has a valid completed attempt:
+
+- Preserve the previous valid attempt, responses, result, and performance
+- Create a fresh new attempt round for the same exam and selected student
+- Timer starts fresh for the new round
 - Previous answers must not carry over
+- New valid performance becomes the next chronological E record for the mapped syllabus scope, such as E2 after E1
 
 ### All Students Re-Exam
 
-- Clear all assigned students' prior attempts/results/performance for this exam
-- Keep the exam and questions unchanged
-- Re-open a fresh attempt for the same assigned audience
+- Preserve all previous valid attempts/results/performance
+- Create a new exam round for the same assigned audience
+- Every eligible student receives a fresh attempt for that round
+- New valid performances continue the chronological E1/E2/E3 sequence
 
-The UI should make the difference between Reset, Re-Exam, and Delete Exam Completely clear.
+The data model must therefore support more than one valid attempt round per student for the same exam when the admin explicitly conducts a Re-Exam.
+
+The UI must clearly distinguish RESET ATTEMPT from RE-EXAM.
 
 ## 5. Exam Attempt Reliability
 
@@ -211,7 +225,9 @@ The system records:
 
 ### 7.1 E1/E2/E3
 
-For the same student and same mapped syllabus scope, valid chronological exams are numbered E1, E2, E3, and so on.
+For the same student and same mapped syllabus scope, valid chronological assessments are numbered E1, E2, E3, and so on.
+
+A valid Re-Exam creates the next E record. A technical Reset removes the invalid attempt and therefore does not consume an E number.
 
 If an exam or manual record is deleted/cancelled, it must no longer count in this sequence. Sequence presentation should be derived from valid records rather than permanently trusting a stale number.
 
@@ -267,7 +283,7 @@ Results should support:
 - Publish result to individual student
 - Publish results to all eligible students
 - Re-Exam selected student
-- Clear/Reset selected attempt
+- Reset selected faulty attempt
 - Scorecard access
 
 Result publication and exam assignment are separate concerns.
@@ -320,13 +336,14 @@ Show:
 
 1. Online performance is derived from submitted server-side exam data; students never manually duplicate it.
 2. Manual/offline performance counts only after admin approval.
-3. Deleting or resetting an exam attempt removes the corresponding derived performance.
-4. Deleting an entire exam removes all corresponding performance.
-5. Question mapping must be complete before publish.
-6. Performance denominator must be consistent with actual mapped question marks.
-7. Exam-level negative-marking configuration must agree with grading behavior. If negative marking is disabled, grading must not deduct per-question negative marks.
-8. Final submit must not grade until the server has synchronized the full answer state.
-9. Admin actions that remove attempts/results must be explicit, auditable, and scoped to individual student or all students.
+3. Resetting a faulty attempt removes the corresponding invalid performance.
+4. Re-Exam preserves prior valid performance and creates a new valid performance record.
+5. Deleting an entire exam removes all corresponding performance, including re-exam rounds.
+6. Question mapping must be complete before publish.
+7. Performance denominator must be consistent with actual mapped question marks.
+8. Exam-level negative-marking configuration must agree with grading behavior. If negative marking is disabled, grading must not deduct per-question negative marks.
+9. Final submit must not grade until the server has synchronized the full answer state.
+10. Admin actions that remove attempts/results must be explicit, auditable, and scoped to individual student or all students.
 
 ## 12. Migration Strategy
 
@@ -336,7 +353,7 @@ Suggested phases:
 
 1. Exam answer reliability: auto-save, server-confirmed state, final full sync
 2. Assignment model: Publish to All / Selected Students
-3. Individual/All reset and re-exam actions
+3. Reset and Re-Exam model, including multiple valid rounds
 4. Range Mapping and publish validation
 5. Automatic performance derivation
 6. Manual/offline exam entry and admin approval
@@ -352,6 +369,7 @@ The design is successful when:
 - no student can lose selected answers silently
 - admin never needs Supabase for routine exam recovery
 - one student's technical issue can be reset without affecting others
+- valid re-exams preserve earlier performance and add a new E record
 - exams can be published to all or selected students
 - re-exams can be conducted for one or all students
 - mixed-subject and partial-topic exams produce correct syllabus-level performance
