@@ -16,9 +16,9 @@ create index if not exists academy_calendar_days_calendar_date_idx
 
 alter table public.academy_calendar_days enable row level security;
 
--- This project does not auto-grant CRUD privileges to authenticated on tables
--- created by the postgres role, so grants must be explicit for Data API access.
-revoke all on table public.academy_calendar_days from anon;
+-- Explicit Data API privileges. This project does not auto-grant CRUD privileges
+-- to authenticated for tables created by the postgres role.
+revoke all on table public.academy_calendar_days from anon, authenticated;
 grant select, insert, update, delete on table public.academy_calendar_days to authenticated;
 grant select, insert, update, delete on table public.academy_calendar_days to service_role;
 
@@ -63,7 +63,7 @@ create policy "calendar_admin_delete"
     where p.id = auth.uid() and p.role = 'admin' and p.is_active = true
   ));
 
--- Support Leave without changing existing rows.
+-- Support Leave without changing existing attendance rows.
 alter table public.attendance
   drop constraint if exists attendance_status_check;
 
