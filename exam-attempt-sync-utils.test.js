@@ -18,6 +18,6 @@ assert.strictEqual(u.statusForQuestion({questionId:'q1',response:responses.q1,vi
 assert.strictEqual(u.statusForQuestion({questionId:'q1',response:responses.q1,visited:true,confirmedCurrent:true}),'answered');
 assert.strictEqual(u.statusForQuestion({questionId:'q2',response:responses.q2,visited:true,confirmedCurrent:true}),'review');
 assert.strictEqual(u.normaliseAnswer('d'),'D');
-assert.strictEqual(u.normaliseAnswer(''),'');
+assert.strictEqual(u.normaliseAnswer(''),null);
 
 console.log('exam-attempt-sync-utils tests passed');
