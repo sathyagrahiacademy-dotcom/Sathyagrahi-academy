@@ -26,7 +26,7 @@ create table if not exists exam_mapping_groups (
   coverage text not null check (coverage in ('full','partial')),
   selector_text text not null check (length(btrim(selector_text)) > 0),
   sort_order integer not null default 0,
-  created_by uuid references profiles(id) on delete set null,
+  created_by uuid not null references profiles(id),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -92,6 +92,92 @@ create index if not exists exam_scope_performance_student_idx
 create index if not exists exam_scope_performance_exam_idx
   on exam_scope_performance (exam_id);
 
+create or replace function replace_exam_mapping_group(
+  p_exam_id uuid,
+  p_mapping_group_id uuid,
+  p_subtopic_id bigint,
+  p_coverage text,
+  p_selector_text text,
+  p_sort_order integer,
+  p_created_by uuid,
+  p_question_ids uuid[]
+) returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_group_id uuid;
+  v_question_count integer;
+  v_distinct_count integer;
+begin
+  if p_exam_id is null or p_subtopic_id is null or p_created_by is null then
+    raise exception 'Exam, subtopic and creator are required';
+  end if;
+  if p_coverage not in ('full','partial') then
+    raise exception 'Coverage must be full or partial';
+  end if;
+  if nullif(btrim(p_selector_text), '') is null then
+    raise exception 'Selector is required';
+  end if;
+  if coalesce(cardinality(p_question_ids), 0) = 0 then
+    raise exception 'At least one question is required';
+  end if;
+
+  select count(*), count(distinct qid)
+    into v_question_count, v_distinct_count
+  from unnest(p_question_ids) as q(qid);
+  if v_question_count <> v_distinct_count then
+    raise exception 'Question list contains duplicates';
+  end if;
+
+  if not exists (
+    select 1 from neet_syllabus_subtopics s
+    where s.id = p_subtopic_id and s.status = 'approved'
+  ) then
+    raise exception 'Subtopic must be approved';
+  end if;
+
+  if (
+    select count(*) from exam_questions q
+    where q.exam_id = p_exam_id and q.id = any(p_question_ids)
+  ) <> v_question_count then
+    raise exception 'One or more questions do not belong to this exam';
+  end if;
+
+  if p_mapping_group_id is null then
+    insert into exam_mapping_groups (
+      exam_id, subtopic_id, coverage, selector_text, sort_order, created_by
+    ) values (
+      p_exam_id, p_subtopic_id, p_coverage, btrim(p_selector_text), coalesce(p_sort_order,0), p_created_by
+    ) returning id into v_group_id;
+  else
+    update exam_mapping_groups
+      set subtopic_id = p_subtopic_id,
+          coverage = p_coverage,
+          selector_text = btrim(p_selector_text),
+          sort_order = coalesce(p_sort_order, sort_order),
+          updated_at = now()
+      where id = p_mapping_group_id and exam_id = p_exam_id
+      returning id into v_group_id;
+    if v_group_id is null then
+      raise exception 'Mapping group not found for exam';
+    end if;
+  end if;
+
+  delete from exam_question_syllabus_map
+  where mapping_group_id = v_group_id;
+
+  insert into exam_question_syllabus_map (
+    question_id, exam_id, mapping_group_id, subtopic_id
+  )
+  select qid, p_exam_id, v_group_id, p_subtopic_id
+  from unnest(p_question_ids) as q(qid);
+
+  return v_group_id;
+end;
+$$;
+
 create or replace view exam_scope_performance_sequenced as
 select
   esp.*,
@@ -123,3 +209,6 @@ grant select, insert, update, delete on exam_question_syllabus_map to service_ro
 grant select, insert, update, delete on exam_scope_performance to service_role;
 grant select on exam_scope_performance_sequenced to service_role;
 grant usage, select on all sequences in schema public to service_role;
+
+revoke all on function replace_exam_mapping_group(uuid, uuid, bigint, text, text, integer, uuid, uuid[]) from public, anon, authenticated;
+grant execute on function replace_exam_mapping_group(uuid, uuid, bigint, text, text, integer, uuid, uuid[]) to service_role;
