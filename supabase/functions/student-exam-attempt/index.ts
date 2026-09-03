@@ -2,6 +2,8 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'jsr:@supabase/supabase-js@2/cors'
 import { validateSnapshotCoverage } from './sync-logic.mjs'
 import { decideAttempt } from './attempt-policy.mjs'
+import { gradeQuestions } from './grading-logic.mjs'
+import { buildScopePerformance } from './performance-logic.mjs'
 
 const FINAL_SYNC_GRACE_MS = 15_000
 
@@ -9,37 +11,111 @@ function json(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 }
 
-async function gradeAttempt(admin: any, attempt: any, isAuto: boolean) {
-  const { data: exam } = await admin.from('exams').select('duration_minutes,total_marks').eq('id', attempt.exam_id).single()
+async function performanceInputs(admin: any, attempt: any, exam: any, questions: any[], keys: any[], responses: any[]) {
+  const { data: mappings, error: mapErr } = await admin.from('exam_question_syllabus_map').select('question_id,mapping_group_id,subtopic_id').eq('exam_id', attempt.exam_id)
+  if (mapErr) throw new Error(mapErr.message)
+  if (!mappings?.length) return { mapped: false, rows: [] }
+
+  const questionIds = new Set((questions || []).map((q: any) => String(q.id)))
+  const mappedQuestionIds = new Set((mappings || []).map((m: any) => String(m.question_id)))
+  if (mappedQuestionIds.size !== questionIds.size || [...questionIds].some(id => !mappedQuestionIds.has(id))) {
+    throw new Error('Syllabus performance mapping is incomplete for this exam')
+  }
+
+  const groupIds = [...new Set((mappings || []).map((m: any) => String(m.mapping_group_id)).filter(Boolean))]
+  const subtopicIds = [...new Set((mappings || []).map((m: any) => Number(m.subtopic_id)).filter(Number.isFinite))]
+  const [{ data: groups, error: groupErr }, { data: subtopics, error: subErr }] = await Promise.all([
+    admin.from('exam_mapping_groups').select('id,subtopic_id,coverage').in('id', groupIds),
+    admin.from('neet_syllabus_subtopics').select('id,chapter_id,status').in('id', subtopicIds)
+  ])
+  if (groupErr || subErr) throw new Error(groupErr?.message || subErr?.message)
+  if ((subtopics || []).some((s: any) => s.status !== 'approved')) throw new Error('Syllabus performance mapping contains an unapproved subtopic')
+
+  const chapterIds = [...new Set((subtopics || []).map((s: any) => Number(s.chapter_id)).filter(Number.isFinite))]
+  const { data: chapters, error: chapterErr } = await admin.from('neet_syllabus_topics').select('id,unit_id').in('id', chapterIds)
+  if (chapterErr) throw new Error(chapterErr.message)
+  const unitIds = [...new Set((chapters || []).map((c: any) => Number(c.unit_id)).filter(Number.isFinite))]
+  const [{ data: units, error: unitErr }, { data: approved, error: approvedErr }] = await Promise.all([
+    admin.from('neet_syllabus_units').select('id').in('id', unitIds),
+    admin.from('neet_syllabus_subtopics').select('id,chapter_id').in('chapter_id', chapterIds).eq('status','approved')
+  ])
+  if (unitErr || approvedErr) throw new Error(unitErr?.message || approvedErr?.message)
+
+  const approvedSubtopicsByChapter: Record<string, number[]> = {}
+  for (const row of approved || []) {
+    const chapterId = String(row.chapter_id)
+    if (!approvedSubtopicsByChapter[chapterId]) approvedSubtopicsByChapter[chapterId] = []
+    approvedSubtopicsByChapter[chapterId].push(Number(row.id))
+  }
+
+  const built = buildScopePerformance({
+    attemptId: attempt.id,
+    examId: attempt.exam_id,
+    studentId: attempt.student_id,
+    questions,
+    answerKeys: keys,
+    responses,
+    mappings: mappings || [],
+    mappingGroups: groups || [],
+    subtopics: subtopics || [],
+    chapters: chapters || [],
+    units: units || [],
+    approvedSubtopicsByChapter,
+    negativeMarking: Boolean(exam.negative_marking)
+  })
+  if (!built.rows.length) throw new Error('Syllabus performance could not be generated for this mapped exam')
+  return { mapped: true, rows: built.rows }
+}
+
+async function replacePerformance(admin: any, attempt: any, exam: any, questions: any[], keys: any[], responses: any[]) {
+  const built = await performanceInputs(admin, attempt, exam, questions, keys, responses)
+  if (!built.mapped) return { mapped: false, count: 0 }
+
+  const { error: deleteErr } = await admin.from('exam_scope_performance').delete().eq('attempt_id', attempt.id)
+  if (deleteErr) throw new Error(deleteErr.message)
+  const { error: insertErr } = await admin.from('exam_scope_performance').insert(built.rows)
+  if (insertErr) throw new Error(`Syllabus performance write failed: ${insertErr.message}`)
+  return { mapped: true, count: built.rows.length }
+}
+
+async function loadGradeData(admin: any, attempt: any) {
+  const { data: exam, error: examErr } = await admin.from('exams').select('duration_minutes,total_marks,negative_marking').eq('id', attempt.exam_id).single()
+  if (examErr || !exam) throw new Error(examErr?.message || 'Exam not found')
   const { data: questions, error: qErr } = await admin.from('exam_questions').select('id,marks,negative_marks').eq('exam_id', attempt.exam_id)
   if (qErr || !questions?.length) throw new Error('No questions found for this exam')
-
   const ids = questions.map((q: any) => q.id)
-  const [{ data: keys }, { data: responses }] = await Promise.all([
+  const [{ data: keys, error: keyErr }, { data: responses, error: responseErr }] = await Promise.all([
     admin.from('exam_answer_keys').select('question_id,correct_option').in('question_id', ids),
     admin.from('exam_responses').select('question_id,selected_option').eq('attempt_id', attempt.id)
   ])
+  if (keyErr || responseErr) throw new Error(keyErr?.message || responseErr?.message)
+  return { exam, questions, keys: keys || [], responses: responses || [] }
+}
 
-  const keyMap = new Map((keys || []).map((k: any) => [k.question_id, k.correct_option]))
-  const resMap = new Map((responses || []).map((r: any) => [r.question_id, r.selected_option]))
-  let score = 0, correct = 0, wrong = 0, unattempted = 0
+async function ensureMappedPerformance(admin: any, attempt: any) {
+  const { count, error: countErr } = await admin.from('exam_question_syllabus_map').select('question_id', { count:'exact', head:true }).eq('exam_id', attempt.exam_id)
+  if (countErr) throw new Error(countErr.message)
+  if (Number(count || 0) === 0) return { mapped:false, count:0, repaired:false }
 
-  for (const q of questions) {
-    const selected = resMap.get(q.id)
-    if (!selected) { unattempted++; continue }
-    if (selected === keyMap.get(q.id)) { correct++; score += Number(q.marks || 0) }
-    else { wrong++; score -= Number(q.negative_marks || 0) }
-  }
+  const data = await loadGradeData(admin, attempt)
+  const written = await replacePerformance(admin, attempt, data.exam, data.questions, data.keys, data.responses)
+  return { ...written, repaired:true }
+}
 
-  const maxMarks = Number(exam?.total_marks || 0)
-  const percentage = maxMarks > 0 ? (score / maxMarks) * 100 : 0
+async function gradeAttempt(admin: any, attempt: any, isAuto: boolean) {
+  const { exam, questions, keys, responses } = await loadGradeData(admin, attempt)
+  const graded = gradeQuestions({
+    questions,
+    answerKeys: keys,
+    responses,
+    negativeMarking: Boolean(exam.negative_marking),
+    totalMarks: Number(exam.total_marks || 0)
+  })
+
   const status = isAuto ? 'auto_submitted' : 'submitted'
   const submittedAt = new Date().toISOString()
+  const summary = graded.summary
 
-  const { error: aErr } = await admin.from('exam_attempts').update({ status, submitted_at: submittedAt }).eq('id', attempt.id)
-  if (aErr) throw new Error(aErr.message)
-
-  const summary = { total_score: score, correct_count: correct, wrong_count: wrong, unattempted_count: unattempted, percentage }
   const { error: rErr } = await admin.from('exam_results').upsert({
     attempt_id: attempt.id,
     ...summary,
@@ -47,6 +123,11 @@ async function gradeAttempt(admin: any, attempt: any, isAuto: boolean) {
     graded_at: submittedAt
   })
   if (rErr) throw new Error(rErr.message)
+
+  await replacePerformance(admin, attempt, exam, questions, keys, responses)
+
+  const { error: aErr } = await admin.from('exam_attempts').update({ status, submitted_at: submittedAt }).eq('id', attempt.id)
+  if (aErr) throw new Error(aErr.message)
 
   return { status, summary }
 }
@@ -164,7 +245,10 @@ Deno.serve(async (req: Request) => {
 
       if (attempt.status !== 'in_progress') {
         const { data: existing } = await admin.from('exam_results').select('total_score,correct_count,wrong_count,unattempted_count,percentage').eq('attempt_id', attempt.id).maybeSingle()
-        if (existing) return json({ ok: true, already_submitted: true, status: attempt.status, summary: existing })
+        if (existing) {
+          await ensureMappedPerformance(admin, attempt)
+          return json({ ok: true, already_submitted: true, status: attempt.status, summary: existing })
+        }
         if (attempt.status === 'auto_submitted') {
           const graded = await gradeAttempt(admin, attempt, true)
           return json({ ok: true, already_submitted: true, ...graded })

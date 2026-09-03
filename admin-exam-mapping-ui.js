@@ -1,0 +1,377 @@
+(() => {
+  const $ = id => document.getElementById(id);
+  const params = new URLSearchParams(location.search);
+  const examId = params.get('exam');
+  const ACTIONS = Object.freeze({
+    tree:'tree',
+    save:'save_mapping',
+    delete:'delete_mapping',
+    generate:'generate_subtopics',
+    upsert:'upsert_subtopic',
+    split:'split_subtopic',
+    merge:'merge_subtopics',
+    disable:'disable_subtopic'
+  });
+  let supabase;
+  let mappingData = null;
+  let editingMappingGroupId = null;
+  let refreshTimer = null;
+
+  function esc(value){
+    return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function utils(){
+    if (!window.ExamMappingUIUtils) throw new Error('Mapping UI helpers not found.');
+    return window.ExamMappingUIUtils;
+  }
+
+  function mappingMsg(text, ok=false){
+    const el = $('mappingMessage');
+    if (!el) return;
+    el.textContent = text || '';
+    el.className = 'msg ' + (ok ? 'ok' : 'error');
+  }
+
+  async function getClient(){
+    if (window.sgaSupabase) return window.sgaSupabase;
+    throw new Error('Supabase client/config not found.');
+  }
+
+  async function invokeMapping(body){
+    const { data:{ session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Admin login required.');
+    const { data, error } = await supabase.functions.invoke('admin-exam-mapping', { body });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    return data;
+  }
+
+  function optionHtml(value, label){
+    return `<option value="${esc(value)}">${esc(label)}</option>`;
+  }
+
+  function setSelectOptions(id, items, placeholder, valueFn=x=>x.id, labelFn=x=>x.label||x.title||x.name){
+    const select = $(id);
+    if (!select) return;
+    const old = select.value;
+    select.innerHTML = optionHtml('', placeholder) + items.map(x => optionHtml(valueFn(x), labelFn(x))).join('');
+    if ([...select.options].some(o => o.value === old)) select.value = old;
+  }
+
+  function currentUnit(){
+    return (mappingData?.syllabus || []).find(u => String(u.id) === String($('mapUnit')?.value));
+  }
+
+  function currentChapter(){
+    return currentUnit()?.chapters?.find(c => String(c.id) === String($('mapChapter')?.value));
+  }
+
+  function selectedChapterId(){
+    return Number($('mapChapter')?.value) || null;
+  }
+
+  function rebuildUnitOptions(preferred){
+    const subject = $('mapSubject')?.value || '';
+    const units = (mappingData?.syllabus || []).filter(u => !subject || u.subject === subject);
+    setSelectOptions('mapUnit', units, 'Select Unit', x => x.id, x => `${x.unit_no ? `Unit ${x.unit_no} • ` : ''}${x.unit_title}`);
+    if (preferred && [...$('mapUnit').options].some(o => o.value === String(preferred))) $('mapUnit').value = String(preferred);
+    rebuildChapterOptions();
+  }
+
+  function rebuildChapterOptions(preferred){
+    const chapters = currentUnit()?.chapters || [];
+    setSelectOptions('mapChapter', chapters, 'Select Chapter', x => x.id, x => x.topic_title);
+    if (preferred && [...$('mapChapter').options].some(o => o.value === String(preferred))) $('mapChapter').value = String(preferred);
+    rebuildSubtopicOptions();
+    renderSubtopicAdmin();
+  }
+
+  function rebuildSubtopicOptions(preferred){
+    const approved = (currentChapter()?.subtopics || []).filter(s => s.status === 'approved');
+    setSelectOptions('mapSubtopic', approved, 'Select approved topic', x => x.id, x => x.subtopic_title);
+    if (preferred && [...$('mapSubtopic').options].some(o => o.value === String(preferred))) $('mapSubtopic').value = String(preferred);
+  }
+
+  function syllabusLookup(){
+    const units = new Map(), chapters = new Map(), subtopics = new Map();
+    (mappingData?.syllabus || []).forEach(unit => {
+      units.set(unit.id, unit); units.set(String(unit.id), unit);
+      (unit.chapters || []).forEach(chapter => {
+        chapters.set(chapter.id, chapter); chapters.set(String(chapter.id), chapter);
+        (chapter.subtopics || []).forEach(subtopic => {
+          subtopics.set(subtopic.id, subtopic); subtopics.set(String(subtopic.id), subtopic);
+        });
+      });
+    });
+    return { units, chapters, subtopics };
+  }
+
+  function captureSelection(){
+    return {
+      subject:$('mapSubject')?.value || '',
+      unitId:$('mapUnit')?.value || '',
+      chapterId:$('mapChapter')?.value || '',
+      subtopicId:$('mapSubtopic')?.value || ''
+    };
+  }
+
+  function renderSelectors(preferred={}){
+    const subjects = [...new Set((mappingData?.syllabus || []).map(u => u.subject).filter(Boolean))];
+    setSelectOptions('mapSubject', subjects.map(subject => ({subject})), 'Select Subject', x => x.subject, x => x.subject);
+    if (preferred.subject && [...$('mapSubject').options].some(o => o.value === String(preferred.subject))) $('mapSubject').value = String(preferred.subject);
+    else if (subjects.length === 1) $('mapSubject').value = subjects[0];
+    rebuildUnitOptions(preferred.unitId);
+    if (preferred.chapterId) rebuildChapterOptions(preferred.chapterId);
+    if (preferred.subtopicId) rebuildSubtopicOptions(preferred.subtopicId);
+  }
+
+  function renderMetrics(){
+    const validation = mappingData?.validation || {};
+    const model = utils().mappingStatusModel(validation);
+    $('mappingSummaryLabel').textContent = utils().mappingCoverageLabel(validation);
+    $('mappingMetricTotal').textContent = model.total;
+    $('mappingMetricMapped').textContent = model.mapped;
+    $('mappingMetricUnmapped').textContent = model.unmapped;
+    $('mappingMetricInvalid').textContent = model.invalid;
+    $('mappingMetricMarks').textContent = model.marks;
+    $('mappingErrors').innerHTML = (validation.errors || []).map(esc).join('<br>');
+  }
+
+  function renderMappings(){
+    const groups = mappingData?.groups || [];
+    const lookup = syllabusLookup();
+    $('mappingRows').innerHTML = groups.length ? groups.map(group => `
+      <div class="mapping-row">
+        <div class="mapping-row-main">
+          <b>${esc(utils().mappingRowText(group, lookup))}</b>
+          <small>Primary scoring topic • ${esc(group.selector_text)}</small>
+        </div>
+        <div class="mapping-row-actions">
+          <button class="secondary compact-btn" data-map-edit="${esc(group.id)}">EDIT</button>
+          <button class="danger compact-btn" data-map-delete="${esc(group.id)}">DELETE</button>
+        </div>
+      </div>`).join('') : '<div class="muted-box">No mappings yet.</div>';
+  }
+
+  function renderSubtopicAdmin(){
+    const chapter = currentChapter();
+    if (!chapter) {
+      $('subtopicAdminList').innerHTML = '<div class="muted-box">Select a Chapter to manage topics.</div>';
+      return;
+    }
+    const rows = chapter.subtopics || [];
+    $('subtopicAdminList').innerHTML = rows.length ? rows.map(subtopic => {
+      const active = subtopic.status !== 'disabled';
+      const approve = subtopic.status === 'suggested'
+        ? `<button class="secondary compact-btn" data-sub-action="approve" data-sub-id="${subtopic.id}">APPROVE</button>` : '';
+      const mergePick = active ? `<input class="merge-pick" type="checkbox" data-merge-sub="${subtopic.id}">` : '';
+      const actions = active ? `${approve}<button class="secondary compact-btn" data-sub-action="rename" data-sub-id="${subtopic.id}">RENAME</button><button class="secondary compact-btn" data-sub-action="split" data-sub-id="${subtopic.id}">SPLIT</button><button class="danger compact-btn" data-sub-action="disable" data-sub-id="${subtopic.id}">DISABLE</button>` : '';
+      return `<div class="subtopic-row"><div class="mapping-row-main"><b>${mergePick}${esc(subtopic.subtopic_title)}</b><small><span class="status-tag ${esc(subtopic.status)}">${esc(String(subtopic.status).toUpperCase())}</span> • ${esc(String(subtopic.source || 'admin').toUpperCase())}</small></div><div class="subtopic-actions">${actions}</div></div>`;
+    }).join('') : '<div class="muted-box">No topics yet. Generate suggestions or add one manually.</div>';
+  }
+
+  function lockControls(){
+    const locked = Boolean(mappingData?.exam?.is_published);
+    $('mappingLocked').style.display = locked ? 'block' : 'none';
+    ['mapSelector','mapSubject','mapUnit','mapChapter','mapSubtopic','mapCoverage','saveMappingBtn','generateSuggestionsBtn','addSubtopicBtn','mergeSelectedBtn']
+      .forEach(id => { if ($(id)) $(id).disabled = locked; });
+    document.querySelectorAll('#mappingRows button,#subtopicAdminList button,#subtopicAdminList input').forEach(el => { el.disabled = locked; });
+  }
+
+  async function loadMapping(preferred=captureSelection()){
+    if (!examId) throw new Error('Exam ID missing.');
+    mappingData = await invokeMapping({action:ACTIONS.tree, examId});
+    renderMetrics();
+    renderSelectors(preferred);
+    renderMappings();
+    renderSubtopicAdmin();
+    lockControls();
+  }
+
+  async function refreshMapping(preferred){
+    try {
+      await loadMapping(preferred);
+    } catch (error) {
+      $('mappingSummaryLabel').textContent = 'Syllabus mapping unavailable';
+      $('mappingErrors').textContent = error.message || 'Could not load syllabus mapping.';
+    }
+  }
+
+  function scheduleRefresh(){
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(() => refreshMapping(), 80);
+  }
+
+  function observeQuestionChanges(){
+    const body = $('questionsBody');
+    if (!body) return;
+    const observer = new MutationObserver(() => scheduleRefresh());
+    observer.observe(body, {childList:true, subtree:true});
+  }
+
+  $('mapSubject')?.addEventListener('change', () => rebuildUnitOptions());
+  $('mapUnit')?.addEventListener('change', () => rebuildChapterOptions());
+  $('mapChapter')?.addEventListener('change', () => { rebuildSubtopicOptions(); renderSubtopicAdmin(); lockControls(); });
+
+  $('saveMappingBtn')?.addEventListener('click', async () => {
+    const subtopicId = $('mapSubtopic').value;
+    if (!$('mapSelector').value.trim()) return mappingMsg('Enter a Question Range.');
+    if (!subtopicId) return mappingMsg('Select an approved Topic / Subtopic.');
+    const btn = $('saveMappingBtn');
+    btn.disabled = true; btn.textContent = 'SAVING...';
+    try {
+      const payload = utils().saveMappingPayload({examId, mappingGroupId:editingMappingGroupId, selector:$('mapSelector').value, subtopicId, coverage:$('mapCoverage').value});
+      if (payload.action !== ACTIONS.save) throw new Error('Invalid mapping action.');
+      await invokeMapping(payload);
+      editingMappingGroupId = null;
+      $('mapSelector').value = '';
+      $('cancelMappingEdit').style.display = 'none';
+      mappingMsg('Mapping saved.', true);
+      await refreshMapping();
+    } catch (error) {
+      mappingMsg(error.message || 'Could not save mapping.');
+    } finally {
+      btn.textContent = 'SAVE MAPPING';
+      if (!mappingData?.exam?.is_published) btn.disabled = false;
+    }
+  });
+
+  $('cancelMappingEdit')?.addEventListener('click', () => {
+    editingMappingGroupId = null;
+    $('mapSelector').value = '';
+    $('mapCoverage').value = 'partial';
+    $('saveMappingBtn').textContent = 'SAVE MAPPING';
+    $('cancelMappingEdit').style.display = 'none';
+    mappingMsg('Mapping edit cancelled.', true);
+  });
+
+  $('mappingRows')?.addEventListener('click', async event => {
+    const editId = event.target?.dataset?.mapEdit;
+    const deleteId = event.target?.dataset?.mapDelete;
+    if (editId) {
+      const group = (mappingData?.groups || []).find(g => String(g.id) === String(editId));
+      if (!group) return;
+      const lookup = syllabusLookup();
+      const subtopic = lookup.subtopics.get(group.subtopic_id);
+      const chapter = subtopic && lookup.chapters.get(subtopic.chapter_id);
+      const unit = chapter && lookup.units.get(chapter.unit_id);
+      editingMappingGroupId = group.id;
+      $('mapSelector').value = group.selector_text || '';
+      $('mapCoverage').value = group.coverage || 'partial';
+      renderSelectors({subject:unit?.subject, unitId:unit?.id, chapterId:chapter?.id, subtopicId:subtopic?.id});
+      $('saveMappingBtn').textContent = 'UPDATE MAPPING';
+      $('cancelMappingEdit').style.display = 'inline-block';
+      mappingMsg('Editing selected mapping.', true);
+      $('syllabusMappingCard').scrollIntoView({behavior:'smooth', block:'start'});
+      return;
+    }
+    if (!deleteId) return;
+    if (!confirm('Delete this syllabus mapping?')) return;
+    try {
+      await invokeMapping({action:ACTIONS.delete, examId, mappingGroupId:deleteId});
+      mappingMsg('Mapping deleted.', true);
+      await refreshMapping();
+    } catch (error) {
+      mappingMsg(error.message || 'Could not delete mapping.');
+    }
+  });
+
+  $('generateSuggestionsBtn')?.addEventListener('click', async () => {
+    const chapterId = selectedChapterId();
+    if (!chapterId) return mappingMsg('Select a Chapter first.');
+    try {
+      const payload = utils().subtopicPayload('generate', {chapterId});
+      if (payload.action !== ACTIONS.generate) throw new Error('Invalid suggestion action.');
+      await invokeMapping(payload);
+      mappingMsg('Suggestions generated. Review and approve them before mapping.', true);
+      await refreshMapping({...captureSelection(), chapterId});
+    } catch (error) {
+      mappingMsg(error.message || 'Could not generate suggestions.');
+    }
+  });
+
+  $('addSubtopicBtn')?.addEventListener('click', async () => {
+    const chapterId = selectedChapterId();
+    if (!chapterId) return mappingMsg('Select a Chapter first.');
+    const title = prompt('New Topic / Subtopic name:');
+    if (!title?.trim()) return;
+    try {
+      await invokeMapping({action:ACTIONS.upsert, chapterId, title:title.trim(), status:'approved'});
+      mappingMsg('Topic added and approved.', true);
+      await refreshMapping({...captureSelection(), chapterId});
+    } catch (error) {
+      mappingMsg(error.message || 'Could not add topic.');
+    }
+  });
+
+  $('subtopicAdminList')?.addEventListener('click', async event => {
+    const kind = event.target?.dataset?.subAction;
+    const subtopicId = Number(event.target?.dataset?.subId || 0);
+    if (!kind || !subtopicId) return;
+    const chapter = currentChapter();
+    const subtopic = chapter?.subtopics?.find(x => Number(x.id) === subtopicId);
+    if (!chapter || !subtopic) return;
+    try {
+      if (kind === 'approve') {
+        const payload = utils().subtopicPayload('approve', {chapterId:chapter.id, subtopicId, title:subtopic.subtopic_title});
+        if (payload.action !== ACTIONS.upsert) throw new Error('Invalid approve action.');
+        await invokeMapping(payload);
+      }
+      if (kind === 'rename') {
+        const title = prompt('Rename Topic / Subtopic:', subtopic.subtopic_title);
+        if (!title?.trim()) return;
+        await invokeMapping({action:ACTIONS.upsert, chapterId:chapter.id, subtopicId, title:title.trim(), status:subtopic.status === 'approved' ? 'approved' : 'suggested'});
+      }
+      if (kind === 'split') {
+        const raw = prompt('Split into two or more topics, separated by commas:');
+        if (!raw) return;
+        const titles = raw.split(',').map(x => x.trim()).filter(Boolean);
+        if (titles.length < 2) return mappingMsg('Enter at least two split topic names.');
+        const payload = utils().subtopicPayload('split', {subtopicId, titles});
+        if (payload.action !== ACTIONS.split) throw new Error('Invalid split action.');
+        await invokeMapping(payload);
+      }
+      if (kind === 'disable') {
+        if (!confirm(`Disable “${subtopic.subtopic_title}”?`)) return;
+        const payload = utils().subtopicPayload('disable', {subtopicId});
+        if (payload.action !== ACTIONS.disable) throw new Error('Invalid disable action.');
+        await invokeMapping(payload);
+      }
+      mappingMsg('Topic list updated.', true);
+      await refreshMapping({...captureSelection(), chapterId:chapter.id});
+    } catch (error) {
+      mappingMsg(error.message || 'Could not update topic.');
+    }
+  });
+
+  $('mergeSelectedBtn')?.addEventListener('click', async () => {
+    const chapter = currentChapter();
+    if (!chapter) return mappingMsg('Select a Chapter first.');
+    const ids = [...document.querySelectorAll('[data-merge-sub]:checked')].map(el => Number(el.dataset.mergeSub)).filter(Boolean);
+    if (ids.length < 2) return mappingMsg('Select at least two topics to merge.');
+    const title = prompt('Merged Topic / Subtopic name:');
+    if (!title?.trim()) return;
+    try {
+      const payload = utils().subtopicPayload('merge', {chapterId:chapter.id, subtopicIds:ids, title});
+      if (payload.action !== ACTIONS.merge) throw new Error('Invalid merge action.');
+      await invokeMapping(payload);
+      mappingMsg('Topics merged and approved.', true);
+      await refreshMapping({...captureSelection(), chapterId:chapter.id});
+    } catch (error) {
+      mappingMsg(error.message || 'Could not merge topics.');
+    }
+  });
+
+  async function start(){
+    try {
+      supabase = await getClient();
+      observeQuestionChanges();
+      await refreshMapping();
+    } catch (error) {
+      mappingMsg(error.message || 'Could not start syllabus mapping.');
+    }
+  }
+
+  start();
+})();
