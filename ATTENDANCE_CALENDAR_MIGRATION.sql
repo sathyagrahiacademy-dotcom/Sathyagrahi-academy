@@ -16,6 +16,12 @@ create index if not exists academy_calendar_days_calendar_date_idx
 
 alter table public.academy_calendar_days enable row level security;
 
+-- This project does not auto-grant CRUD privileges to authenticated on tables
+-- created by the postgres role, so grants must be explicit for Data API access.
+revoke all on table public.academy_calendar_days from anon;
+grant select, insert, update, delete on table public.academy_calendar_days to authenticated;
+grant select, insert, update, delete on table public.academy_calendar_days to service_role;
+
 drop policy if exists "calendar_authenticated_read" on public.academy_calendar_days;
 create policy "calendar_authenticated_read"
   on public.academy_calendar_days
@@ -58,22 +64,8 @@ create policy "calendar_admin_delete"
   ));
 
 -- Support Leave without changing existing rows.
-do $$
-declare r record;
-begin
-  for r in
-    select c.conname
-    from pg_constraint c
-    join pg_class t on t.oid = c.conrelid
-    join pg_namespace n on n.oid = t.relnamespace
-    where n.nspname = 'public'
-      and t.relname = 'attendance'
-      and c.contype = 'c'
-      and pg_get_constraintdef(c.oid) ilike '%status%'
-  loop
-    execute format('alter table public.attendance drop constraint %I', r.conname);
-  end loop;
-end $$;
+alter table public.attendance
+  drop constraint if exists attendance_status_check;
 
 alter table public.attendance
   add constraint attendance_status_check
