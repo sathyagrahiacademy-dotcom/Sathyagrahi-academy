@@ -45,7 +45,7 @@
         while(desired.has(questionId)){
           const state=clone(desired.get(questionId));
           desired.delete(questionId);
-          try{await saveFn(questionId,state)}catch(e){desired.set(questionId,state);throw e}
+          try{await saveFn(questionId,state)}catch(e){if(!desired.has(questionId))desired.set(questionId,state);throw e}
         }
       })().finally(()=>workers.delete(questionId));
       workers.set(questionId,worker);
