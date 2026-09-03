@@ -1,41 +1,14 @@
 (async()=>{
-const c=window.sgaSupabase,$=id=>document.getElementById(id);
-const {data:{session}}=await c.auth.getSession(); if(!session)return location.replace('index.html#student-portal');
-const p=(await c.from('profiles').select('full_name,student_id').eq('id',session.user.id).single()).data;
-$('studentName').textContent=p?.full_name||'Student'; $('studentCode').textContent='ID: '+(p?.student_id||'—');
-
-function fmtTime(v){if(!v)return '—';return new Date(v).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true,timeZone:'Asia/Kolkata'});}function localDate(){
- const d=new Date(), y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
- return `${y}-${m}-${day}`;
-}
-const today=localDate();
-$('todayText').textContent=new Date(today+'T00:00:00').toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-$('month').value=today.slice(0,7);
-let all=[];
-
-async function load(){
- const r=await c.from('attendance').select('attendance_date,status,marked_at,updated_at').eq('student_id',session.user.id).order('attendance_date',{ascending:false});
- if(r.error){$('message').className='error';$('message').textContent='Attendance setup is not active yet.';return}
- all=r.data||[];
- const t=all.find(x=>x.attendance_date===today);
- if(t){$('markBtn').disabled=true;$('markBtn').textContent='ATTENDANCE MARKED';$('message').className='success';$('message').textContent="Today's attendance: "+t.status.toUpperCase()+" - "+fmtTime(t.marked_at||t.updated_at);}
- draw();
-}
-function draw(){
- const pr=all.filter(x=>x.status==='present').length, ab=all.filter(x=>x.status==='absent').length;
- $('total').textContent=all.length;$('present').textContent=pr;$('absent').textContent=ab;$('percent').textContent=(all.length?pr/all.length*100:0).toFixed(1)+'%';
- const a=all.filter(x=>x.attendance_date.startsWith($('month').value));
- $('rows').innerHTML=a.length?a.map(x=>{let d=new Date(x.attendance_date+'T00:00:00');return `<tr><td>${d.toLocaleDateString('en-IN')}</td><td>${d.toLocaleDateString('en-IN',{weekday:'long'})}</td><td class="${x.status}">${x.status.toUpperCase()}</td><td>${fmtTime(x.marked_at||x.updated_at)}</td></tr>`}).join(''):'<tr><td colspan="4">No attendance recorded for this month.</td></tr>';
-}
+const c=window.sgaSupabase,$=id=>document.getElementById(id),u=window.AttendanceReportUtils;
+const {data:{session}}=await c.auth.getSession();if(!session)return location.replace('index.html#student-portal');
+const p=(await c.from('profiles').select('full_name,student_id,batch').eq('id',session.user.id).single()).data;$('studentName').textContent=p?.full_name||'Student';$('studentCode').textContent='ID: '+(p?.student_id||'—');
+function localDate(){return new Date().toLocaleDateString('en-CA')}const today=localDate();$('month').value=today.slice(0,7);
+const dateText=d=>new Date(d+'T00:00:00').toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});$('todayText').textContent=dateText(today);
+async function getCalendar(month){const b=u.monthBounds(month),r=await c.from('academy_calendar_days').select('calendar_date,day_type,title').gte('calendar_date',b.start).lte('calendar_date',b.end);if(r.error)throw r.error;return u.buildAcademyCalendarMonth(month,r.data||[]);}
+async function loadToday(){try{const cal=await getCalendar(today.slice(0,7)),day=cal.days.find(x=>x.date===today),existing=await c.from('attendance').select('id,status,marked_at,updated_at').eq('student_id',session.user.id).eq('attendance_date',today).maybeSingle();if(day.kind!=='working'){$('markBtn').disabled=true;$('markBtn').textContent=day.kind==='holiday'?'ACADEMY HOLIDAY':'WEEKLY OFF';$('message').className='success';$('message').textContent=day.title||'Attendance not required today.';return}if(existing.data){$('markBtn').disabled=true;$('markBtn').textContent='ATTENDANCE MARKED';$('message').className='success';$('message').textContent="Today's attendance: "+String(existing.data.status||'').toUpperCase();return}$('markBtn').disabled=false;$('markBtn').textContent="MARK TODAY'S ATTENDANCE";$('message').textContent='';}catch{$('markBtn').disabled=true;$('message').className='error';$('message').textContent='Attendance calendar is temporarily unavailable.';}}
+async function draw(){const month=$('month').value;try{const b=u.monthBounds(month),cal=await getCalendar(month),r=await c.from('attendance').select('attendance_date,status,marked_at,updated_at').eq('student_id',session.user.id).gte('attendance_date',b.start).lte('attendance_date',b.end).order('attendance_date');if(r.error)throw r.error;const report=u.buildMonthlyReportFromCalendar([{id:session.user.id,student_id:p?.student_id,full_name:p?.full_name,batch:p?.batch}],r.data||[],cal,today),s=report.students[0];$('total').textContent=report.completedWorkingDays;$('present').textContent=s.present;$('absent').textContent=s.absent+s.leave;$('percent').textContent=s.percentage.toFixed(1)+'%';$('rows').innerHTML=report.days.filter(d=>d.date<=today||d.kind!=='working').map(d=>{const st=s.byDate[d.date],label=st==='weekly_off'?'SUNDAY':st==='holiday'?'HOLIDAY':st==='unmarked'?'UNMARKED':String(st||'').toUpperCase();return `<tr><td>${new Date(d.date+'T00:00:00').toLocaleDateString('en-IN')}</td><td>${new Date(d.date+'T00:00:00').toLocaleDateString('en-IN',{weekday:'long'})}</td><td>${d.title}</td><td class="${st}">${label}</td></tr>`}).join('')||'<tr><td colspan="4">No attendance for this month.</td></tr>';}catch{$('rows').innerHTML='<tr><td colspan="4">Attendance calendar is unavailable.</td></tr>';}}
 $('month').onchange=draw;
-$('markBtn').onclick=async()=>{
- $('markBtn').disabled=true;$('markBtn').textContent='MARKING...';
- const existing=await c.from('attendance').select('id,status').eq('student_id',session.user.id).eq('attendance_date',today).maybeSingle();
- if(existing.data){$('message').className='success';$('message').textContent='Attendance already marked for today.';$('markBtn').textContent='ATTENDANCE MARKED';return}
- const r=await c.from('attendance').insert({student_id:session.user.id,attendance_date:today,status:'present',marked_by:session.user.id,marked_at:new Date().toISOString(),updated_at:new Date().toISOString()});
- if(r.error){$('message').className='error';$('message').textContent='Unable to mark attendance. Please contact admin.';$('markBtn').disabled=false;$('markBtn').textContent="MARK TODAY'S ATTENDANCE";return}
- $('message').className='success';$('message').textContent='Attendance marked successfully.';$('markBtn').textContent='ATTENDANCE MARKED';await load();
-};
+$('markBtn').onclick=async()=>{$('markBtn').disabled=true;$('markBtn').textContent='MARKING...';try{const cal=await getCalendar(today.slice(0,7)),day=cal.days.find(x=>x.date===today);if(day.kind!=='working')throw new Error('Attendance not required today.');const existing=await c.from('attendance').select('id').eq('student_id',session.user.id).eq('attendance_date',today).maybeSingle();if(existing.data){await loadToday();return}const r=await c.from('attendance').insert({student_id:session.user.id,attendance_date:today,status:'present',marked_by:session.user.id,marked_at:new Date().toISOString(),updated_at:new Date().toISOString()});if(r.error)throw r.error;$('message').className='success';$('message').textContent='Attendance marked successfully.';await loadToday();await draw();}catch(e){$('message').className='error';$('message').textContent=e.message||'Unable to mark attendance.';$('markBtn').disabled=false;$('markBtn').textContent="MARK TODAY'S ATTENDANCE";}};
 $('logoutBtn').onclick=async()=>{await c.auth.signOut();location.replace('index.html#student-portal')};
-await load();
+await loadToday();await draw();
 })();
