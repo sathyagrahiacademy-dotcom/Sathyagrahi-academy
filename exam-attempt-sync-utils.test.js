@@ -35,5 +35,18 @@ const u = require('./exam-attempt-sync-utils.js');
   assert.strictEqual(confirmed.q1.selected_option,'B');
   assert.strictEqual(queue.hasPending(),false);
 
+  let failA=true;
+  const retryConfirmed={};
+  const retryQueue=u.createSaveQueue(async(questionId,state)=>{
+    if(state.selected_option==='A'&&failA){failA=false;throw new Error('network')}
+    retryConfirmed[questionId]={...state};
+  });
+  const first=retryQueue.enqueue('q1',{selected_option:'A',marked_for_review:false}).catch(()=>{});
+  const second=retryQueue.enqueue('q1',{selected_option:'B',marked_for_review:false}).catch(()=>{});
+  await Promise.all([first,second]);
+  await retryQueue.flush('q1');
+  assert.strictEqual(retryConfirmed.q1.selected_option,'B');
+  assert.strictEqual(retryQueue.hasPending(),false);
+
   console.log('exam-attempt-sync-utils tests passed');
 })().catch(err=>{console.error(err);process.exit(1)});
