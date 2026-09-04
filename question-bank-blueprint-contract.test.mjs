@@ -15,6 +15,14 @@ test('migration defines permanent central question bank and exam snapshot link',
   assert.match(sql, /add_bank_questions_to_exam/i);
 });
 
+test('bank import and reuse preserve historical performance and require explicit marks', () => {
+  const sql = read('QUESTION_BANK_AUTO_MAPPING_MIGRATION.sql');
+  const performanceGuards = sql.match(/exam_scope_performance/gi) || [];
+  assert.ok(performanceGuards.length >= 2, 'import and bank reuse must both block exams with generated syllabus performance');
+  assert.doesNotMatch(sql, /v_marks\s*:=\s*coalesce\(nullif\(v_item->>'marks'/i);
+  assert.doesNotMatch(sql, /v_negative\s*:=\s*coalesce\(nullif\(v_item->>'negativeMarks'/i);
+});
+
 test('manual canonical mappings automatically sync mapped questions to permanent bank', () => {
   const sql=read('QUESTION_BANK_MAPPING_SYNC_TRIGGER_MIGRATION.sql');
   assert.match(sql,/create trigger exam_question_map_sync_bank/i);
@@ -50,6 +58,14 @@ test('question bank reads protected central-bank API instead of exam_questions d
   assert.match(js,/unitTitle/);assert.match(js,/chapterTitle/);assert.match(js,/topicTitle/);
 });
 
+test('question bank filters include source and source year', () => {
+  const html=read('admin-question-bank.html'),js=read('admin-question-bank.js');
+  assert.match(html,/id=["']source["']/i);
+  assert.match(html,/id=["']sourceYear["']/i);
+  assert.match(js,/source_label/);
+  assert.match(js,/source_year/);
+});
+
 test('exam page loads downloadable Blueprint PDF action and protected data API', () => {
   const nav=read('admin-examinations-nav.js'),blueprint=read('admin-exam-blueprint.js'),edge=read('supabase/functions/admin-exam-blueprint/index.ts');
   assert.ok(blueprint.length > 0, 'blueprint module is missing');
@@ -57,4 +73,19 @@ test('exam page loads downloadable Blueprint PDF action and protected data API',
   assert.match(blueprint, /jspdf/i);
   assert.match(nav,/jspdf@/i);assert.match(nav,/jspdf-autotable@/i);assert.match(nav,/admin-exam-blueprint\.js/);
   assert.match(edge,/Admin access required/);assert.match(edge,/exam_code/);assert.doesNotMatch(edge,/password_hash/);
+});
+
+test('Blueprint reuses canonical mapping validation without exposing answer keys', () => {
+  const edge=read('supabase/functions/admin-exam-blueprint/index.ts');
+  assert.match(edge,/validateExamMapping/);
+  assert.match(edge,/\.in\(['"]question_id['"],\s*questionIds\)/);
+  assert.match(edge,/publishReady:\s*coreValidation\.ok/);
+  assert.doesNotMatch(edge,/correct_option[^\n]*return json/i);
+});
+
+test('feature CI includes stable Examination regression coverage', () => {
+  const yml=read('.github/workflows/question-bank-blueprint.yml');
+  for(const name of ['exam-mapping-logic.test.mjs','exam-publish-validation.test.mjs','exam-scope-logic.test.mjs','exam-grading-performance.test.mjs','exam-submit-sync.test.mjs','exam-performance-contract.test.mjs']){
+    assert.ok(yml.includes(name), `missing regression test ${name}`);
+  }
 });
