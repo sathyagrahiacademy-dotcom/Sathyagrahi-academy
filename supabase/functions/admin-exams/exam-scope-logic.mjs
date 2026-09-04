@@ -44,3 +44,39 @@ export function buildExamScopeSummary(items,lookup={}){
   }
   return labels.join('; ');
 }
+
+export function normalizeTopicName(value){
+  return String(value??'').trim().replace(/\s+/g,' ');
+}
+
+export function normaliseExamScopeDraftV2(items){
+  if(!Array.isArray(items))return{ok:false,error:'Scope items must be an array'};
+  const allowed=new Set(['Physics','Chemistry','Biology']);
+  const out=[];
+  const seen=new Set();
+  for(let i=0;i<items.length;i++){
+    const raw=items[i]||{};
+    const subject=String(raw.subject||'').trim();
+    const unitId=positiveInt(raw.unitId);
+    const chapterId=positiveInt(raw.chapterId);
+    const scopeType=String(raw.scopeType||((raw.subtopicId!=null&&raw.subtopicId!=='')?'topic':'chapter')).trim().toLowerCase();
+    if(!allowed.has(subject))return{ok:false,error:`Select Subject for syllabus scope row ${i+1}`};
+    if(!unitId)return{ok:false,error:`Select Unit for syllabus scope row ${i+1}`};
+    if(!chapterId)return{ok:false,error:`Select Chapter for syllabus scope row ${i+1}`};
+    if(!['chapter','topic'].includes(scopeType))return{ok:false,error:`Select Scope Type for syllabus scope row ${i+1}`};
+    let topicName='',subtopicId=null,key='';
+    if(scopeType==='topic'){
+      topicName=normalizeTopicName(raw.topicName);
+      if(!topicName)return{ok:false,error:`Enter Topic Name for syllabus scope row ${i+1}`};
+      subtopicId=raw.subtopicId==null||raw.subtopicId===''?null:positiveInt(raw.subtopicId);
+      if(raw.subtopicId!=null&&raw.subtopicId!==''&&!subtopicId)return{ok:false,error:`Invalid Topic for syllabus scope row ${i+1}`};
+      key=subtopicId?`${unitId}:${chapterId}:id:${subtopicId}`:`${unitId}:${chapterId}:name:${topicName.toLowerCase()}`;
+    }else{
+      key=`${unitId}:${chapterId}:chapter`;
+    }
+    if(seen.has(key))return{ok:false,error:'Duplicate syllabus scope row'};
+    seen.add(key);
+    out.push({subject,unitId,chapterId,scopeType,topicName,subtopicId,sortOrder:i});
+  }
+  return{ok:true,items:out};
+}
