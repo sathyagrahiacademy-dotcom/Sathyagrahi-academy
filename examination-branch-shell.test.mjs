@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const nav=fs.readFileSync('admin-examinations-nav.js','utf8');
-const css=fs.readFileSync('admin-dashboard.css','utf8');
+const css=fs.existsSync('examination-branch-shell.css')?fs.readFileSync('examination-branch-shell.css','utf8'):'';
 
 test('uses shared Examination Branch identity and tagline',()=>{
   assert.match(nav,/EXAMINATION BRANCH/);
@@ -16,6 +16,7 @@ test('renders five designed Examination Branch navigation sections',()=>{
   assert.match(nav,/exam-nav-card/);
   assert.match(nav,/exam-nav-number/);
   assert.match(nav,/exam-nav-copy/);
+  assert.match(nav,/examination-branch-shell\.css/);
 });
 
 test('styles navigation as a full-width professional module strip',()=>{
