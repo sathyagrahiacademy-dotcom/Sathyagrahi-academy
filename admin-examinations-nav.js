@@ -27,6 +27,13 @@
   host.className='examination-branch-shell';
   host.innerHTML=`<nav class="exam-section-nav branch-nav" aria-label="Examination Branch sections">${items.map(([href,no,label,desc])=>`<a href="${href}" class="exam-nav-card ${current===href.toLowerCase()?'active':''}"><span class="exam-nav-number">${no}</span><span class="exam-nav-copy"><b>${label}</b><small>${desc}</small></span></a>`).join('')}</nav>`;
 
+  if(current==='admin-exams.html'&&!document.getElementById('adminExamsEnhancements')){
+    const script=document.createElement('script');
+    script.id='adminExamsEnhancements';
+    script.src='admin-exams-enhancements.js?v=20260905-1';
+    document.body.appendChild(script);
+  }
+
   document.querySelectorAll('aside nav a.active').forEach(a=>a.classList.remove('active'));
   const examinationsLink=document.querySelector('aside nav a[href="admin-exams.html"]');
   if(examinationsLink)examinationsLink.classList.add('active');
