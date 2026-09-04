@@ -5,12 +5,15 @@ import fs from 'node:fs';
 const html=fs.readFileSync('admin-exams.html','utf8');
 const legacyJs=fs.readFileSync('admin-exams.js','utf8');
 const v2=fs.readFileSync('admin-exam-scope-v2-ui.js','utf8');
+const loader=fs.readFileSync('admin-exam-scope-v2-loader.js','utf8');
 
-test('exam form keeps canonical scope host and loads v2 controller',()=>{
+test('exam form keeps canonical scope host and loads v2 controller after legacy initialization',()=>{
   assert.match(html,/id="scopeRows"/);
   assert.match(html,/id="addScopeRow"/);
   assert.match(html,/id="legacyScopeNote"/);
-  assert.match(html,/admin-exam-scope-v2-ui\.js\?v=20260904-1/);
+  assert.match(html,/admin-exam-scope-v2-loader\.js\?v=20260905-2/);
+  assert.doesNotMatch(html,/<script src="admin-exam-scope-v2-ui\.js\?v=[^"]+"><\/script>/);
+  assert.match(loader,/admin-exam-scope-v2-ui\.js\?v=20260905-2/);
   assert.doesNotMatch(html,/id="syllabus"/);
 });
 
