@@ -12,3 +12,6 @@ jobs:
         with:
           node-version: '22'
       - run: node --test exam-scope-month-folders.test.mjs
+      - run: node --check admin-exams-enhancements.js
+      - run: node --check admin-examinations-nav.js
+      - run: node --check exam-scope-ui-utils.js
