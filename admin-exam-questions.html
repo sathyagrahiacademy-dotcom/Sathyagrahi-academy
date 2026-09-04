@@ -22,13 +22,14 @@
     .mapping-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}.mapping-head h2{margin:0}.mapping-note{color:#667085;font-size:13px;margin-top:5px;max-width:720px}
     .mapping-summary{margin-top:16px;padding:13px 14px;border:1px solid #dce5ef;border-radius:10px;background:#f8fbff;font-weight:800;color:#173653}
     .mapping-metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin:12px 0 18px}.mapping-metric{border:1px solid #e4e9ef;border-radius:9px;padding:10px;background:#fff}.mapping-metric small{display:block;color:#718096;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px}.mapping-metric strong{display:block;margin-top:4px;font-size:18px;color:#10213c}
+    .exam-scope-context{margin:0 0 14px;padding:12px 14px;border:1px solid #d7e3f0;border-radius:10px;background:#f7fbff}.exam-scope-context b{font-size:12px;color:#173653}.exam-scope-context p{margin:4px 0 0;color:#667085;font-size:11px}.scope-preset{display:grid;grid-template-columns:160px 1fr;gap:10px;align-items:center;margin-top:9px}.scope-preset label{margin:0;font-size:11px}.scope-preset select{padding:9px}
     .mapping-grid{display:grid;grid-template-columns:1.4fr repeat(5,1fr);gap:10px;align-items:end}.mapping-grid .actions{display:flex;gap:8px;flex-wrap:wrap}
     .mapping-subsection{margin-top:20px;padding-top:16px;border-top:1px solid #edf0f4}.mapping-subhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.mapping-subhead h3{margin:0;font-size:16px;color:#173653}.mapping-actions{display:flex;gap:8px;flex-wrap:wrap}
     .mapping-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}.mapping-row,.subtopic-row{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid #e4e9ef;border-radius:9px;padding:10px 12px;background:#fff}.mapping-row-main{min-width:0}.mapping-row-main b{display:block;font-size:12px;color:#173653;line-height:1.45}.mapping-row-main small{display:block;color:#78879a;margin-top:3px}.mapping-row-actions,.subtopic-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
     .status-tag{display:inline-block;border-radius:99px;padding:3px 7px;font-size:9px;font-weight:900;background:#eef2f7;color:#627286}.status-tag.approved{background:#eaf7ef;color:#267447}.status-tag.suggested{background:#fff4e8;color:#95531f}.status-tag.disabled{background:#f3f4f6;color:#7b8491}
     .compact-btn{padding:7px 9px;font-size:10px}.muted-box{border:1px dashed #d7dee8;border-radius:9px;padding:14px;color:#748197;font-size:12px;margin-top:10px}.mapping-locked{color:#9a4f16;background:#fff6e8;border:1px solid #f0d6ad;border-radius:8px;padding:9px 11px;font-size:12px;font-weight:700;display:none}.merge-pick{width:auto;margin:0 3px 0 0;vertical-align:middle}
     @media(max-width:980px){.mapping-grid{grid-template-columns:1fr 1fr 1fr}.mapping-metrics{grid-template-columns:repeat(3,1fr)}}
-    @media(max-width:700px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.top{align-items:flex-start;flex-direction:column}.mapping-grid{grid-template-columns:1fr}.mapping-metrics{grid-template-columns:1fr 1fr}.mapping-row,.subtopic-row{align-items:flex-start;flex-direction:column}.mapping-row-actions,.subtopic-actions{justify-content:flex-start}}
+    @media(max-width:700px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.top{align-items:flex-start;flex-direction:column}.mapping-grid{grid-template-columns:1fr}.mapping-metrics{grid-template-columns:1fr 1fr}.mapping-row,.subtopic-row{align-items:flex-start;flex-direction:column}.mapping-row-actions,.subtopic-actions{justify-content:flex-start}.scope-preset{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -92,6 +93,7 @@
         <div class="mapping-metric"><small>Marks</small><strong id="mappingMetricMarks">—</strong></div>
       </div>
       <div id="mappingErrors" class="msg error"></div>
+      <div id="examScopeContext" class="exam-scope-context"><b>Exam Scope</b><p>Loading official exam scope...</p></div>
 
       <div class="mapping-grid">
         <div><label>Question Range</label><input id="mapSelector" placeholder="Q1-Q10, Q17, Q22-Q28"></div>
@@ -128,8 +130,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="supabase-config.js"></script>
-  <script src="exam-mapping-ui-utils.js"></script>
+  <script src="exam-mapping-ui-utils.js?v=20260904-2"></script>
   <script src="admin-exam-questions.js"></script>
-  <script src="admin-exam-mapping-ui.js"></script>
+  <script src="admin-exam-mapping-ui.js?v=20260904-2"></script>
 </body>
 </html>
