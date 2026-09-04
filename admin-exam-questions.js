@@ -22,9 +22,23 @@
     return data;
   }
 
+  async function invokeBank(body){
+    const { data:{ session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("Admin login required.");
+    const { data, error } = await supabase.functions.invoke("admin-question-bank", { body });
+    if (error){
+      let detail=null;
+      try{ detail=await error.context?.json?.(); }catch(_){}
+      const e=new Error(detail?.error||error.message||"Question Bank operation failed.");
+      e.details=Array.isArray(detail?.errors)?detail.errors:[];
+      throw e;
+    }
+    if(data?.error){ const e=new Error(data.error); e.details=Array.isArray(data.errors)?data.errors:[]; throw e; }
+    return data;
+  }
 
   let bulkQuestions = [];
-  const requiredHeaders = ["Question No","Question","Option A","Option B","Option C","Option D","Correct Answer","Marks","Negative Marks","Explanation"];
+  const requiredHeaders = ["Question No","Subject","Unit","Chapter","Topic","Question","Option A","Option B","Option C","Option D","Correct Answer","Marks","Negative Marks","Explanation","Difficulty","Question Type","Source","Source Year"];
 
   function normalizeHeader(s){ return String(s??"").trim().toLowerCase().replace(/[^a-z0-9]/g,""); }
   function cell(row,names){
@@ -35,6 +49,10 @@
   function parseRows(rows){
     return rows.filter(r=>Object.values(r).some(v=>String(v??"").trim()!=="")).map(r=>({
       questionNo:Number(cell(r,["Question No","question_no","questionno"])),
+      subject:String(cell(r,["Subject"])).trim(),
+      unit:String(cell(r,["Unit","Unit Title","unit_title"])).trim(),
+      chapter:String(cell(r,["Chapter","Chapter Title","chapter_title"])).trim(),
+      topic:String(cell(r,["Topic","Topic/Subtopic","Subtopic"])).trim(),
       questionText:String(cell(r,["Question","question_text","questiontext"])).trim(),
       optionA:String(cell(r,["Option A","option_a","optiona"])).trim(),
       optionB:String(cell(r,["Option B","option_b","optionb"])).trim(),
@@ -43,7 +61,11 @@
       correctOption:String(cell(r,["Correct Answer","correct_option","correctanswer"])).trim().toUpperCase(),
       marks:Number(cell(r,["Marks"]) || 4),
       negativeMarks:Number(cell(r,["Negative Marks","negative_marks","negativemarks"]) || 0),
-      explanation:String(cell(r,["Explanation"])).trim()
+      explanation:String(cell(r,["Explanation"])).trim(),
+      difficulty:String(cell(r,["Difficulty"])).trim(),
+      questionType:String(cell(r,["Question Type","question_type","Type"])).trim(),
+      source:String(cell(r,["Source","Source Label"])).trim(),
+      sourceYear:String(cell(r,["Source Year","source_year"])).trim()
     }));
   }
   function validateBulk(rows){
@@ -51,11 +73,14 @@
     rows.forEach((q,i)=>{
       const r=i+2;
       if(!Number.isInteger(q.questionNo)||q.questionNo<=0) errors.push(`Row ${r}: invalid Question No.`);
+      for(const [label,value] of [["Subject",q.subject],["Unit",q.unit],["Chapter",q.chapter],["Topic",q.topic]]) if(!value) errors.push(`Row ${r}: ${label} is required for automatic mapping.`);
       if(!q.questionText) errors.push(`Row ${r}: Question is missing.`);
       [q.optionA,q.optionB,q.optionC,q.optionD].forEach((v,j)=>{ if(!v) errors.push(`Row ${r}: Option ${"ABCD"[j]} is missing.`); });
       if(!["A","B","C","D"].includes(q.correctOption)) errors.push(`Row ${r}: Correct Answer must be A, B, C or D.`);
       if(!Number.isFinite(q.marks)||q.marks<=0) errors.push(`Row ${r}: invalid Marks.`);
       if(!Number.isFinite(q.negativeMarks)||q.negativeMarks<0) errors.push(`Row ${r}: invalid Negative Marks.`);
+      if(q.difficulty&&!['easy','medium','hard'].includes(q.difficulty.toLowerCase())) errors.push(`Row ${r}: Difficulty must be Easy, Medium or Hard.`);
+      if(q.sourceYear&&(!/^\d{4}$/.test(q.sourceYear)||Number(q.sourceYear)<1900||Number(q.sourceYear)>2200)) errors.push(`Row ${r}: invalid Source Year.`);
       if(seen.has(q.questionNo)) errors.push(`Row ${r}: duplicate Question No. ${q.questionNo}.`);
       seen.add(q.questionNo);
     });
@@ -63,11 +88,16 @@
   }
 
   $("downloadTemplate").addEventListener("click",()=>{
-    const sample=[{"Question No":1,"Question":"What is the SI unit of force?","Option A":"Joule","Option B":"Newton","Option C":"Watt","Option D":"Pascal","Correct Answer":"B","Marks":4,"Negative Marks":1,"Explanation":"Force is measured in newtons (N)."}];
+    const sample=[{
+      "Question No":1,"Subject":"Physics","Unit":"Kinematics","Chapter":"Motion in a Plane","Topic":"Projectile Motion",
+      "Question":"A projectile is launched horizontally. Which component of velocity remains constant?","Option A":"Horizontal","Option B":"Vertical","Option C":"Both","Option D":"Neither",
+      "Correct Answer":"A","Marks":4,"Negative Marks":1,"Explanation":"Ignoring air resistance, horizontal acceleration is zero.",
+      "Difficulty":"Medium","Question Type":"Concept","Source":"AI Practice","Source Year":""
+    }];
     const ws=XLSX.utils.json_to_sheet(sample,{header:requiredHeaders});
-    ws["!cols"]=[{wch:12},{wch:45},{wch:22},{wch:22},{wch:22},{wch:22},{wch:16},{wch:10},{wch:16},{wch:45}];
+    ws["!cols"]=[{wch:12},{wch:14},{wch:28},{wch:30},{wch:28},{wch:52},{wch:22},{wch:22},{wch:22},{wch:22},{wch:16},{wch:10},{wch:16},{wch:45},{wch:12},{wch:18},{wch:18},{wch:12}];
     const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"Questions");
-    XLSX.writeFile(wb,"Sathyagrahi_Exam_Questions_Template.xlsx");
+    XLSX.writeFile(wb,"Sathyagrahi_AI_Exam_Questions_AutoMap_Template.xlsx");
   });
 
   $("bulkFile").addEventListener("change",async e=>{
@@ -86,7 +116,7 @@
         $("bulkErrors").innerHTML=errors.slice(0,25).map(esc).join("<br>");
         return;
       }
-      $("bulkSummary").textContent=`Ready: ${bulkQuestions.length} valid question(s).`;
+      $("bulkSummary").textContent=`Ready: ${bulkQuestions.length} question(s). Official Subject → Unit → Chapter → Topic will be verified and AUTO MAPPED on import.`;
       $("bulkSummary").className="msg ok";
       $("importQuestions").disabled=false;
     }catch(err){
@@ -97,14 +127,17 @@
 
   $("importQuestions").addEventListener("click",async()=>{
     if(!bulkQuestions.length) return;
-    if(!confirm(`Import ${bulkQuestions.length} questions into this exam?`)) return;
-    const btn=$("importQuestions"); btn.disabled=true; btn.textContent="IMPORTING...";
+    if(!confirm(`Validate, auto-map and import ${bulkQuestions.length} questions into this exam and permanent Question Bank?`)) return;
+    const btn=$("importQuestions"); btn.disabled=true; btn.textContent="VALIDATING & IMPORTING..."; $("bulkErrors").textContent="";
     try{
-      const data=await invoke({action:"bulk_add",examId,questions:bulkQuestions});
-      msg(`${data.imported||bulkQuestions.length} questions imported successfully.`,true);
+      const data=await invokeBank({action:"bulk_import",examId,questions:bulkQuestions});
+      msg(`${data.imported||bulkQuestions.length} imported • ${data.autoMapped||0} auto-mapped • Bank: ${data.bankCreated||0} new, ${data.bankReused||0} reused.`,true);
       bulkQuestions=[]; $("bulkFile").value=""; $("bulkSummary").textContent="No file selected."; $("bulkSummary").className="msg"; $("bulkErrors").textContent="";
       await load();
-    }catch(err){ msg(err.message||"Bulk import failed."); }
+    }catch(err){
+      msg(err.message||"Bulk import failed.");
+      if(Array.isArray(err.details)&&err.details.length) $("bulkErrors").innerHTML=err.details.slice(0,50).map(esc).join("<br>");
+    }
     finally{ btn.textContent="IMPORT ALL QUESTIONS"; btn.disabled=true; }
   });
 
@@ -125,7 +158,7 @@
     e.preventDefault(); msg("Saving...");
     try{
       await invoke({action:editingQuestionId?"update":"add",questionId:editingQuestionId||undefined,examId,questionNo:Number($("questionNo").value),questionText:$("questionText").value,optionA:$("optionA").value,optionB:$("optionB").value,optionC:$("optionC").value,optionD:$("optionD").value,correctOption:$("correctOption").value,marks:Number($("marks").value),negativeMarks:Number($("negativeMarks").value),explanation:$("explanation").value});
-      e.target.reset(); $("marks").value=4; $("negativeMarks").value=1; msg(editingQuestionId?"Question updated successfully.":"Question saved successfully.",true); editingQuestionId=null; $("saveQuestionBtn").textContent="SAVE QUESTION"; $("cancelEditQuestion").style.display="none"; await load();
+      e.target.reset(); $("marks").value=4; $("negativeMarks").value=1; msg(editingQuestionId?"Question updated successfully.":"Question saved successfully. Map it below to sync it into the permanent Question Bank.",true); editingQuestionId=null; $("saveQuestionBtn").textContent="SAVE QUESTION"; $("cancelEditQuestion").style.display="none"; await load();
     }catch(err){ msg(err.message||"Could not save question."); }
   });
 
