@@ -2,182 +2,38 @@
 aside::-webkit-scrollbar{width:6px}
 aside::-webkit-scrollbar-thumb{background:#ffffff3d;border-radius:99px}
 nav a[data-coming]{color:#eaf1ff}
-/* =========================================================
-   SATHYAGRAHI ACADEMY — ADMIN PORTAL PROFESSIONAL TYPOGRAPHY
-   Font family retained. Readability only. No layout/JS changes.
-   ========================================================= */
+html,body,button,input,select,textarea,a{font-family:'Trebuchet MS','Segoe UI',Arial,sans-serif !important;}
+.brand b{font-size:15px !important;line-height:1.25 !important;}
+.brand small{font-size:11px !important;line-height:1.35 !important;opacity:.90 !important;}
+nav a{font-size:13.5px !important;line-height:1.35 !important;}
+header h1{font-size:22px !important;line-height:1.2 !important;}
+header p{font-size:13px !important;line-height:1.45 !important;}
+header button{font-size:12px !important;}
+.content h2{font-size:24px !important;line-height:1.25 !important;}
+.intro,.muted,.subtle,.count-line,.msg,.message,.empty,.info-note{font-size:13px !important;line-height:1.55 !important;}
+.stats span,.stat span{font-size:11px !important;line-height:1.35 !important;}
+.panel h3{font-size:16px !important;line-height:1.3 !important;}
+.panel p{font-size:13px !important;line-height:1.6 !important;}
+.actions button{font-size:12px !important;}
+main .field label,main .form label,main .form-grid label,main .reply-grid label,main .edit-card label,main .status label{font-size:12px !important;line-height:1.4 !important;}
+main input,main select,main textarea,main .toolbar input,main .toolbar select,main .actions select,main .actions textarea,main .reply-grid select,main .reply-grid textarea,main .form input,main .form select,main .form textarea,main .form-grid input,main .form-grid textarea{font-size:13px !important;line-height:1.4 !important;}
+main table{font-size:13px !important;}
+main table th,main th{font-size:11.5px !important;line-height:1.35 !important;}
+main table td,main td{font-size:12.5px !important;line-height:1.45 !important;}
+main .badge,main .chip,main .attach,main .detail span,main .preview .chip{font-size:10.5px !important;line-height:1.3 !important;}
+main .detail b,main .student,main .notice p,main .ticket p,main .preview .tagline,main .preview .quote{font-size:12.5px !important;line-height:1.5 !important;}
+main .btn,main .small-btn,main .form-actions button,main .notice-actions button,main .more-menu button{font-size:11.5px !important;line-height:1.3 !important;}
+main .check{font-size:12.5px !important;}
+#toast,#msg,.edit-msg{font-size:12.5px !important;line-height:1.45 !important;}
+main .preview,main .reply-grid,main .actions label{font-size:12px !important;}
+.brand img{width:48px !important;height:48px !important;border-radius:50% !important;object-fit:cover !important;background:#fff !important;padding:3px !important;border:1px solid #ffffff66 !important;box-shadow:0 4px 12px #001d4629 !important;flex:0 0 48px !important;}
+@media(max-width:800px){header h1{font-size:20px !important}.content h2{font-size:22px !important}}
 
-html,body,button,input,select,textarea,a{
-  font-family:'Trebuchet MS','Segoe UI',Arial,sans-serif !important;
-}
-
-/* Sidebar / Brand */
-.brand b{
-  font-size:15px !important;
-  line-height:1.25 !important;
-}
-.brand small{
-  font-size:11px !important;
-  line-height:1.35 !important;
-  opacity:.90 !important;
-}
-nav a{
-  font-size:13.5px !important;
-  line-height:1.35 !important;
-}
-
-/* Top bar */
-header h1{
-  font-size:22px !important;
-  line-height:1.2 !important;
-}
-header p{
-  font-size:13px !important;
-  line-height:1.45 !important;
-}
-header button{
-  font-size:12px !important;
-}
-
-/* Main headings / supporting text */
-.content h2{
-  font-size:24px !important;
-  line-height:1.25 !important;
-}
-.intro,
-.muted,
-.subtle,
-.count-line,
-.msg,
-.message,
-.empty,
-.info-note{
-  font-size:13px !important;
-  line-height:1.55 !important;
-}
-
-/* Dashboard cards */
-.stats span,
-.stat span{
-  font-size:11px !important;
-  line-height:1.35 !important;
-}
-.panel h3{
-  font-size:16px !important;
-  line-height:1.3 !important;
-}
-.panel p{
-  font-size:13px !important;
-  line-height:1.6 !important;
-}
-.actions button{
-  font-size:12px !important;
-}
-
-/* Forms */
-main .field label,
-main .form label,
-main .form-grid label,
-main .reply-grid label,
-main .edit-card label,
-main .status label{
-  font-size:12px !important;
-  line-height:1.4 !important;
-}
-main input,
-main select,
-main textarea,
-main .toolbar input,
-main .toolbar select,
-main .actions select,
-main .actions textarea,
-main .reply-grid select,
-main .reply-grid textarea,
-main .form input,
-main .form select,
-main .form textarea,
-main .form-grid input,
-main .form-grid textarea{
-  font-size:13px !important;
-  line-height:1.4 !important;
-}
-
-/* Tables */
-main table{
-  font-size:13px !important;
-}
-main table th,
-main th{
-  font-size:11.5px !important;
-  line-height:1.35 !important;
-}
-main table td,
-main td{
-  font-size:12.5px !important;
-  line-height:1.45 !important;
-}
-
-/* Badges / chips / small metadata */
-main .badge,
-main .chip,
-main .attach,
-main .detail span,
-main .preview .chip{
-  font-size:10.5px !important;
-  line-height:1.3 !important;
-}
-main .detail b,
-main .student,
-main .notice p,
-main .ticket p,
-main .preview .tagline,
-main .preview .quote{
-  font-size:12.5px !important;
-  line-height:1.5 !important;
-}
-
-/* Buttons / controls */
-main .btn,
-main .small-btn,
-main .form-actions button,
-main .notice-actions button,
-main .more-menu button{
-  font-size:11.5px !important;
-  line-height:1.3 !important;
-}
-main .check{
-  font-size:12.5px !important;
-}
-
-/* Messages / toast */
-#toast,
-#msg,
-.edit-msg{
-  font-size:12.5px !important;
-  line-height:1.45 !important;
-}
-
-/* Admin page-specific readable text */
-main .preview,
-main .reply-grid,
-main .actions label{
-  font-size:12px !important;
-}
-
-/* Keep logo appearance exactly consistent */
-.brand img{
-  width:48px !important;
-  height:48px !important;
-  border-radius:50% !important;
-  object-fit:cover !important;
-  background:#fff !important;
-  padding:3px !important;
-  border:1px solid #ffffff66 !important;
-  box-shadow:0 4px 12px #001d4629 !important;
-  flex:0 0 48px !important;
-}
-
-@media(max-width:800px){
-  header h1{font-size:20px !important}
-  .content h2{font-size:22px !important}
-}
+/* Unified Examinations shell */
+aside nav a[href="admin-question-bank.html"],
+aside nav a[href="admin-results.html"]{display:none}
+.exam-section-nav{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 20px;padding:7px;background:#eef4fb;border:1px solid #d7e1ee;border-radius:10px}
+.exam-section-nav a{display:inline-flex;align-items:center;justify-content:center;padding:9px 13px;border-radius:7px;text-decoration:none;color:#315070;font-size:12px;font-weight:800;line-height:1.2;background:transparent}
+.exam-section-nav a:hover{background:#fff;color:#06275f}
+.exam-section-nav a.active{background:#06275f;color:#fff;box-shadow:0 2px 8px #06275f1f}
+@media(max-width:700px){.exam-section-nav{display:grid;grid-template-columns:1fr 1fr}.exam-section-nav a{width:100%}}
