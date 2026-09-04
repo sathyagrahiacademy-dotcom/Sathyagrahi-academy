@@ -13,6 +13,7 @@
   function findChapter(tree,chapterId){for(const unit of list(tree)){const chapter=list(unit.chapters).find(x=>String(x.id)===String(chapterId));if(chapter)return chapter;}return null;}
   function approvedSubtopicsForChapter(tree,chapterId){return list(findChapter(tree,chapterId)?.subtopics).filter(x=>x.status==='approved');}
   function activeTopicSuggestionsForChapter(tree,chapterId){return list(findChapter(tree,chapterId)?.subtopics).filter(x=>x.status!=='disabled');}
+  function activeSubtopicsForChapter(tree,chapterId){return activeTopicSuggestionsForChapter(tree,chapterId);}
 
   function key(row){return `${Number(row?.unitId)||0}:${Number(row?.chapterId)||0}:${row?.subtopicId==null||row?.subtopicId===''?0:Number(row.subtopicId)||0}`;}
   function isDuplicateScopeRow(rows,candidate,ignoreIndex=-1){const target=key(candidate);return list(rows).some((row,i)=>i!==ignoreIndex&&key(row)===target);}
@@ -41,5 +42,5 @@
     return{ok:true,items:out};
   }
 
-  return{unitsForSubject,chaptersForUnit,approvedSubtopicsForChapter,activeTopicSuggestionsForChapter,isDuplicateScopeRow,normaliseScopeDraft,normalizeTopicName,normaliseScopeDraftV2};
+  return{unitsForSubject,chaptersForUnit,approvedSubtopicsForChapter,activeTopicSuggestionsForChapter,activeSubtopicsForChapter,isDuplicateScopeRow,normaliseScopeDraft,normalizeTopicName,normaliseScopeDraftV2};
 });
