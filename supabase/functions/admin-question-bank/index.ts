@@ -1,18 +1,11 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'jsr:@supabase/supabase-js@2/cors'
-import { buildSyllabusLookup, resolveSyllabusLabels } from './import-policy.mjs'
+import { buildSyllabusLookup, validateImportQuestions } from './import-policy.mjs'
 
 function json(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 }
 function text(v: unknown){ return String(v ?? '').trim() }
-function numberOr(v: unknown, fallback: number){ const n=Number(v); return Number.isFinite(n)?n:fallback }
-function normalizeDifficulty(v: unknown){
-  const s=text(v).toLowerCase();
-  if(!s) return '';
-  if(s==='easy') return 'Easy'; if(s==='medium') return 'Medium'; if(s==='hard') return 'Hard';
-  return null;
-}
 async function loadTree(admin:any){
   const [u,c,s]=await Promise.all([
     admin.from('neet_syllabus_units').select('id,subject,unit_no,unit_title,sort_order').order('subject').order('sort_order'),
@@ -64,33 +57,10 @@ Deno.serve(async (req: Request) => {
       if(!examId) return json({error:'Exam ID is required'},400)
       if(!raw.length) return json({error:'No questions supplied'},400)
       if(raw.length>250) return json({error:'Maximum 250 questions per import'},400)
-      const tree=await loadTree(admin), lookup=buildSyllabusLookup(tree), errors:string[]=[], resolved:any[]=[]
-      const seen=new Set<number>()
-      raw.forEach((q:any,i:number)=>{
-        const row=i+2, qn=Number(q.questionNo), difficulty=normalizeDifficulty(q.difficulty)
-        if(!Number.isInteger(qn)||qn<=0) errors.push(`Row ${row}: invalid Question No.`)
-        if(seen.has(qn)) errors.push(`Row ${row}: duplicate Question No. ${qn}.`); seen.add(qn)
-        const syllabus=resolveSyllabusLabels(lookup,{subject:q.subject,unit:q.unit,chapter:q.chapter,topic:q.topic})
-        if(!syllabus.ok) errors.push(`Row ${row}: ${syllabus.error}.`)
-        const required=[['Question',q.questionText],['Option A',q.optionA],['Option B',q.optionB],['Option C',q.optionC],['Option D',q.optionD]]
-        for(const [name,value] of required) if(!text(value)) errors.push(`Row ${row}: ${name} is missing.`)
-        const correct=text(q.correctOption).toUpperCase(); if(!['A','B','C','D'].includes(correct)) errors.push(`Row ${row}: Correct Answer must be A, B, C or D.`)
-        const marks=numberOr(q.marks,4), negative=numberOr(q.negativeMarks,0)
-        if(marks<=0) errors.push(`Row ${row}: invalid Marks.`); if(negative<0) errors.push(`Row ${row}: invalid Negative Marks.`)
-        if(difficulty===null) errors.push(`Row ${row}: Difficulty must be Easy, Medium or Hard.`)
-        const sourceYear=text(q.sourceYear)?Number(q.sourceYear):null
-        if(sourceYear!=null&&(!Number.isInteger(sourceYear)||sourceYear<1900||sourceYear>2200)) errors.push(`Row ${row}: invalid Source Year.`)
-        if(syllabus.ok&&Number.isInteger(qn)&&qn>0&&text(q.questionText)&&required.slice(1).every(([,v])=>text(v))&&['A','B','C','D'].includes(correct)&&marks>0&&negative>=0&&difficulty!==null&&(sourceYear==null||(Number.isInteger(sourceYear)&&sourceYear>=1900&&sourceYear<=2200))){
-          resolved.push({
-            questionNo:qn,subject:syllabus.subject,unitId:syllabus.unitId,chapterId:syllabus.chapterId,subtopicId:syllabus.subtopicId,
-            questionText:text(q.questionText),optionA:text(q.optionA),optionB:text(q.optionB),optionC:text(q.optionC),optionD:text(q.optionD),
-            correctOption:correct,marks,negativeMarks:negative,explanation:text(q.explanation),difficulty:difficulty||'',
-            questionType:text(q.questionType),source:text(q.source),sourceYear
-          })
-        }
-      })
-      if(errors.length) return json({error:'Import needs review before anything is saved.',errors:errors.slice(0,100)},400)
-      const {data,error}=await admin.rpc('import_exam_questions_to_bank',{p_exam_id:examId,p_items:resolved,p_created_by:user.id})
+      const tree=await loadTree(admin), lookup=buildSyllabusLookup(tree)
+      const validation=validateImportQuestions(lookup,raw)
+      if(!validation.ok) return json({error:'Import needs review before anything is saved.',errors:validation.errors.slice(0,100)},400)
+      const {data,error}=await admin.rpc('import_exam_questions_to_bank',{p_exam_id:examId,p_items:validation.items,p_created_by:user.id})
       if(error) return json({error:error.message},400)
       return json({ok:true,...(data||{})})
     }
