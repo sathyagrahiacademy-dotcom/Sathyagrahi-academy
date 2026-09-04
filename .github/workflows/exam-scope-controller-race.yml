@@ -11,7 +11,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test exam-scope-controller-race.test.mjs
+      - run: node --test exam-scope-controller-race.test.mjs admin-exam-scope-contract.test.mjs admin-exam-scope-ui-contract.test.mjs admin-exam-scope-v2-ui.test.mjs exam-scope-logic.test.mjs exam-scope-month-folders.test.mjs exam-scope-ui-utils.test.mjs exam-scope-v2-schema.test.mjs
       - run: node --check admin-exams.js
       - run: node --check admin-exam-scope-v2-loader.js
       - run: node --check admin-exam-scope-v2-ui.js
