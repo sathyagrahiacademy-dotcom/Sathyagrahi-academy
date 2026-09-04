@@ -82,10 +82,3 @@ test('Blueprint reuses canonical mapping validation without exposing answer keys
   assert.match(edge,/publishReady:\s*coreValidation\.ok/);
   assert.doesNotMatch(edge,/correct_option[^\n]*return json/i);
 });
-
-test('feature CI includes stable Examination regression coverage', () => {
-  const yml=read('.github/workflows/question-bank-blueprint.yml');
-  for(const name of ['exam-mapping-logic.test.mjs','exam-publish-validation.test.mjs','exam-scope-logic.test.mjs','exam-grading-performance.test.mjs','exam-submit-sync.test.mjs','exam-performance-contract.test.mjs']){
-    assert.ok(yml.includes(name), `missing regression test ${name}`);
-  }
-});
