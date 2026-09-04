@@ -1,0 +1,16 @@
+name: Exam Scope Controller Race
+on:
+  push:
+    branches:
+      - fix/exam-scope-controller-race
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test exam-scope-controller-race.test.mjs
+      - run: node --check admin-exams.js
+      - run: node --check admin-exam-scope-v2-ui.js
