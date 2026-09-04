@@ -23,7 +23,7 @@
 <div class="field span2"><label>Exam Title</label><input id="title" placeholder="e.g. NEET Weekly Test - 01" required></div>
 <div class="field"><label>Exam Subject / Type</label><select id="subject"><option>NEET</option><option>Physics</option><option>Chemistry</option><option>Biology</option><option>Mixed</option></select></div>
 <div class="field"><label>Duration (Minutes)</label><input id="duration" type="number" min="1" value="180" required></div>
-<div class="field span2"><div class="scope-box"><div class="scope-head"><div><b>Official Syllabus Scope</b><div class="subtle">Subject → Unit → Chapter → Whole Chapter / Specific Topic. Manual topics are saved into the official chapter topic list.</div></div><button type="button" id="addScopeRow">+ ADD SCOPE</button></div><div id="scopeRows"></div><div id="legacyScopeNote" class="legacy-note"></div></div></div>
+<div class="field span2"><div class="scope-box exam-coverage-box"><div class="scope-head"><div><b>Exam Coverage</b><div class="subtle">Subject → Unit → Chapter → Whole Chapter / Specific Topic. Use Add Scope only for mixed or multi-chapter exams.</div></div><button type="button" id="addScopeRow">+ ADD SCOPE</button></div><div id="scopeRows"></div><div id="legacyScopeNote" class="legacy-note"></div></div></div>
 <div class="field"><label>Total Marks</label><input id="marks" type="number" min="1" value="720" required></div>
 <div class="field"><label>Exam Code</label><input id="code" maxlength="20" placeholder="e.g. NEET-W01" required></div>
 <div class="field"><label>Exam Password</label><input id="password" type="password" minlength="4" placeholder="Minimum 4 characters" required></div>
@@ -37,8 +37,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
-<script src="admin-examinations-nav.js?v=20260904-1"></script>
-<script src="exam-scope-ui-utils.js?v=20260904-3"></script>
+<script src="admin-examinations-nav.js?v=20260905-1"></script>
+<script src="exam-scope-ui-utils.js?v=20260905-1"></script>
 <script src="admin-exams.js?v=20260904-2"></script>
 <script src="admin-exam-scope-v2-ui.js?v=20260904-1"></script>
 </body>
