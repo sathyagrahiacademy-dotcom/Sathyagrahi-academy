@@ -2,13 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const html=fs.readFileSync('admin-exams.html','utf8');
 const nav=fs.readFileSync('admin-examinations-nav.js','utf8');
 const css=fs.readFileSync('admin-dashboard.css','utf8');
 
-test('uses Examination Branch identity and tagline',()=>{
-  assert.match(html,/EXAMINATION BRANCH/);
-  assert.match(html,/Create\s*•\s*Conduct\s*•\s*Evaluate\s*•\s*Analyse/);
+test('uses shared Examination Branch identity and tagline',()=>{
+  assert.match(nav,/EXAMINATION BRANCH/);
+  assert.match(nav,/Create\s*•\s*Conduct\s*•\s*Evaluate\s*•\s*Analyse/);
 });
 
 test('renders five designed Examination Branch navigation sections',()=>{
