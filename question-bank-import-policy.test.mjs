@@ -36,3 +36,41 @@ test('only approved topics are auto-mapped', async (t) => {
   assert.equal(result.ok,false);
   assert.match(result.error,/approved/i);
 });
+
+test('full import policy rejects blank or non-numeric marks before any write', async (t) => {
+  if (!fs.existsSync(modulePath)) return t.skip('module not implemented yet');
+  const { buildSyllabusLookup, validateImportQuestions } = await import(modulePath);
+  assert.equal(typeof validateImportQuestions,'function','validateImportQuestions policy is required');
+  const lookup=buildSyllabusLookup({
+    units:[{id:1,subject:'Physics',unit_no:1,unit_title:'Kinematics'}],
+    chapters:[{id:2,unit_id:1,topic_title:'Motion in a Plane'}],
+    subtopics:[{id:3,chapter_id:2,subtopic_title:'Projectile Motion',status:'approved'}]
+  });
+  const base={questionNo:1,subject:'Physics',unit:'Kinematics',chapter:'Motion in a Plane',topic:'Projectile Motion',questionText:'Q?',optionA:'A',optionB:'B',optionC:'C',optionD:'D',correctOption:'A',marks:'4',negativeMarks:'1',explanation:'',difficulty:'Medium',questionType:'Concept',source:'Practice',sourceYear:''};
+  const ok=validateImportQuestions(lookup,[base]);
+  assert.equal(ok.ok,true);
+  assert.equal(ok.items[0].marks,4);
+  assert.equal(ok.items[0].negativeMarks,1);
+  for(const patch of [{marks:''},{marks:'abc'},{negativeMarks:''},{negativeMarks:'abc'}]){
+    const result=validateImportQuestions(lookup,[{...base,...patch}]);
+    assert.equal(result.ok,false,JSON.stringify(patch));
+    assert.match(result.errors.join(' '),/Marks|Negative Marks/i);
+    assert.equal(result.items.length,0);
+  }
+});
+
+test('full import policy rejects duplicate question numbers as one atomic batch', async (t) => {
+  if (!fs.existsSync(modulePath)) return t.skip('module not implemented yet');
+  const { buildSyllabusLookup, validateImportQuestions } = await import(modulePath);
+  assert.equal(typeof validateImportQuestions,'function','validateImportQuestions policy is required');
+  const lookup=buildSyllabusLookup({
+    units:[{id:1,subject:'Biology',unit_no:1,unit_title:'Diversity'}],
+    chapters:[{id:2,unit_id:1,topic_title:'Living World'}],
+    subtopics:[{id:3,chapter_id:2,subtopic_title:'Taxonomy',status:'approved'}]
+  });
+  const q={questionNo:1,subject:'Biology',unit:'Diversity',chapter:'Living World',topic:'Taxonomy',questionText:'Q?',optionA:'A',optionB:'B',optionC:'C',optionD:'D',correctOption:'B',marks:'4',negativeMarks:'1',difficulty:'Easy'};
+  const result=validateImportQuestions(lookup,[q,{...q,questionText:'Q2?'}]);
+  assert.equal(result.ok,false);
+  assert.match(result.errors.join(' '),/duplicate Question No/i);
+  assert.equal(result.items.length,0);
+});
