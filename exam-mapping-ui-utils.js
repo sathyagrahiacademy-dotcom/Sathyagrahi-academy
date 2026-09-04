@@ -86,5 +86,14 @@
     };
   }
 
-  return { mappingCoverageLabel, availableSubtopics, mappingRowText, mappingStatusModel, saveMappingPayload, subtopicPayload };
+  function preferredMappingSelectionFromScope(scopeItem = {}) {
+    return {
+      subject: String(scopeItem.subject || ''),
+      unitId: Number(scopeItem.unit_id ?? scopeItem.unitId),
+      chapterId: Number(scopeItem.chapter_id ?? scopeItem.chapterId),
+      subtopicId: scopeItem.subtopic_id == null && scopeItem.subtopicId == null ? null : Number(scopeItem.subtopic_id ?? scopeItem.subtopicId)
+    };
+  }
+
+  return { mappingCoverageLabel, availableSubtopics, mappingRowText, mappingStatusModel, saveMappingPayload, subtopicPayload, preferredMappingSelectionFromScope };
 });

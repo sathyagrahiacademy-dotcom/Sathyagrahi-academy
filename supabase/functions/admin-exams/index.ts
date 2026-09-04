@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'jsr:@supabase/supabase-js@2/cors'
 import { normaliseAudience, nextMaxAttempts } from './audience-policy.mjs'
+import { normaliseExamScopeItems, canSaveExamScope, buildExamScopeSummary } from './exam-scope-logic.mjs'
 import { validateExamMapping } from '../_shared/exam-mapping-logic.mjs'
 import { canPublishExam } from './publish-validation.mjs'
 
@@ -59,6 +60,60 @@ async function ensureEligibleAssignment(admin:any, examId:string, studentId:stri
   return { ok:true, assignment:a || null }
 }
 
+async function loadScopeTree(admin:any) {
+  const [unitsRes, chaptersRes, subtopicsRes] = await Promise.all([
+    admin.from('neet_syllabus_units').select('id,subject,unit_no,unit_title,sort_order').order('subject').order('sort_order').order('unit_no'),
+    admin.from('neet_syllabus_topics').select('id,unit_id,topic_title,sort_order').order('unit_id').order('sort_order').order('id'),
+    admin.from('neet_syllabus_subtopics').select('id,chapter_id,subtopic_title,sort_order,status').eq('status','approved').order('chapter_id').order('sort_order').order('id')
+  ])
+  if (unitsRes.error) throw new Error(unitsRes.error.message)
+  if (chaptersRes.error) throw new Error(chaptersRes.error.message)
+  if (subtopicsRes.error) throw new Error(subtopicsRes.error.message)
+
+  const subtopicsByChapter = new Map<string,any[]>()
+  for (const row of subtopicsRes.data || []) {
+    const key = String(row.chapter_id)
+    if (!subtopicsByChapter.has(key)) subtopicsByChapter.set(key,[])
+    subtopicsByChapter.get(key)!.push(row)
+  }
+  const chaptersByUnit = new Map<string,any[]>()
+  for (const row of chaptersRes.data || []) {
+    const key = String(row.unit_id)
+    if (!chaptersByUnit.has(key)) chaptersByUnit.set(key,[])
+    chaptersByUnit.get(key)!.push({...row,subtopics:subtopicsByChapter.get(String(row.id)) || []})
+  }
+  const syllabus = (unitsRes.data || []).map((row:any)=>({...row,chapters:chaptersByUnit.get(String(row.id)) || []}))
+  const lookup = {
+    units:new Map<any,any>(),
+    chapters:new Map<any,any>(),
+    subtopics:new Map<any,any>()
+  }
+  for (const unit of syllabus) {
+    lookup.units.set(unit.id,unit); lookup.units.set(String(unit.id),unit)
+    for (const chapter of unit.chapters || []) {
+      lookup.chapters.set(chapter.id,chapter); lookup.chapters.set(String(chapter.id),chapter)
+      for (const subtopic of chapter.subtopics || []) {
+        lookup.subtopics.set(subtopic.id,subtopic); lookup.subtopics.set(String(subtopic.id),subtopic)
+      }
+    }
+  }
+  return {syllabus,lookup}
+}
+
+function validateScopeAgainstTree(items:any[], lookup:any) {
+  for (const item of items) {
+    const unit = lookup.units.get(item.unitId) || lookup.units.get(String(item.unitId))
+    if (!unit) return {ok:false,error:`Scope Unit ${item.unitId} was not found`}
+    const chapter = lookup.chapters.get(item.chapterId) || lookup.chapters.get(String(item.chapterId))
+    if (!chapter || Number(chapter.unit_id) !== Number(item.unitId)) return {ok:false,error:'Selected Chapter does not belong to the selected Unit'}
+    if (item.subtopicId != null) {
+      const subtopic = lookup.subtopics.get(item.subtopicId) || lookup.subtopics.get(String(item.subtopicId))
+      if (!subtopic || Number(subtopic.chapter_id) !== Number(item.chapterId) || subtopic.status !== 'approved') return {ok:false,error:'Selected Topic/Subtopic is not an approved child of the selected Chapter'}
+    }
+  }
+  return {ok:true}
+}
+
 async function loadPublishValidation(admin: any, examId: string) {
   const { data: exam, error: examErr } = await admin.from('exams').select('id,total_marks').eq('id', examId).maybeSingle()
   if (examErr) throw new Error(examErr.message)
@@ -112,18 +167,38 @@ Deno.serve(async (req: Request) => {
     const body = await req.json()
     const action = String(body.action || '')
 
+    if (action === 'scope_tree') {
+      const { syllabus } = await loadScopeTree(admin)
+      return json({ok:true,syllabus})
+    }
+
+    if (action === 'get_scope') {
+      const examId = String(body.examId || '')
+      const {data:exam,error:examError}=await admin.from('exams').select('id,syllabus').eq('id',examId).maybeSingle()
+      if (examError) return json({error:examError.message},400)
+      if (!exam) return json({error:'Exam not found'},404)
+      const {data:scopeRows,error:scopeError}=await admin.from('exam_scope_items').select('id,unit_id,chapter_id,subtopic_id,sort_order').eq('exam_id',examId).order('sort_order').order('id')
+      if (scopeError) return json({error:scopeError.message},400)
+      return json({
+        ok:true,
+        scopeItems:(scopeRows||[]).map((row:any)=>({id:row.id,unitId:row.unit_id,chapterId:row.chapter_id,subtopicId:row.subtopic_id,sortOrder:row.sort_order})),
+        legacySyllabus:exam.syllabus || ''
+      })
+    }
+
     if (action === 'create' || action === 'update') {
       const examId = String(body.examId || '')
       const title = String(body.title || '').trim()
       const subject = String(body.subject || 'NEET')
-      const syllabus = String(body.syllabus || '').trim()
       const durationMinutes = Number(body.durationMinutes || 0)
       const totalMarks = Number(body.totalMarks || 0)
       const negativeMarking = Boolean(body.negativeMarking)
       const instructions = String(body.instructions || '').trim()
       const examCode = String(body.examCode || '').trim().toUpperCase()
       const examPassword = String(body.examPassword || '')
+      const scopeNorm = normaliseExamScopeItems(body.scopeItems || [])
 
+      if (!scopeNorm.ok) return json({error:scopeNorm.error},400)
       if (title.length < 3) return json({ error: 'Enter exam title' }, 400)
       if (!['Physics','Chemistry','Biology','NEET','Mixed'].includes(subject)) return json({ error: 'Invalid subject' }, 400)
       if (!Number.isFinite(durationMinutes) || durationMinutes <= 0) return json({ error: 'Enter valid duration' }, 400)
@@ -131,9 +206,34 @@ Deno.serve(async (req: Request) => {
       if (!/^[A-Z0-9-]{4,20}$/.test(examCode)) return json({ error: 'Exam Code must be 4-20 letters/numbers' }, 400)
       if (action === 'create' && examPassword.length < 4) return json({ error: 'Exam password must be at least 4 characters' }, 400)
 
+      let existing:any = null
+      let hadStructuredScope = false
+      if (action === 'update') {
+        if (!examId) return json({ error: 'Exam ID is required' }, 400)
+        const existingRes = await admin.from('exams').select('id,is_published,status,syllabus').eq('id', examId).maybeSingle()
+        if (existingRes.error) return json({error:existingRes.error.message},400)
+        existing = existingRes.data
+        if (!existing) return json({ error: 'Exam not found' }, 404)
+        const countRes = await admin.from('exam_scope_items').select('id',{count:'exact',head:true}).eq('exam_id',examId)
+        if (countRes.error) return json({error:countRes.error.message},400)
+        hadStructuredScope = Number(countRes.count || 0) > 0
+      }
+
+      const scopeGate = canSaveExamScope({action,hadStructuredScope,items:scopeNorm.items})
+      if (!scopeGate.ok) return json({error:scopeGate.error},400)
+
+      let syllabusSummary = action === 'update' ? String(existing?.syllabus || '') : ''
+      if (scopeNorm.items.length) {
+        const {lookup}=await loadScopeTree(admin)
+        const hierarchyCheck=validateScopeAgainstTree(scopeNorm.items,lookup)
+        if (!hierarchyCheck.ok) return json({error:hierarchyCheck.error},400)
+        syllabusSummary=buildExamScopeSummary(scopeNorm.items,lookup)
+        if (!syllabusSummary) return json({error:'Could not build syllabus scope summary'},400)
+      }
+
       if (action === 'create') {
         const { data: exam, error: examError } = await admin.from('exams').insert({
-          title, subject, syllabus: syllabus || null,
+          title, subject, syllabus: syllabusSummary || null,
           scheduled_start: null, scheduled_end: null,
           duration_minutes: durationMinutes, total_marks: totalMarks,
           negative_marking: negativeMarking, instructions: instructions || null,
@@ -143,15 +243,14 @@ Deno.serve(async (req: Request) => {
         const passwordHash = await hashPassword(examPassword)
         const { error: accessError } = await admin.from('exam_access').insert({ exam_id: exam.id, exam_code: examCode, password_hash: passwordHash })
         if (accessError) { await admin.from('exams').delete().eq('id', exam.id); return json({ error: accessError.message || 'Exam access setup failed' }, 400) }
+        const {error:scopeError}=await admin.rpc('replace_exam_scope_items',{p_exam_id:exam.id,p_items:scopeNorm.items})
+        if (scopeError) { await admin.from('exams').delete().eq('id',exam.id); return json({error:scopeError.message || 'Exam syllabus scope setup failed'},400) }
         return json({ ok: true, examId: exam.id })
       }
 
-      if (!examId) return json({ error: 'Exam ID is required' }, 400)
-      const { data: existing } = await admin.from('exams').select('id,is_published,status').eq('id', examId).maybeSingle()
-      if (!existing) return json({ error: 'Exam not found' }, 404)
       const nextStatus = existing.is_published ? 'active' : (existing.status === 'completed' ? 'completed' : 'draft')
       const { error: examError } = await admin.from('exams').update({
-        title, subject, syllabus: syllabus || null,
+        title, subject, syllabus: syllabusSummary || null,
         scheduled_start: null, scheduled_end: null,
         duration_minutes: durationMinutes, total_marks: totalMarks,
         negative_marking: negativeMarking, instructions: instructions || null,
@@ -166,6 +265,10 @@ Deno.serve(async (req: Request) => {
       }
       const { error: accessError } = await admin.from('exam_access').update(accessUpdate).eq('exam_id', examId)
       if (accessError) return json({ error: accessError.message }, 400)
+      if (hadStructuredScope || scopeNorm.items.length) {
+        const {error:scopeError}=await admin.rpc('replace_exam_scope_items',{p_exam_id:examId,p_items:scopeNorm.items})
+        if (scopeError) return json({error:scopeError.message || 'Could not update exam syllabus scope'},400)
+      }
       return json({ ok: true })
     }
 

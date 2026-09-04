@@ -181,3 +181,12 @@ main .actions label{
   header h1{font-size:20px !important}
   .content h2{font-size:22px !important}
 }
+
+/* Unified Examinations shell */
+aside nav a[href="admin-question-bank.html"],
+aside nav a[href="admin-results.html"]{display:none}
+.exam-section-nav{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 20px;padding:7px;background:#eef4fb;border:1px solid #d7e1ee;border-radius:10px}
+.exam-section-nav a{display:inline-flex;align-items:center;justify-content:center;padding:9px 13px;border-radius:7px;text-decoration:none;color:#315070;font-size:12px;font-weight:800;line-height:1.2;background:transparent}
+.exam-section-nav a:hover{background:#fff;color:#06275f}
+.exam-section-nav a.active{background:#06275f;color:#fff;box-shadow:0 2px 8px #06275f1f}
+@media(max-width:700px){.exam-section-nav{display:grid;grid-template-columns:1fr 1fr}.exam-section-nav a{width:100%}}

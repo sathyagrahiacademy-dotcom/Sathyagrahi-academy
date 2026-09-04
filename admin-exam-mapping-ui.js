@@ -16,6 +16,7 @@
   let mappingData = null;
   let editingMappingGroupId = null;
   let refreshTimer = null;
+  let appliedInitialScope = false;
 
   function esc(value){
     return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -116,6 +117,10 @@
     };
   }
 
+  function hasSelection(selection={}){
+    return Boolean(selection.subject || selection.unitId || selection.chapterId || selection.subtopicId);
+  }
+
   function renderSelectors(preferred={}){
     const subjects = [...new Set((mappingData?.syllabus || []).map(u => u.subject).filter(Boolean))];
     setSelectOptions('mapSubject', subjects.map(subject => ({subject})), 'Select Subject', x => x.subject, x => x.subject);
@@ -124,6 +129,36 @@
     rebuildUnitOptions(preferred.unitId);
     if (preferred.chapterId) rebuildChapterOptions(preferred.chapterId);
     if (preferred.subtopicId) rebuildSubtopicOptions(preferred.subtopicId);
+  }
+
+  function scopeLabel(scope={}){
+    return [scope.subject, scope.unit_title, scope.chapter_title, scope.subtopic_title].filter(Boolean).join(' → ');
+  }
+
+  function applyScopePreset(scope, announce=false){
+    if (!scope) return;
+    renderSelectors(utils().preferredMappingSelectionFromScope(scope));
+    if (announce) mappingMsg(`Exam scope selected: ${scopeLabel(scope)}`, true);
+  }
+
+  function renderExamScopeContext(){
+    const box = $('examScopeContext');
+    if (!box) return;
+    const scopes = mappingData?.examScope || [];
+    if (!scopes.length) {
+      box.innerHTML = '<b>Exam Scope</b><p>No structured exam scope — choose syllabus manually.</p>';
+      return;
+    }
+    if (scopes.length === 1) {
+      box.innerHTML = `<b>Exam Scope</b><p>${esc(scopeLabel(scopes[0]))}</p>`;
+      return;
+    }
+    box.innerHTML = `<b>Exam Scope</b><p>This exam covers multiple syllabus areas. Choose one to prefill the mapping selectors.</p><div class="scope-preset"><label for="mapScopePreset">Scope preset</label><select id="mapScopePreset"><option value="">Choose exam scope</option>${scopes.map((scope, index) => optionHtml(index + 1, scopeLabel(scope))).join('')}</select></div>`;
+    const preset = $('mapScopePreset');
+    preset.onchange = () => {
+      const index = Number(preset.value) - 1;
+      if (index >= 0) applyScopePreset(scopes[index], true);
+    };
   }
 
   function renderMetrics(){
@@ -174,7 +209,7 @@
   function lockControls(){
     const locked = Boolean(mappingData?.exam?.is_published);
     $('mappingLocked').style.display = locked ? 'block' : 'none';
-    ['mapSelector','mapSubject','mapUnit','mapChapter','mapSubtopic','mapCoverage','saveMappingBtn','generateSuggestionsBtn','addSubtopicBtn','mergeSelectedBtn']
+    ['mapSelector','mapSubject','mapUnit','mapChapter','mapSubtopic','mapCoverage','saveMappingBtn','generateSuggestionsBtn','addSubtopicBtn','mergeSelectedBtn','mapScopePreset']
       .forEach(id => { if ($(id)) $(id).disabled = locked; });
     document.querySelectorAll('#mappingRows button,#subtopicAdminList button,#subtopicAdminList input').forEach(el => { el.disabled = locked; });
   }
@@ -183,7 +218,13 @@
     if (!examId) throw new Error('Exam ID missing.');
     mappingData = await invokeMapping({action:ACTIONS.tree, examId});
     renderMetrics();
-    renderSelectors(preferred);
+    let effective = preferred;
+    if (!appliedInitialScope && !hasSelection(preferred) && (mappingData.examScope || []).length === 1) {
+      effective = utils().preferredMappingSelectionFromScope(mappingData.examScope[0]);
+      appliedInitialScope = true;
+    }
+    renderSelectors(effective);
+    renderExamScopeContext();
     renderMappings();
     renderSubtopicAdmin();
     lockControls();

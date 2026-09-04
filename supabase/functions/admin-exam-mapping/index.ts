@@ -79,6 +79,9 @@ async function loadTree(admin: any, examId: string) {
   const { data: groups, error: gErr } = await admin.from('exam_mapping_groups').select('id,exam_id,subtopic_id,coverage,selector_text,sort_order,created_at,updated_at').eq('exam_id', examId).order('sort_order')
   if (gErr) throw new Error(gErr.message)
 
+  const { data: scopeRows, error: scopeErr } = await admin.from('exam_scope_items').select('id,unit_id,chapter_id,subtopic_id,sort_order').eq('exam_id', examId).order('sort_order').order('id')
+  if (scopeErr) throw new Error(scopeErr.message)
+
   const syllabus = (units || []).map((unit: any) => ({
     ...unit,
     chapters: chapters.filter((c: any) => String(c.unit_id) === String(unit.id)).map((chapter: any) => ({
@@ -87,7 +90,18 @@ async function loadTree(admin: any, examId: string) {
     }))
   }))
 
-  return { ...core, groups: groups || [], syllabus }
+  const unitById = new Map((units || []).map((u:any)=>[String(u.id),u]))
+  const chapterById = new Map(chapters.map((ch:any)=>[String(ch.id),ch]))
+  const subtopicById = new Map(subtopics.map((st:any)=>[String(st.id),st]))
+  const examScope = (scopeRows || []).map((row:any)=>({
+    ...row,
+    subject:unitById.get(String(row.unit_id))?.subject || '',
+    unit_title:unitById.get(String(row.unit_id))?.unit_title || '',
+    chapter_title:chapterById.get(String(row.chapter_id))?.topic_title || '',
+    subtopic_title:row.subtopic_id == null ? '' : (subtopicById.get(String(row.subtopic_id))?.subtopic_title || '')
+  }))
+
+  return { ...core, groups: groups || [], syllabus, examScope }
 }
 
 async function assertSubtopicsCanChange(admin: any, subtopicIds: string[]) {
