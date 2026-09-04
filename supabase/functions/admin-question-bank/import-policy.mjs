@@ -50,3 +50,53 @@ export function resolveSyllabusLabels(lookup,raw={}){
   if(approved.length!==1)return {ok:false,error:approved.length>1?'Topic is ambiguous':'Topic is not approved'};
   return {ok:true,subject:um.row.subject,unitId:um.row.id,chapterId:cm.row.id,subtopicId:approved[0].id,unit:um.row,chapter:cm.row,topic:approved[0]};
 }
+
+function text(value){return String(value??'').trim()}
+function requiredNumber(value){
+  const raw=text(value);
+  if(!raw)return {ok:false,value:null};
+  const n=Number(raw);
+  return Number.isFinite(n)?{ok:true,value:n}:{ok:false,value:null};
+}
+
+export function validateImportQuestions(lookup,rawQuestions=[]){
+  const rows=Array.isArray(rawQuestions)?rawQuestions:[];
+  const errors=[],resolved=[],seen=new Set();
+  rows.forEach((q,i)=>{
+    const row=i+2,rowErrors=[];
+    const add=message=>{rowErrors.push(`Row ${row}: ${message}`)};
+    const questionNo=Number(q?.questionNo);
+    if(!Number.isInteger(questionNo)||questionNo<=0)add('invalid Question No.');
+    else if(seen.has(questionNo))add(`duplicate Question No. ${questionNo}.`);
+    else seen.add(questionNo);
+
+    const syllabus=resolveSyllabusLabels(lookup,q||{});
+    if(!syllabus.ok)add(syllabus.error+'.');
+
+    const questionText=text(q?.questionText),optionA=text(q?.optionA),optionB=text(q?.optionB),optionC=text(q?.optionC),optionD=text(q?.optionD);
+    if(!questionText)add('Question is missing.');
+    for(const [label,value] of [['A',optionA],['B',optionB],['C',optionC],['D',optionD]])if(!value)add(`Option ${label} is missing.`);
+    const correctOption=text(q?.correctOption).toUpperCase();
+    if(!['A','B','C','D'].includes(correctOption))add('Correct Answer must be A, B, C or D.');
+
+    const marks=requiredNumber(q?.marks),negative=requiredNumber(q?.negativeMarks);
+    if(!marks.ok||marks.value<=0)add('Marks is required and must be a number greater than 0.');
+    if(!negative.ok||negative.value<0)add('Negative Marks is required and must be a number 0 or greater.');
+
+    const difficultyRaw=text(q?.difficulty),difficulty=difficultyRaw?difficultyRaw[0].toUpperCase()+difficultyRaw.slice(1).toLowerCase():'';
+    if(difficulty&&!['Easy','Medium','Hard'].includes(difficulty))add('Difficulty must be Easy, Medium or Hard.');
+    const sourceYearRaw=text(q?.sourceYear);
+    const sourceYear=sourceYearRaw?Number(sourceYearRaw):null;
+    if(sourceYearRaw&&(!/^\d{4}$/.test(sourceYearRaw)||!Number.isInteger(sourceYear)||sourceYear<1900||sourceYear>2200))add('invalid Source Year.');
+
+    errors.push(...rowErrors);
+    if(!rowErrors.length&&syllabus.ok){
+      resolved.push({
+        questionNo,subject:syllabus.subject,unitId:syllabus.unitId,chapterId:syllabus.chapterId,subtopicId:syllabus.subtopicId,
+        questionText,optionA,optionB,optionC,optionD,correctOption,marks:marks.value,negativeMarks:negative.value,
+        explanation:text(q?.explanation),difficulty,questionType:text(q?.questionType),source:text(q?.source),sourceYear
+      });
+    }
+  });
+  return {ok:errors.length===0,errors,items:errors.length?[]:resolved};
+}
