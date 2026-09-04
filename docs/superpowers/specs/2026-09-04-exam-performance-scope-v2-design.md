@@ -59,9 +59,11 @@ Definitions:
 - **Exams Set** = distinct published exams the student is eligible to access through ALL or SELECTED audience assignment.
 - **Exams Attempted** = distinct eligible exams with at least one valid submitted/graded attempt.
 - **Results Published** = distinct eligible exams with at least one result published to the student.
-- **Average / Best / Accuracy** use valid graded results available to Admin; Admin does not have to wait for student result publication to see performance.
+- **Current Average %** uses the latest valid graded attempt for each distinct exam so a RE-EXAM does not accidentally overweight one exam in the summary.
+- **Best %** is the best valid attempt percentage across the selected student’s exam history.
+- **Overall Accuracy** aggregates correct/wrong from the latest valid attempt of each distinct exam.
 
-RESET-invalidated attempts must not contribute. RE-EXAM valid attempts remain historical data.
+RESET-invalidated attempts must not contribute. RE-EXAM valid attempts remain visible in history even though only the latest valid attempt contributes to the current summary average/accuracy.
 
 ## 4. Subject Cards
 
@@ -83,39 +85,70 @@ Example:
 
 `Physics — Set 5 | Attempted 4 | Published 4 | Avg 68.5% | Best 82%`
 
-### Subject classification
+### Subject classification source of truth
 
-For mapped/structured exams, subject membership is derived from canonical syllabus scope/question mapping, not merely from `exams.subject`.
+For mapped exams, subject membership is derived from **question-level canonical syllabus mapping** (`exam_question_syllabus_map` resolved through the mapped subtopic/chapter/unit), because question mapping is scoring truth.
 
-This matters for `NEET` or `Mixed` exams: one exam may legitimately contribute to Physics, Chemistry, and Biology subject cards when it contains mapped coverage in all three.
+`exam_scope_items` is only intended coverage/context and must not override actual scoring mappings.
 
-A distinct exam is counted at most once inside a given subject card, even if multiple questions/scopes in that exam belong to that subject.
+This matters for `NEET` or `Mixed` exams: one exam may legitimately contribute to Physics, Chemistry, and Biology subject cards when its mapped questions cover all three subjects.
+
+A distinct exam is counted at most once inside a given subject card, even if multiple mapped questions/scopes in that exam belong to that subject.
 
 For legacy unmapped exams:
 
 - `Physics`, `Chemistry`, or `Biology` exam types may be shown under that declared single subject.
 - Legacy `NEET`/`Mixed` exams are not guessed into subject cards. They remain identifiable as legacy/unmapped rather than fabricating subject distribution.
 
-## 5. Subject Detail — Exam History
+## 5. Subject Performance Must Be Subject-Specific
+
+A mixed NEET exam must never show its whole-exam score as Physics/Chemistry/Biology performance.
+
+For mapped exams, the protected server calculates subject-specific attempt metrics from the questions mapped to that subject:
+
+- Subject Earned Marks
+- Subject Max Marks
+- Subject Percentage
+- Subject Correct
+- Subject Wrong
+- Subject Unattempted
+
+Each question belongs to one primary scoring topic, so it contributes once to exactly one subject.
+
+For implementation, subject earned/max may be derived from the subject’s mapped question set directly, or by summing only the non-overlapping Unit-level performance rows for that subject. Topic + Chapter + Unit rows must never be summed together because that would double/triple count the same questions.
+
+For a legacy unmapped single-subject exam, the full exam result may be used as that declared subject’s fallback performance because there is no mixed-subject allocation to infer.
+
+### Subject summary average
+
+Within a subject card:
+
+- `Exams Attempted` counts distinct exams with a valid attempt containing that subject.
+- `Average %` uses the latest valid subject-specific attempt percentage per distinct exam.
+- `Best %` uses the best valid subject-specific attempt percentage in that subject’s history.
+
+## 6. Subject Detail — Exam History
 
 Clicking a subject card opens that subject’s exam-only detail.
 
-First show a chronological exam history table/cards with:
+Show a chronological subject exam history with:
 
 - Exam Name
 - Scope summary for that subject
 - Attempt number (`Attempt 1`, `Attempt 2`, ... when re-exams exist)
-- Score / Max Marks
-- Percentage
-- Correct / Wrong / Unattempted
+- Subject Earned / Subject Max Marks
+- Subject Percentage
+- Subject Correct / Wrong / Unattempted
 - Result publication state
 - Submitted date/time
+
+For a mapped mixed exam, every metric above is subject-specific, not the whole-exam metric.
 
 Important: this subject-level exam list does **not** invent a global Subject E1/E2/E3 series.
 
 Official `E1 / E2 / E3...` remains exact-scope-wise only, as already approved in Phase 3.
 
-## 6. Subject Detail — Unit / Chapter / Topic E-History
+## 7. Subject Detail — Unit / Chapter / Topic E-History
 
 Below the exam timeline, show official syllabus performance in hierarchy:
 
@@ -143,7 +176,7 @@ Rules remain unchanged:
 - Chapter/Unit performance remains weighted by actual marks.
 - No Subject-level E-series is introduced.
 
-## 7. Create/Edit Exam — Scope Editor V2
+## 8. Create/Edit Exam — Scope Editor V2
 
 Keep the existing exam fields:
 
@@ -177,13 +210,19 @@ Each scope row becomes:
 - Selecting `Specific Topic` reveals a manual Topic Name input.
 - Selecting `Whole Chapter` hides/clears Topic Name.
 
-Chapter is not expected to show values before Unit is selected; the UI should make this dependency visually obvious rather than appearing broken.
+The UI must make dependency state explicit:
 
-## 8. Manual Topic Entry — Canonicalization
+- Before Subject: Unit shows `Select Subject First` and is disabled.
+- Before Unit: Chapter shows `Select Unit First` and is disabled.
+- Before Chapter: Scope Type is disabled.
+
+This prevents an empty Chapter dropdown from looking like a data/loading bug.
+
+## 9. Manual Topic Entry — Canonicalization
 
 Manual Topic entry must not remain free text detached from syllabus IDs.
 
-When Admin saves a scope row with `Specific Topic`, the protected Admin backend resolves the entered name under the selected Chapter.
+When Admin saves a scope row with `Specific Topic`, the protected backend resolves the entered name under the selected Chapter.
 
 Normalization for exact reuse:
 
@@ -201,18 +240,20 @@ Resolution order:
 
 This guarantees that Exam Scope, Question Mapping, Performance, and future reuse all reference canonical IDs.
 
-## 9. Topic Reuse in Future Exams
+## 10. Topic Reuse in Future Exams
 
-Although V2 uses manual entry rather than a mandatory dropdown, the Topic Name field should provide lightweight autocomplete/suggestions from existing approved topics under the selected Chapter.
+V2 uses a manual Topic Name field rather than a mandatory topic dropdown.
+
+The Topic Name input may show lightweight autocomplete suggestions from existing **approved** topics under the selected Chapter.
 
 Admin may:
 
 - click an existing suggestion to reuse it, or
 - type a new topic name.
 
-The final save still resolves server-side using the canonicalization rules above; client autocomplete is convenience only and never security/validation truth.
+The final save always resolves server-side using the canonicalization rules above; client autocomplete is convenience only and never validation/security truth.
 
-## 10. Exam Scope Persistence
+## 11. Atomic Topic Resolution + Scope Persistence
 
 Keep `exam_scope_items` as the authoritative exam-level intended coverage layer.
 
@@ -224,11 +265,36 @@ For `Specific Topic`:
 
 - canonical `subtopic_id` is required after backend resolution.
 
-The existing human-readable `exams.syllabus` summary continues to be generated for compatibility/display.
+### Required transaction boundary
 
-Duplicate exact exam scope rows remain blocked.
+Topic promotion/creation and exam-scope replacement must occur in **one PostgreSQL transaction**.
 
-## 11. Relationship to Question Mapping
+Implement this as a service-only Security Definer RPC, for example:
+
+`replace_exam_scope_items_v2(p_exam_id uuid, p_items jsonb) returns integer`
+
+Each JSON item carries enough information to distinguish:
+
+- whole chapter (`scopeType='chapter'`), or
+- specific topic (`scopeType='topic'`, `topicName='...'`, optionally an existing approved `subtopicId`).
+
+The RPC must:
+
+1. Validate every Unit/Chapter relationship.
+2. Validate every scope type/topic name.
+3. Resolve all topic matches by the rules in Section 9.
+4. Reject disabled conflicts/duplicates.
+5. Create/promote required subtopics.
+6. Replace all `exam_scope_items` rows.
+7. Return only after the entire operation succeeds.
+
+Any exception rolls back topic changes and scope changes together. There must be no orphan approved topic created by a failed exam save.
+
+Direct `anon` / `authenticated` execute and direct topic/scope table writes remain prohibited; only `service_role` may execute the RPC.
+
+The existing human-readable `exams.syllabus` summary continues to be generated for compatibility/display from the resolved canonical rows.
+
+## 12. Relationship to Question Mapping
 
 Question-level mapping remains scoring truth.
 
@@ -244,43 +310,31 @@ Admin still selects Question Range and FULL/PARTIAL. No question mappings are si
 
 Publish validation remains strict: all questions must have valid mappings/answer keys/marks before publish.
 
-## 12. Protected Backend Changes
+## 13. Protected API for Student-First Exam Performance
 
-Extend protected Admin exam scope logic with a single-purpose topic resolver.
+Extend the existing protected `exam-performance` Edge Function with a specific Admin action:
 
-Suggested interface:
+`action: 'admin_student_monitor'`
 
-`resolve_or_create_exam_subtopic(chapter_id, topic_name)`
+Input:
 
-It may be implemented inside `admin-exams` service logic or as a service-only SQL RPC, but direct anon/authenticated topic writes remain prohibited.
+- `studentId`
 
-The operation must validate:
+Response must contain one coherent protected payload with:
 
-- Chapter exists
-- Chapter belongs to selected Unit
-- Unit belongs to selected Subject
-- Topic name is non-empty after normalization
-- disabled exact matches are rejected
-- no duplicate canonical topic is created under the same Chapter
-
-Save ordering should resolve all specific topics and validate all rows before replacing the exam scope, so a failed row cannot leave a partially updated scope.
-
-## 13. Data/API for Student-First Exam Performance
-
-Prefer extending the existing protected `exam-performance` API rather than exposing direct client table joins.
-
-Add an Admin student-monitor action that can return, for one student:
-
-- eligible exams/audience
-- valid attempts/results
-- subject membership derived from canonical mapping/scope
-- subject summary counts
-- subject exam timeline
+- student identity needed by the page
+- eligible published exams/audience state
+- valid attempts/results and attempt ordinals
+- mapped subject membership per exam
+- subject-specific question/score metrics per attempt
+- three subject summaries
+- subject exam timelines
+- legacy/unmapped exam markers
 - existing exact-scope E-history rows
 
-The browser should receive one coherent protected payload instead of reproducing security-sensitive audience/performance joins client-side.
+The browser must not recreate audience or subject-scoring security logic using direct table joins.
 
-Existing `admin_list` / rebuild behavior can remain available for internal/backward compatibility.
+Existing `admin_list` and `rebuild_exam` actions remain available for backward compatibility/maintenance.
 
 ## 14. Error Handling
 
@@ -292,13 +346,14 @@ Create/Edit Exam:
 - Specific Topic selected but Topic Name empty → block save.
 - Disabled exact topic match → block save with explicit message.
 - Duplicate scope row → block save.
-- Backend topic resolution failure → do not partially replace exam scope.
+- Backend topic/scope transaction failure → no topic or scope partial write.
 
 Exam Performance:
 
-- No exams for subject → show `No Exams Yet`, not zero-filled misleading history.
-- Submitted result not yet published → Admin may see score; mark publication state clearly.
+- No exams for subject → show `No Exams Yet`, not misleading zero-filled history.
+- Submitted result not yet published → Admin may see score; publication state is clearly marked.
 - Legacy NEET/Mixed unmapped exam → show as legacy/unmapped, never guess subject allocation.
+- Subject score cannot be derived for a mapped exam → show an explicit data-integrity warning rather than falling back to whole-exam percentage.
 
 ## 15. Backward Compatibility
 
@@ -306,8 +361,9 @@ Exam Performance:
 - Existing structured `exam_scope_items` remain valid.
 - Existing approved subtopic IDs remain valid.
 - Existing suggested subtopics are not bulk-approved; only an exact topic explicitly chosen by Admin may be promoted during save.
-- Existing question mappings and generated scope performance remain unchanged unless the Admin explicitly rebuilds an exam after mapping changes.
+- Existing question mappings and generated scope performance remain unchanged unless Admin explicitly rebuilds an exam after mapping changes.
 - Student-side result visibility rules remain unchanged.
+- Existing `replace_exam_scope_items` RPC remains available until all callers are migrated; V2 caller uses the atomic V2 RPC.
 
 ## 16. Testing Requirements
 
@@ -315,22 +371,28 @@ Add TDD/regression coverage for at least:
 
 1. Subject → Unit cascade.
 2. Unit → Chapter cascade.
-3. Whole Chapter hides Topic Name and saves null subtopic.
-4. Specific Topic reveals manual input and requires a name.
-5. Existing approved topic is reused.
-6. Existing suggested exact topic is promoted/reused, not duplicated.
-7. Disabled exact topic is rejected.
-8. New manual topic creates one approved canonical subtopic.
-9. Case/whitespace duplicate detection.
-10. Multi-scope mixed-subject exam saves correctly.
-11. Mapping preset receives resolved canonical topic ID.
-12. Student exam summary counts distinct eligible exams correctly.
-13. Mixed/NEET exam can contribute once to multiple subject cards based on mapped subject coverage.
-14. Legacy NEET/Mixed unmapped exam is not guessed into a subject.
-15. RE-EXAM history is retained without inventing Subject E-series.
-16. Exact Unit/Chapter/Topic E-history numbering remains unchanged.
-17. RESET semantics remain unchanged.
-18. Existing answer-save, audience, publish-validation, grading, result-publication, and performance regressions remain green.
+3. Disabled placeholder states before prerequisites are selected.
+4. Whole Chapter hides Topic Name and saves null subtopic.
+5. Specific Topic reveals manual input and requires a name.
+6. Existing approved topic is reused.
+7. Existing suggested exact topic is promoted/reused, not duplicated.
+8. Disabled exact topic is rejected.
+9. New manual topic creates one approved canonical subtopic.
+10. Case/whitespace duplicate detection.
+11. Topic promotion/creation and scope replacement roll back together on any failing row.
+12. Multi-scope mixed-subject exam saves correctly.
+13. Mapping preset receives resolved canonical topic ID.
+14. Student exam summary counts distinct eligible exams correctly.
+15. RE-EXAM does not overweight current summary average; latest valid attempt per exam is used.
+16. Mixed/NEET exam contributes once to each mapped subject card.
+17. Mixed/NEET subject score uses only questions mapped to that subject.
+18. Mixed exam Physics/Chemistry/Biology correct/wrong/unattempted counts are subject-specific.
+19. Legacy single-subject unmapped exam may use full-result fallback.
+20. Legacy NEET/Mixed unmapped exam is not guessed into a subject.
+21. RE-EXAM history is retained without inventing Subject E-series.
+22. Exact Unit/Chapter/Topic E-history numbering remains unchanged.
+23. RESET semantics remain unchanged.
+24. Existing answer-save, audience, publish-validation, grading, result-publication, and performance regressions remain green.
 
 ## 17. Production Rollout
 
@@ -350,11 +412,12 @@ Use patch-based rollout:
 The change is complete when:
 
 - Selecting a student in Exam Performance immediately shows Physics/Chemistry/Biology exam counts and performance.
-- Clicking a subject shows that student’s subject exam history plus exact Unit/Chapter/Topic E-history.
+- Clicking a subject shows that student’s subject-specific exam history plus exact Unit/Chapter/Topic E-history.
+- Mixed-exam subject scores/counts are calculated only from questions mapped to that subject.
 - No Subject E-series is fabricated.
-- Create/Edit Exam reliably guides Subject → Unit → Chapter.
+- Create/Edit Exam clearly guides Subject → Unit → Chapter with disabled prerequisite states.
 - Choosing Specific Topic opens manual Topic Name entry.
-- Manual topics become/reuse canonical approved syllabus IDs.
+- Manual topics become/reuse canonical approved syllabus IDs in the same transaction as scope save.
 - Whole Chapter remains supported.
 - Multiple scope rows remain supported.
 - Question Mapping receives the scope as a preset but remains scoring truth.
