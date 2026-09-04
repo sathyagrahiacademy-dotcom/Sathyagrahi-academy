@@ -127,6 +127,9 @@ begin
   select id,is_published,status into v_exam from public.exams where id=p_exam_id for update;
   if not found then raise exception 'Exam not found'; end if;
   if coalesce(v_exam.is_published,false) then raise exception 'Published exam questions are read-only'; end if;
+  if exists(select 1 from public.exam_scope_performance where exam_id=p_exam_id) then
+    raise exception 'This exam already has syllabus performance. Rebuild workflow is required before changing its questions.';
+  end if;
   if p_items is null or jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items)=0 then
     raise exception 'Questions must be a non-empty array';
   end if;
@@ -146,8 +149,8 @@ begin
     v_c := btrim(coalesce(v_item->>'optionC',''));
     v_d := btrim(coalesce(v_item->>'optionD',''));
     v_correct := upper(btrim(coalesce(v_item->>'correctOption','')));
-    v_marks := coalesce(nullif(v_item->>'marks','')::numeric,4);
-    v_negative := coalesce(nullif(v_item->>'negativeMarks','')::numeric,0);
+    v_marks := nullif(btrim(coalesce(v_item->>'marks','')),'')::numeric;
+    v_negative := nullif(btrim(coalesce(v_item->>'negativeMarks','')),'')::numeric;
     v_difficulty := nullif(btrim(coalesce(v_item->>'difficulty','')),'');
     v_source_year := nullif(v_item->>'sourceYear','')::integer;
 
@@ -169,6 +172,8 @@ begin
     end if;
     if v_question='' or v_a='' or v_b='' or v_c='' or v_d='' then raise exception 'Question/options missing for Q%',v_question_no; end if;
     if v_correct not in ('A','B','C','D') then raise exception 'Correct Answer must be A-D for Q%',v_question_no; end if;
+    if v_marks is null then raise exception 'Marks are required for Q%',v_question_no; end if;
+    if v_negative is null then raise exception 'Negative Marks are required for Q%',v_question_no; end if;
     if v_marks <= 0 or v_negative < 0 then raise exception 'Invalid marks for Q%',v_question_no; end if;
     if v_difficulty is not null and v_difficulty not in ('Easy','Medium','Hard') then raise exception 'Difficulty must be Easy, Medium or Hard for Q%',v_question_no; end if;
     if v_source_year is not null and (v_source_year < 1900 or v_source_year > 2200) then raise exception 'Invalid Source Year for Q%',v_question_no; end if;
@@ -186,8 +191,8 @@ begin
     v_c := btrim(v_item->>'optionC'); v_d := btrim(v_item->>'optionD');
     v_correct := upper(btrim(v_item->>'correctOption'));
     v_explanation := nullif(btrim(coalesce(v_item->>'explanation','')),'');
-    v_marks := coalesce(nullif(v_item->>'marks','')::numeric,4);
-    v_negative := coalesce(nullif(v_item->>'negativeMarks','')::numeric,0);
+    v_marks := nullif(btrim(coalesce(v_item->>'marks','')),'')::numeric;
+    v_negative := nullif(btrim(coalesce(v_item->>'negativeMarks','')),'')::numeric;
     v_difficulty := nullif(btrim(coalesce(v_item->>'difficulty','')),'');
     v_type := nullif(btrim(coalesce(v_item->>'questionType','')),'');
     v_source := nullif(btrim(coalesce(v_item->>'source','')),'');
@@ -341,12 +346,20 @@ begin
   select id,is_published into v_exam from public.exams where id=p_exam_id for update;
   if not found then raise exception 'Target exam not found'; end if;
   if coalesce(v_exam.is_published,false) then raise exception 'Published exam questions are read-only'; end if;
+  if exists(select 1 from public.exam_scope_performance where exam_id=p_exam_id) then
+    raise exception 'This exam already has syllabus performance. Rebuild workflow is required before changing its questions.';
+  end if;
   if p_bank_ids is null or cardinality(p_bank_ids)=0 then raise exception 'Select at least one bank question'; end if;
   if cardinality(p_bank_ids)>250 then raise exception 'Maximum 250 questions per operation'; end if;
   if (select count(distinct x) from unnest(p_bank_ids) x) <> cardinality(p_bank_ids) then raise exception 'Duplicate bank selection'; end if;
   if exists(select 1 from public.exam_questions where exam_id=p_exam_id and bank_question_id=any(p_bank_ids)) then
     raise exception 'One or more selected questions already exist in this exam';
   end if;
+  if exists(
+    select 1 from public.question_bank_questions q
+    left join public.neet_syllabus_subtopics s on s.id=q.subtopic_id
+    where q.id=any(p_bank_ids) and (not q.is_active or s.id is null or s.status<>'approved')
+  ) then raise exception 'Selected bank questions must use active approved Topics'; end if;
   select coalesce(max(question_no),0)+1 into v_next from public.exam_questions where exam_id=p_exam_id;
 
   for v_bank in select * from public.question_bank_questions where id=any(p_bank_ids) and is_active=true order by created_at,id
