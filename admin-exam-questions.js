@@ -59,8 +59,8 @@
       optionC:String(cell(r,["Option C","option_c","optionc"])).trim(),
       optionD:String(cell(r,["Option D","option_d","optiond"])).trim(),
       correctOption:String(cell(r,["Correct Answer","correct_option","correctanswer"])).trim().toUpperCase(),
-      marks:Number(cell(r,["Marks"]) || 4),
-      negativeMarks:Number(cell(r,["Negative Marks","negative_marks","negativemarks"]) || 0),
+      marks:String(cell(r,["Marks"])).trim(),
+      negativeMarks:String(cell(r,["Negative Marks","negative_marks","negativemarks"])).trim(),
       explanation:String(cell(r,["Explanation"])).trim(),
       difficulty:String(cell(r,["Difficulty"])).trim(),
       questionType:String(cell(r,["Question Type","question_type","Type"])).trim(),
@@ -77,8 +77,9 @@
       if(!q.questionText) errors.push(`Row ${r}: Question is missing.`);
       [q.optionA,q.optionB,q.optionC,q.optionD].forEach((v,j)=>{ if(!v) errors.push(`Row ${r}: Option ${"ABCD"[j]} is missing.`); });
       if(!["A","B","C","D"].includes(q.correctOption)) errors.push(`Row ${r}: Correct Answer must be A, B, C or D.`);
-      if(!Number.isFinite(q.marks)||q.marks<=0) errors.push(`Row ${r}: invalid Marks.`);
-      if(!Number.isFinite(q.negativeMarks)||q.negativeMarks<0) errors.push(`Row ${r}: invalid Negative Marks.`);
+      const marks=Number(q.marks),negativeMarks=Number(q.negativeMarks);
+      if(!q.marks||!Number.isFinite(marks)||marks<=0) errors.push(`Row ${r}: Marks is required and must be greater than 0.`);
+      if(!q.negativeMarks||!Number.isFinite(negativeMarks)||negativeMarks<0) errors.push(`Row ${r}: Negative Marks is required and must be 0 or greater.`);
       if(q.difficulty&&!['easy','medium','hard'].includes(q.difficulty.toLowerCase())) errors.push(`Row ${r}: Difficulty must be Easy, Medium or Hard.`);
       if(q.sourceYear&&(!/^\d{4}$/.test(q.sourceYear)||Number(q.sourceYear)<1900||Number(q.sourceYear)>2200)) errors.push(`Row ${r}: invalid Source Year.`);
       if(seen.has(q.questionNo)) errors.push(`Row ${r}: duplicate Question No. ${q.questionNo}.`);
