@@ -1,16 +1,17 @@
 (() => {
 const c=window.sgaSupabase;
 const msg=document.getElementById('msg');
-const email=document.getElementById('email');
+const adminId=document.getElementById('adminId');
 const pw=document.getElementById('password');
 const loginBtn=document.getElementById('loginBtn');
 const setupBtn=document.getElementById('setupBtn');
 const forgotBtn=document.getElementById('forgotPasswordBtn');
 const togglePassword=document.getElementById('togglePassword');
+const ADMIN_LOGIN_ID='1901';
 const AUTHORIZED_ADMIN_EMAIL='d.kingshravan@gmail.com';
 
 const show=(t,k='')=>{msg.textContent=t;msg.className='msg '+k};
-const adminEmail=()=>email.value.trim().toLowerCase();
+const validAdminId=()=>adminId.value.trim()===ADMIN_LOGIN_ID;
 
 togglePassword.onclick=()=>{
  const hidden=pw.type==='password';
@@ -19,17 +20,15 @@ togglePassword.onclick=()=>{
 };
 
 forgotBtn.onclick=async()=>{
- const e=adminEmail();
- if(!e){email.focus();return show('Enter the registered admin email first.','error')}
- if(e!==AUTHORIZED_ADMIN_EMAIL)return show('Use the authorized admin email.','error');
+ if(!validAdminId()){adminId.focus();return show('Enter the authorized Admin ID.','error')}
 
  forgotBtn.disabled=true;
  show('Sending password reset link...');
  try{
    const redirectTo=new URL('admin-reset-password.html',window.location.href).href;
-   const {error}=await c.auth.resetPasswordForEmail(e,{redirectTo});
+   const {error}=await c.auth.resetPasswordForEmail(AUTHORIZED_ADMIN_EMAIL,{redirectTo});
    if(error)throw error;
-   show('Password reset link sent. Open the email and click the reset link.','success');
+   show('Password reset link sent to the registered admin account.','success');
  }catch(err){
    show(err?.message||'Unable to send password reset link.','error');
  }finally{
@@ -38,8 +37,7 @@ forgotBtn.onclick=async()=>{
 };
 
 setupBtn.onclick=async()=>{
- const e=adminEmail();
- if(e!==AUTHORIZED_ADMIN_EMAIL)return show('Use the authorized admin email.','error');
+ if(!validAdminId())return show('Use the authorized Admin ID.','error');
  if(pw.value.length<8)return show('Set a password with at least 8 characters.','error');
 
  setupBtn.disabled=true;
@@ -48,7 +46,7 @@ setupBtn.onclick=async()=>{
   const r=await fetch(`${window.SGA_SUPABASE_URL}/functions/v1/admin-bootstrap`,{
     method:'POST',
     headers:{'Content-Type':'application/json','apikey':window.SGA_SUPABASE_PUBLISHABLE_KEY},
-    body:JSON.stringify({email:e,password:pw.value})
+    body:JSON.stringify({email:AUTHORIZED_ADMIN_EMAIL,password:pw.value})
   });
   const d=await r.json();
   if(!r.ok)throw new Error(d.error||'Setup failed');
@@ -59,14 +57,13 @@ setupBtn.onclick=async()=>{
 
 document.getElementById('loginForm').onsubmit=async(ev)=>{
  ev.preventDefault();
- const e=adminEmail();
- if(e!==AUTHORIZED_ADMIN_EMAIL)return show('Use the authorized admin email.','error');
+ if(!validAdminId())return show('Invalid Admin ID or password.','error');
 
  loginBtn.disabled=true;
  show('Verifying admin...');
  try{
-   const {data,error}=await c.auth.signInWithPassword({email:e,password:pw.value});
-   if(error)return show('Invalid admin email or password.','error');
+   const {data,error}=await c.auth.signInWithPassword({email:AUTHORIZED_ADMIN_EMAIL,password:pw.value});
+   if(error)return show('Invalid Admin ID or password.','error');
 
    const {data:p,error:pe}=await c.from('profiles')
      .select('role,is_active').eq('id',data.user.id).single();
