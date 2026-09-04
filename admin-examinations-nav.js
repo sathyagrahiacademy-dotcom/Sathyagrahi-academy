@@ -27,11 +27,24 @@
   host.className='examination-branch-shell';
   host.innerHTML=`<nav class="exam-section-nav branch-nav" aria-label="Examination Branch sections">${items.map(([href,no,label,desc])=>`<a href="${href}" class="exam-nav-card ${current===href.toLowerCase()?'active':''}"><span class="exam-nav-number">${no}</span><span class="exam-nav-copy"><b>${label}</b><small>${desc}</small></span></a>`).join('')}</nav>`;
 
-  if(current==='admin-exams.html'&&!document.getElementById('adminExamsEnhancements')){
-    const script=document.createElement('script');
-    script.id='adminExamsEnhancements';
-    script.src='admin-exams-enhancements.js?v=20260905-1';
-    document.body.appendChild(script);
+  function loadScript(id,src,onload){
+    const existing=document.getElementById(id);
+    if(existing){if(onload)existing.dataset.loaded==='1'?onload():existing.addEventListener('load',onload,{once:true});return;}
+    const script=document.createElement('script');script.id=id;script.src=src;script.onload=()=>{script.dataset.loaded='1';if(onload)onload()};document.body.appendChild(script);
+  }
+
+  if(current==='admin-exams.html'){
+    if(!document.getElementById('adminExamsEnhancements')){
+      const script=document.createElement('script');
+      script.id='adminExamsEnhancements';
+      script.src='admin-exams-enhancements.js?v=20260905-1';
+      document.body.appendChild(script);
+    }
+    loadScript('sgaJsPdf','https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',()=>{
+      loadScript('sgaJsPdfAutoTable','https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js',()=>{
+        loadScript('adminExamBlueprint','admin-exam-blueprint.js?v=20260905-1');
+      });
+    });
   }
 
   document.querySelectorAll('aside nav a.active').forEach(a=>a.classList.remove('active'));
