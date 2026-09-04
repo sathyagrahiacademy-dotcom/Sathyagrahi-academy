@@ -11,4 +11,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test question-bank-blueprint-contract.test.mjs
+      - run: node --test question-bank-blueprint-contract.test.mjs question-bank-import-policy.test.mjs exam-blueprint-utils.test.mjs
+      - run: node --check admin-exam-questions.js
+      - run: node --check admin-question-bank.js
+      - run: node --check admin-exam-blueprint.js
+      - run: node --check admin-examinations-nav.js
