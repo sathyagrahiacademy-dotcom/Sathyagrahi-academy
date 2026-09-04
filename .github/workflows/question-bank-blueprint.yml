@@ -11,8 +11,36 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test question-bank-blueprint-contract.test.mjs question-bank-import-policy.test.mjs exam-blueprint-utils.test.mjs
-      - run: node --check admin-exam-questions.js
-      - run: node --check admin-question-bank.js
-      - run: node --check admin-exam-blueprint.js
-      - run: node --check admin-examinations-nav.js
+      - name: Feature and Examination regression tests
+        run: >-
+          node --test
+          question-bank-blueprint-contract.test.mjs
+          question-bank-import-policy.test.mjs
+          exam-blueprint-utils.test.mjs
+          exam-mapping-logic.test.mjs
+          exam-publish-validation.test.mjs
+          exam-scope-logic.test.mjs
+          exam-scope-ui-utils.test.mjs
+          admin-exam-scope-v2-ui.test.mjs
+          admin-exam-scope-ui-contract.test.mjs
+          exam-scope-controller-race.test.mjs
+          exam-scope-service-role-grants.test.mjs
+          exam-scope-month-folders.test.mjs
+          exam-grading-performance.test.mjs
+          exam-attempt-policy.test.mjs
+          exam-audience-policy.test.mjs
+          exam-student-audience.test.mjs
+          exam-submit-sync.test.mjs
+          exam-performance-contract.test.mjs
+          exam-performance-visibility.test.mjs
+      - name: Question Bank and Blueprint syntax
+        run: |
+          node --check admin-exam-questions.js
+          node --check admin-question-bank.js
+          node --check admin-exam-blueprint.js
+          node --check admin-examinations-nav.js
+          node --check admin-exams.js
+          node --check admin-exam-mapping-ui.js
+          node --check student-exam-attempt.js
+          node --check admin-results.js
+          node --check admin-performance.js
