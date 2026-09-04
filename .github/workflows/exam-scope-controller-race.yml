@@ -13,4 +13,5 @@ jobs:
           node-version: '22'
       - run: node --test exam-scope-controller-race.test.mjs
       - run: node --check admin-exams.js
+      - run: node --check admin-exam-scope-v2-loader.js
       - run: node --check admin-exam-scope-v2-ui.js
