@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import uiUtils from './exam-mapping-ui-utils.js';
-const { mappingCoverageLabel, availableSubtopics, mappingRowText, mappingStatusModel, saveMappingPayload, subtopicPayload } = uiUtils;
+const { mappingCoverageLabel, availableSubtopics, mappingRowText, mappingStatusModel, saveMappingPayload, subtopicPayload, preferredMappingSelectionFromScope } = uiUtils;
 
 test('shows ready label only for complete valid mapping', () => {
   assert.equal(
@@ -75,4 +75,11 @@ test('builds approve and rename payloads for a subtopic', () => {
   assert.deepEqual(subtopicPayload('disable', { subtopicId:101 }), {
     action:'disable_subtopic', subtopicId:101
   });
+});
+
+test('exam scope converts to mapping selector defaults',()=>{
+  assert.deepEqual(
+    preferredMappingSelectionFromScope({subject:'Physics',unit_id:1,chapter_id:10,subtopic_id:100}),
+    {subject:'Physics',unitId:1,chapterId:10,subtopicId:100}
+  );
 });
