@@ -1,3 +1,5 @@
+import { validateQuestionType, validateOfficialQuestionMarking } from '../_shared/exam-intelligence-policy.mjs';
+
 export function normalizeLabel(value){
   return String(value??'').trim().replace(/\s+/g,' ').toLowerCase();
 }
@@ -82,9 +84,18 @@ export function validateImportQuestions(lookup,rawQuestions=[]){
     const marks=requiredNumber(q?.marks),negative=requiredNumber(q?.negativeMarks);
     if(!marks.ok||marks.value<=0)add('Marks is required and must be a number greater than 0.');
     if(!negative.ok||negative.value<0)add('Negative Marks is required and must be a number 0 or greater.');
+    if(marks.ok&&negative.ok&&marks.value>0&&negative.value>=0){
+      const officialMarking=validateOfficialQuestionMarking({marks:marks.value,negativeMarks:negative.value});
+      if(!officialMarking.ok)add(officialMarking.error+'.');
+    }
 
     const difficultyRaw=text(q?.difficulty),difficulty=difficultyRaw?difficultyRaw[0].toUpperCase()+difficultyRaw.slice(1).toLowerCase():'';
     if(difficulty&&!['Easy','Medium','Hard'].includes(difficulty))add('Difficulty must be Easy, Medium or Hard.');
+    const questionType=text(q?.questionType);
+    if(syllabus.ok){
+      const typeValidation=validateQuestionType(syllabus.subject,questionType);
+      if(!typeValidation.ok)add(typeValidation.error+'.');
+    }
     const sourceYearRaw=text(q?.sourceYear);
     const sourceYear=sourceYearRaw?Number(sourceYearRaw):null;
     if(sourceYearRaw&&(!/^\d{4}$/.test(sourceYearRaw)||!Number.isInteger(sourceYear)||sourceYear<1900||sourceYear>2200))add('invalid Source Year.');
@@ -94,7 +105,7 @@ export function validateImportQuestions(lookup,rawQuestions=[]){
       resolved.push({
         questionNo,subject:syllabus.subject,unitId:syllabus.unitId,chapterId:syllabus.chapterId,subtopicId:syllabus.subtopicId,
         questionText,optionA,optionB,optionC,optionD,correctOption,marks:marks.value,negativeMarks:negative.value,
-        explanation:text(q?.explanation),difficulty,questionType:text(q?.questionType),source:text(q?.source),sourceYear
+        explanation:text(q?.explanation),difficulty,questionType,source:text(q?.source),sourceYear
       });
     }
   });
