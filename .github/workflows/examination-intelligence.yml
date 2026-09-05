@@ -27,6 +27,7 @@ jobs:
           question-bank-import-policy.test.mjs
           question-bank-import-ui.test.mjs
           exam-publish-validation.test.mjs
+          admin-publish-template-contract.test.mjs
 
       - name: Check browser JavaScript syntax
         run: |
