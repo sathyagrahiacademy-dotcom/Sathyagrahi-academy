@@ -29,23 +29,10 @@ jobs:
         run: node --check admin-exams.js
 
       - name: Parse admin exams Edge Function TypeScript
-        run: |
-          npx -y -p typescript@5.8.3 node - <<'NODE'
-          const fs=require('fs')
-          const ts=require('typescript')
-          const file='supabase/functions/admin-exams/index.ts'
-          const source=fs.readFileSync(file,'utf8')
-          const parsed=ts.transpileModule(source,{
-            compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext},
-            fileName:file,
-            reportDiagnostics:true
-          })
-          const errors=(parsed.diagnostics||[]).filter(d=>d.category===ts.DiagnosticCategory.Error)
-          if(errors.length){
-            for(const d of errors) console.error(ts.flattenDiagnosticMessageText(d.messageText,'\n'))
-            process.exit(1)
-          }
-          console.log('TypeScript parse OK')
-          NODE
-
-# Verification revision: official exam identity foundation
+        run: >-
+          npx -y esbuild@0.25.9
+          supabase/functions/admin-exams/index.ts
+          --loader:.ts=ts
+          --format=esm
+          --outfile=/tmp/admin-exams.js
+          --external:*
