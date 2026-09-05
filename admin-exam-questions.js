@@ -39,6 +39,17 @@
 
   let bulkQuestions = [];
   const requiredHeaders = ["Question No","Subject","Unit","Chapter","Topic","Question","Option A","Option B","Option C","Option D","Correct Answer","Marks","Negative Marks","Explanation","Difficulty","Question Type","Source","Source Year"];
+  const approvedQuestionTypes = Object.freeze({
+    Physics:Object.freeze([
+      "Direct Concept MCQ","Numerical / Application","Graph / Diagram","Circuit Based","Formula / Relation","Statement I–II","Match / Order"
+    ]),
+    Chemistry:Object.freeze([
+      "Direct Concept / NCERT","Numerical / Application","Reaction / Product","Reagent / Conversion","Statement Based","Assertion–Reason","Match / Order / Trend"
+    ]),
+    Biology:Object.freeze([
+      "NCERT Direct","Multiple Statements","Statement I–II","Assertion–Reason","Match the Following","Sequence / Order","Diagram / Image"
+    ])
+  });
 
   function normalizeHeader(s){ return String(s??"").trim().toLowerCase().replace(/[^a-z0-9]/g,""); }
   function cell(row,names){
@@ -77,9 +88,16 @@
       if(!q.questionText) errors.push(`Row ${r}: Question is missing.`);
       [q.optionA,q.optionB,q.optionC,q.optionD].forEach((v,j)=>{ if(!v) errors.push(`Row ${r}: Option ${"ABCD"[j]} is missing.`); });
       if(!["A","B","C","D"].includes(q.correctOption)) errors.push(`Row ${r}: Correct Answer must be A, B, C or D.`);
+
       const marks=Number(q.marks),negativeMarks=Number(q.negativeMarks);
-      if(!q.marks||!Number.isFinite(marks)||marks<=0) errors.push(`Row ${r}: Marks is required and must be greater than 0.`);
-      if(!q.negativeMarks||!Number.isFinite(negativeMarks)||negativeMarks<0) errors.push(`Row ${r}: Negative Marks is required and must be 0 or greater.`);
+      if(!Number.isFinite(marks)||marks!==4) errors.push(`Row ${r}: Marks must be 4 for official NEET questions.`);
+      if(!Number.isFinite(negativeMarks)||negativeMarks!==1) errors.push(`Row ${r}: Negative Marks must be 1 for official NEET questions.`);
+
+      const allowed=approvedQuestionTypes[q.subject];
+      if(!allowed) errors.push(`Row ${r}: Subject must be Physics, Chemistry or Biology.`);
+      else if(!q.questionType) errors.push(`Row ${r}: Question Type is required and must use an approved ${q.subject} format.`);
+      else if(!allowed.includes(q.questionType)) errors.push(`Row ${r}: Question Type "${q.questionType}" is not an approved ${q.subject} format.`);
+
       if(q.difficulty&&!['easy','medium','hard'].includes(q.difficulty.toLowerCase())) errors.push(`Row ${r}: Difficulty must be Easy, Medium or Hard.`);
       if(q.sourceYear&&(!/^\d{4}$/.test(q.sourceYear)||Number(q.sourceYear)<1900||Number(q.sourceYear)>2200)) errors.push(`Row ${r}: invalid Source Year.`);
       if(seen.has(q.questionNo)) errors.push(`Row ${r}: duplicate Question No. ${q.questionNo}.`);
@@ -93,10 +111,10 @@
       "Question No":1,"Subject":"Physics","Unit":"Kinematics","Chapter":"Motion in a Plane","Topic":"Projectile Motion",
       "Question":"A projectile is launched horizontally. Which component of velocity remains constant?","Option A":"Horizontal","Option B":"Vertical","Option C":"Both","Option D":"Neither",
       "Correct Answer":"A","Marks":4,"Negative Marks":1,"Explanation":"Ignoring air resistance, horizontal acceleration is zero.",
-      "Difficulty":"Medium","Question Type":"Concept","Source":"AI Practice","Source Year":""
+      "Difficulty":"Medium","Question Type":"Direct Concept MCQ","Source":"AI Practice","Source Year":""
     }];
     const ws=XLSX.utils.json_to_sheet(sample,{header:requiredHeaders});
-    ws["!cols"]=[{wch:12},{wch:14},{wch:28},{wch:30},{wch:28},{wch:52},{wch:22},{wch:22},{wch:22},{wch:22},{wch:16},{wch:10},{wch:16},{wch:45},{wch:12},{wch:18},{wch:18},{wch:12}];
+    ws["!cols"]=[{wch:12},{wch:14},{wch:28},{wch:30},{wch:28},{wch:52},{wch:22},{wch:22},{wch:22},{wch:22},{wch:16},{wch:10},{wch:16},{wch:45},{wch:12},{wch:24},{wch:18},{wch:12}];
     const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"Questions");
     XLSX.writeFile(wb,"Sathyagrahi_AI_Exam_Questions_AutoMap_Template.xlsx");
   });
@@ -117,7 +135,7 @@
         $("bulkErrors").innerHTML=errors.slice(0,25).map(esc).join("<br>");
         return;
       }
-      $("bulkSummary").textContent=`Ready: ${bulkQuestions.length} question(s). Official Subject → Unit → Chapter → Topic will be verified and AUTO MAPPED on import.`;
+      $("bulkSummary").textContent=`Ready: ${bulkQuestions.length} question(s). Official syllabus, Question Type and +4/−1 marking will be server-verified and AUTO MAPPED on import.`;
       $("bulkSummary").className="msg ok";
       $("importQuestions").disabled=false;
     }catch(err){
