@@ -17,6 +17,8 @@ function load(){
   return sandbox.window.sgaStudentAnswerReview;
 }
 
+function plain(value){return JSON.parse(JSON.stringify(value))}
+
 test('formats active time deterministically',t=>{
   const u=load();if(!u)return t.skip('utility not implemented yet');
   assert.equal(u.formatActiveTime(0),'0 sec');
@@ -27,10 +29,10 @@ test('formats active time deterministically',t=>{
 
 test('builds legacy-safe question intelligence metadata',t=>{
   const u=load();if(!u)return t.skip('utility not implemented yet');
-  assert.deepEqual(u.normaliseQuestionMeta({difficulty:'Hard',topic:'Entropy',active_seconds:74,visit_count:3,answer_change_count:2}),{
+  assert.deepEqual(plain(u.normaliseQuestionMeta({difficulty:'Hard',topic:'Entropy',active_seconds:74,visit_count:3,answer_change_count:2})),{
     difficulty:'Hard',topic:'Entropy',activeSeconds:74,activeTime:'1 min 14 sec',visitCount:3,answerChangeCount:2
   });
-  assert.deepEqual(u.normaliseQuestionMeta({}),{
+  assert.deepEqual(plain(u.normaliseQuestionMeta({})),{
     difficulty:'Not Set',topic:'Unmapped',activeSeconds:0,activeTime:'0 sec',visitCount:0,answerChangeCount:0
   });
 });
