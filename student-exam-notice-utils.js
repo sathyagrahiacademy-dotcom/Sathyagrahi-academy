@@ -4,14 +4,17 @@
   if(root)root.SGAExamNotices=api;
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   const TYPE_LABELS=Object.freeze({daily:'Daily Exam',unit:'Unit Exam',monthly:'Monthly Exam'});
+  const MONTHS=Object.freeze(['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']);
 
   function clean(value){return String(value??'').trim()}
   function formatDate(value){
     const text=clean(value);
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(text))return '';
-    const date=new Date(`${text}T00:00:00Z`);
-    if(Number.isNaN(date.getTime()))return '';
-    return date.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'});
+    const match=text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(!match)return '';
+    const year=Number(match[1]),month=Number(match[2]),day=Number(match[3]);
+    const date=new Date(Date.UTC(year,month-1,day));
+    if(date.getUTCFullYear()!==year||date.getUTCMonth()!==month-1||date.getUTCDate()!==day)return '';
+    return `${String(day).padStart(2,'0')} ${MONTHS[month-1]} ${year}`;
   }
   function typeLabel(exam){
     const type=clean(exam?.exam_type).toLowerCase();
