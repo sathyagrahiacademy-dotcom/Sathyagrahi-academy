@@ -42,16 +42,36 @@ Deno.serve(async (req: Request) => {
     const action = String(body.action || 'verify')
 
     if(action==='list'){
-      const {data:exams,error}=await admin.from('exams').select('id,title,subject,syllabus,duration_minutes,total_marks,negative_marking,status,is_published,audience_mode,created_at').eq('is_published',true).neq('status','completed').order('created_at',{ascending:false})
+      const {data:exams,error}=await admin.from('exams').select('id,title,subject,syllabus,duration_minutes,total_marks,negative_marking,status,is_published,audience_mode,exam_type,exam_date,expected_questions,created_at').eq('is_published',true).neq('status','completed').order('created_at',{ascending:false})
       if(error)return json({error:error.message},400)
+      const examRows=exams||[]
+      const examIds=examRows.map((e:any)=>e.id)
+      const codeByExam=new Map<string,string>()
+      const questionCountByExam=new Map<string,number>()
+      if(examIds.length){
+        const [accessRes,questionRes]=await Promise.all([
+          admin.from('exam_access').select('exam_id,exam_code').in('exam_id',examIds),
+          admin.from('exam_questions').select('exam_id').in('exam_id',examIds)
+        ])
+        if(accessRes.error)return json({error:accessRes.error.message},400)
+        if(questionRes.error)return json({error:questionRes.error.message},400)
+        for(const row of accessRes.data||[])codeByExam.set(String(row.exam_id),String(row.exam_code||''))
+        for(const row of questionRes.data||[]){
+          const key=String(row.exam_id)
+          questionCountByExam.set(key,(questionCountByExam.get(key)||0)+1)
+        }
+      }
       const visible=[]
-      for(const exam of exams||[]){
+      for(const exam of examRows){
         const assignment=await assignmentFor(admin,exam.id,user.id)
         if(!canAccessAudience(exam.audience_mode,assignment))continue
         const availability=await attemptAvailability(admin,exam.id,user.id,assignment?.max_attempts||1)
         visible.push({
-          id:exam.id,title:exam.title,subject:exam.subject,syllabus:exam.syllabus,duration_minutes:exam.duration_minutes,total_marks:exam.total_marks,
-          negative_marking:exam.negative_marking,status:exam.status,availability:availability.can_start?'active':'completed',can_start:availability.can_start,
+          id:exam.id,title:exam.title,subject:exam.subject,syllabus:exam.syllabus,
+          exam_type:exam.exam_type,exam_date:exam.exam_date,exam_code:codeByExam.get(String(exam.id))||'',expected_questions:exam.expected_questions,
+          question_count:questionCountByExam.get(String(exam.id))||Number(exam.expected_questions)||0,
+          duration_minutes:exam.duration_minutes,total_marks:exam.total_marks,negative_marking:exam.negative_marking,status:exam.status,created_at:exam.created_at,
+          availability:availability.can_start?'active':'completed',can_start:availability.can_start,
           attempt_count:availability.attempt_count,max_attempts:availability.max_attempts
         })
       }
