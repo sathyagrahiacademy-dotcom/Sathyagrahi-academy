@@ -252,7 +252,7 @@ Deno.serve(async (req: Request) => {
         p_event_id: eventId,
         p_attempt_id: attemptId,
         p_question_id: questionId,
-        p_active_seconds: activeSeconds,
+        p_active_seconds_delta: activeSeconds,
         p_visit_delta: visitDelta,
         p_answer_change_delta: answerChangeDelta,
         p_viewed_at: safeViewedAt
