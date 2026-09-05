@@ -105,6 +105,10 @@ begin
     raise exception 'Official exam requires exactly one approved syllabus mapping for every question';
   end if;
 
+  if v_physics + v_chemistry + v_biology <> v_question_count then
+    raise exception 'Official exam questions must map only to Physics, Chemistry or Biology syllabus subjects';
+  end if;
+
   if new.exam_type in ('unit','monthly') then
     if new.subject<>'NEET' then
       raise exception 'Unit/Monthly official exam subject must be NEET';
@@ -133,7 +137,7 @@ revoke all on function public.validate_official_exam_publish() from anon, authen
 
 drop trigger if exists exams_official_publish_guard on public.exams;
 create trigger exams_official_publish_guard
-before update of is_published on public.exams
+before insert or update on public.exams
 for each row
 when (new.is_published is true)
 execute function public.validate_official_exam_publish();
