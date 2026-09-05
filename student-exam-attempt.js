@@ -1,6 +1,7 @@
 (() => {
-const c=window.sgaSupabase,$=id=>document.getElementById(id),u=window.sgaExamAttemptSync;
+const c=window.sgaSupabase,$=id=>document.getElementById(id),u=window.sgaExamAttemptSync,activityApi=window.sgaQuestionActivity;
 let exam=null,attempt=null,questions=[],responses={},confirmed={},visited=new Set(),current=0,endsAt=0,timerId=null,submitting=false,navigating=false;
+let activityTracker=null,activityHeartbeat=null;
 
 async function invoke(body){
   const {data,error}=await c.functions.invoke('student-exam-attempt',{body});
@@ -32,6 +33,41 @@ function queueState(qid,state){
   p.then(updateSaveIndicator).catch(showRecoverableSaveError);
   return p;
 }
+
+function isActivityActive(){return !document.hidden&&document.hasFocus()}
+async function sendActivityEvent(event){
+  if(!event||!attempt?.id)return;
+  await invoke({
+    action:'activity',attemptId:attempt.id,questionId:event.questionId,eventId:event.eventId,
+    activeSeconds:event.activeSeconds,visitDelta:event.visitDelta,answerChangeDelta:event.answerChangeDelta,viewedAt:event.viewedAt
+  });
+}
+function logActivityEvent(event){
+  if(!event)return Promise.resolve();
+  return sendActivityEvent(event).catch(e=>console.warn('Activity logging failed',e));
+}
+function flushActivity(){
+  if(!activityTracker)return Promise.resolve();
+  return logActivityEvent(activityTracker.flush());
+}
+function trackCurrentQuestion(questionId){
+  if(!activityTracker)return;
+  const previousEvent=activityTracker.enter(questionId,{active:isActivityActive()});
+  logActivityEvent(previousEvent);
+}
+function startActivityHeartbeat(){
+  if(!activityTracker||activityHeartbeat)return;
+  activityHeartbeat=setInterval(()=>{flushActivity();},15_000);
+}
+
+document.addEventListener('visibilitychange',()=>{
+  if(!activityTracker)return;
+  activityTracker.setActive(!document.hidden&&document.hasFocus());
+  if(document.hidden)flushActivity();
+});
+window.addEventListener('focus',()=>{activityTracker?.setActive(!document.hidden)});
+window.addEventListener('blur',()=>{if(!activityTracker)return;activityTracker.setActive(false);flushActivity()});
+
 function statusFor(i){
   const q=questions[i],r=responseFor(q.id),v=visited.has(q.id);
   return u.statusForQuestion({questionId:q.id,response:r,visited:v,confirmedCurrent:u.isConfirmedCurrent(q.id,responses,confirmed)});
@@ -41,6 +77,7 @@ function renderPalette(){
 }
 function render(){
   const q=questions[current];if(!q)return;
+  trackCurrentQuestion(q.id);
   visited.add(q.id);
   $('questionNo').textContent=q.question_no;
   $('questionText').textContent=q.question_text;
@@ -48,7 +85,10 @@ function render(){
   const r=responseFor(q.id);
   $('options').innerHTML=['A','B','C','D'].map(k=>{const txt=q['option_'+k.toLowerCase()];return `<label class="option ${r.selected_option===k?'selected':''}"><input type="radio" name="answer" value="${k}" ${r.selected_option===k?'checked':''}><span class="letter">${k}</span><span>${escapeHtml(txt)}</span></label>`}).join('');
   document.querySelectorAll('input[name=answer]').forEach(el=>el.onchange=e=>{
-    const latest={...responseFor(q.id),selected_option:e.target.value};
+    const previousOption=responseFor(q.id).selected_option;
+    const nextOption=e.target.value;
+    if(previousOption!==nextOption)activityTracker?.answerChanged();
+    const latest={...responseFor(q.id),selected_option:nextOption};
     responses[q.id]=latest;
     render();
     queueState(q.id,latest).catch(()=>{});
@@ -57,7 +97,7 @@ function render(){
   $('saveNextBtn').textContent=current===questions.length-1?'SAVE':'SAVE & NEXT';
   renderPalette();
 }
-function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]))}
+function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[ch]))}
 async function flushQuestion(qid){
   if(Object.prototype.hasOwnProperty.call(responses,qid)&&!u.isConfirmedCurrent(qid,responses,confirmed))queueState(qid,responseFor(qid)).catch(()=>{});
   await saveQueue.flush(qid);
@@ -99,9 +139,11 @@ function summary(){
 async function submit(auto=false){
   if(submitting)return;submitting=true;
   try{
+    await Promise.race([flushActivity(),new Promise(resolve=>setTimeout(resolve,800))]);
     if(auto){try{await flushAllPending()}catch(e){showRecoverableSaveError(e)}}else await flushAllPending();
     const snapshot=u.buildFullSnapshot(questions,responses);
     await invoke({action:'submit',attemptId:attempt.id,auto,responses:snapshot});
+    if(activityHeartbeat){clearInterval(activityHeartbeat);activityHeartbeat=null}
     sessionStorage.removeItem('sga_active_exam_id');sessionStorage.removeItem('sga_verified_exam');
     alert(auto?'Time is over. Your exam has been auto-submitted.':'Your exam has been submitted successfully.');
     location.replace('dashboard.html');
@@ -109,7 +151,7 @@ async function submit(auto=false){
 }
 $('saveNextBtn').onclick=async()=>{if(navigating)return;navigating=true;try{await saveCurrent(false);next()}catch(e){alert(e.message||'Could not save this answer. Please retry.')}finally{navigating=false}};
 $('reviewBtn').onclick=async()=>{if(navigating)return;navigating=true;try{await saveCurrent(true);next()}catch(e){alert(e.message||'Could not save this answer. Please retry.')}finally{navigating=false}};
-$('clearBtn').onclick=async()=>{if(navigating)return;navigating=true;const q=questions[current];responses[q.id]={selected_option:null,marked_for_review:false};render();try{queueState(q.id,responses[q.id]).catch(()=>{});await flushQuestion(q.id)}catch(e){alert(e.message||'Could not clear this answer. Please retry.')}finally{navigating=false}};
+$('clearBtn').onclick=async()=>{if(navigating)return;navigating=true;const q=questions[current];const previousOption=responseFor(q.id).selected_option;if(previousOption!==null)activityTracker?.answerChanged();responses[q.id]={selected_option:null,marked_for_review:false};render();try{queueState(q.id,responses[q.id]).catch(()=>{});await flushQuestion(q.id)}catch(e){alert(e.message||'Could not clear this answer. Please retry.')}finally{navigating=false}};
 $('prevBtn').onclick=()=>{if(current>0)goTo(current-1)};
 $('palette').onclick=e=>{const b=e.target.closest('[data-i]');if(!b)return;goTo(Number(b.dataset.i))};
 $('submitBtn').onclick=async()=>{try{await flushAllPending();summary();open('submitModal')}catch(e){alert(e.message||'Could not synchronize answers. Please retry.')}};
@@ -125,6 +167,7 @@ document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>close(b.datas
     const data=await invoke({action:'start',examId});
     exam=data.exam;attempt=data.attempt;questions=data.questions;endsAt=new Date(data.ends_at).getTime();
     (data.responses||[]).forEach(r=>{const state={selected_option:u.normaliseAnswer(r.selected_option),marked_for_review:Boolean(r.marked_for_review)};responses[r.question_id]={...state};confirmed[r.question_id]={...state}});
+    if(activityApi?.createQuestionActivityTracker){activityTracker=activityApi.createQuestionActivityTracker();startActivityHeartbeat()}
     $('examTitle').textContent=exam.title;$('subjectName').textContent=exam.subject+(exam.syllabus?' • '+exam.syllabus:'');
     $('instructionsContent').innerHTML=`<p><strong>${escapeHtml(exam.title)}</strong></p><ul><li>Duration: ${exam.duration_minutes} minutes.</li><li>Total Marks: ${exam.total_marks}.</li><li>${exam.negative_marking?'Negative marking is enabled.':'No negative marking.'}</li><li>Your selected option is auto-saved. A question turns Answered only after the server confirms the save.</li><li>Navigation waits for any pending answer save.</li><li>FINAL SUBMIT performs a complete answer synchronization before grading.</li><li>The test auto-submits when the timer reaches zero.</li></ul>${exam.instructions?`<p>${escapeHtml(exam.instructions)}</p>`:''}`;
     $('paperContent').innerHTML=questions.map(q=>`<p><strong>Q${q.question_no}.</strong> ${escapeHtml(q.question_text)}</p>`).join('');
