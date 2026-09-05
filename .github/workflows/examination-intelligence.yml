@@ -30,14 +30,18 @@ jobs:
           admin-publish-template-contract.test.mjs
           student-exam-notice-utils.test.cjs
           student-exam-notice-integration.test.mjs
+          exam-question-activity-utils.test.cjs
+          exam-question-activity-integration.test.mjs
 
       - name: Check browser JavaScript syntax
         run: |
           node --check admin-exams.js
           node --check admin-exam-questions.js
           node --check student-notifications.js
+          node --check student-exam-attempt.js
 
       - name: Parse Edge Function TypeScript
         run: |
           npx -y esbuild@0.25.9 supabase/functions/admin-exams/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/admin-exams.js --external:*
           npx -y esbuild@0.25.9 supabase/functions/student-exam-access/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/student-exam-access.js --external:*
+          npx -y esbuild@0.25.9 supabase/functions/student-exam-attempt/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/student-exam-attempt.js --external:*
