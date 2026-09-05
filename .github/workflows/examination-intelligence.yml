@@ -37,6 +37,9 @@ jobs:
           performance-intelligence-policy.test.mjs
           performance-intelligence-integration.test.mjs
 
+      - name: Run full root regression suite
+        run: node --test *.test.js *.test.mjs *.test.cjs
+
       - name: Check browser JavaScript syntax
         run: |
           node --check admin-exams.js
@@ -46,6 +49,9 @@ jobs:
           node --check student-results.js
           node --check student-answer-review-utils.js
           node --check student-performance.js
+
+      - name: Check all root JavaScript syntax
+        run: find . -maxdepth 1 -type f -name '*.js' -print0 | xargs -0 -n1 node --check
 
       - name: Parse Edge Function TypeScript
         run: |
