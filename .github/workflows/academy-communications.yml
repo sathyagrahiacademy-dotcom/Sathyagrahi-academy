@@ -1,0 +1,48 @@
+name: Academy Communications
+
+on:
+  push:
+    branches:
+      - feature/academy-communications-hub
+  pull_request:
+    paths:
+      - 'ACADEMY_COMMUNICATIONS_MIGRATION.sql'
+      - 'academy-communications-*'
+      - 'admin-communications.*'
+      - 'admin-results.js'
+      - 'admin-results.html'
+      - 'admin-exams.html'
+      - 'admin-dashboard.html'
+      - 'admin-settings.html'
+      - 'supabase/functions/academy-communications/**'
+      - 'supabase/functions/admin-exams/**'
+      - '.github/workflows/academy-communications.yml'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Communication contracts
+        run: node --test academy-communications-*.test.mjs
+
+      - name: Full root regression
+        run: node --test *.test.js *.test.mjs *.test.cjs
+
+      - name: Root JavaScript syntax
+        run: |
+          for f in *.js; do
+            node --check "$f"
+          done
+
+      - name: Edge TypeScript parse when present
+        run: |
+          if [ -f supabase/functions/academy-communications/index.ts ]; then
+            npx --yes esbuild@0.25.9 supabase/functions/academy-communications/index.ts --bundle --platform=browser --format=esm --external:npm:* --external:jsr:* --outfile=/tmp/academy-communications.js
+          fi
+          npx --yes esbuild@0.25.9 supabase/functions/admin-exams/index.ts --bundle --platform=browser --format=esm --external:npm:* --external:jsr:* --outfile=/tmp/admin-exams.js
