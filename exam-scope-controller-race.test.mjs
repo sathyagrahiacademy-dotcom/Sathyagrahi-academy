@@ -7,8 +7,11 @@ const loader=fs.readFileSync('admin-exam-scope-v2-loader.js','utf8');
 
 test('HTML no longer loads the V2 controller in parallel with admin-exams.js',()=>{
   assert.doesNotMatch(html,/<script src="admin-exam-scope-v2-ui\.js\?v=[^"]+"><\/script>/);
-  assert.match(html,/<script src="admin-exams\.js\?v=20260905-2"><\/script>/);
-  assert.match(html,/<script src="admin-exam-scope-v2-loader\.js\?v=20260905-2"><\/script>/);
+  const adminMatch=html.match(/<script src="admin-exams\.js\?v=([^"]+)"><\/script>/);
+  const loaderMatch=html.match(/<script src="admin-exam-scope-v2-loader\.js\?v=([^"]+)"><\/script>/);
+  assert.ok(adminMatch,'admin-exams.js must be loaded');
+  assert.ok(loaderMatch,'scope V2 loader must be loaded');
+  assert.ok(html.indexOf(adminMatch[0])<html.indexOf(loaderMatch[0]),'admin-exams.js must load before the V2 scope loader');
 });
 
 test('loader waits until legacy scope rendering has completed before loading V2',()=>{
