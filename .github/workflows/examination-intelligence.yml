@@ -32,6 +32,8 @@ jobs:
         run: >-
           npx -y esbuild@0.25.9
           supabase/functions/admin-exams/index.ts
+          --bundle
+          --platform=neutral
           --loader:.ts=ts
           --format=esm
           --outfile=/tmp/admin-exams.js
