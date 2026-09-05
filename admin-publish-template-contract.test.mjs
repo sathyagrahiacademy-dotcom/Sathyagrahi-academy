@@ -7,7 +7,13 @@ const migration=fs.readFileSync('EXAMINATION_INTELLIGENCE_PUBLISH_GUARD_MIGRATIO
 test('official publish template is protected by a database trigger',()=>{
   assert.match(migration,/create or replace function public\.validate_official_exam_publish/i)
   assert.match(migration,/create trigger exams_official_publish_guard/i)
-  assert.match(migration,/before update of is_published on public\.exams/i)
+  assert.match(migration,/before insert or update on public\.exams/i)
+  assert.match(migration,/when \(new\.is_published is true\)/i)
+})
+
+test('published official exam cannot bypass validation by changing protected metadata without toggling publish',()=>{
+  assert.doesNotMatch(migration,/before update of is_published on public\.exams/i)
+  assert.match(migration,/before insert or update on public\.exams/i)
 })
 
 test('publish guard explicitly preserves legacy exams',()=>{
@@ -35,4 +41,5 @@ test('publish guard derives authoritative subject counts through approved syllab
   assert.match(migration,/v_physics/i)
   assert.match(migration,/v_chemistry/i)
   assert.match(migration,/v_biology/i)
+  assert.match(migration,/v_physics\s*\+\s*v_chemistry\s*\+\s*v_biology\s*<>\s*v_question_count/i)
 })
