@@ -97,7 +97,7 @@ function render(){
   $('saveNextBtn').textContent=current===questions.length-1?'SAVE':'SAVE & NEXT';
   renderPalette();
 }
-function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[ch]))}
+function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]))}
 async function flushQuestion(qid){
   if(Object.prototype.hasOwnProperty.call(responses,qid)&&!u.isConfirmedCurrent(qid,responses,confirmed))queueState(qid,responseFor(qid)).catch(()=>{});
   await saveQueue.flush(qid);
