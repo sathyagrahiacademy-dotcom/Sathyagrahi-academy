@@ -24,6 +24,7 @@ jobs:
           exam-intelligence-policy.test.mjs
           exam-intelligence-schema.test.mjs
           admin-exam-intelligence-contract.test.mjs
+          question-bank-import-policy.test.mjs
 
       - name: Check browser JavaScript syntax
         run: node --check admin-exams.js
