@@ -5,12 +5,14 @@ const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({
 }[ch]))
 const text=value=>String(value??'').trim()
 const list=value=>Array.isArray(value)?value:[]
+const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
 function dateLabel(value){
   const raw=text(value)
   if(!/^\d{4}-\d{2}-\d{2}$/.test(raw))return raw||'Today'
   const [y,m,d]=raw.split('-').map(Number)
-  return new Date(Date.UTC(y,m-1,d)).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'})
+  if(!months[m-1]||d<1||d>31)return raw
+  return `${String(d).padStart(2,'0')} ${months[m-1]} ${y}`
 }
 
 function page(title,body,siteUrl){
