@@ -26,6 +26,7 @@ jobs:
           admin-exam-intelligence-contract.test.mjs
           question-bank-import-policy.test.mjs
           question-bank-import-ui.test.mjs
+          exam-publish-validation.test.mjs
 
       - name: Check browser JavaScript syntax
         run: |
