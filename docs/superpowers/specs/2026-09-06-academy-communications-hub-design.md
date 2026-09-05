@@ -48,7 +48,7 @@ Content:
 Email sender: `info@...`
 WhatsApp sender: Academy WhatsApp business number.
 
-Scheduling is admin-controlled. Morning Study Plan automation remains disabled until the admin selects an enabled send time and channel.
+Scheduling is admin-controlled. Morning Study Plan automation remains disabled until the admin enables the event and selects a send time.
 
 ### 2. Exam Published
 Source: existing official exam publication flow and exam audience.
@@ -124,6 +124,11 @@ Internal event actions:
 
 Secrets are read from the Edge Function environment. Supabase current guidance is followed: browser uses publishable keys; controlled server code uses secret credentials; external provider tokens stay in project secrets.
 
+### Morning Scheduler
+Use Supabase scheduled execution as a lightweight dispatcher. The scheduler invokes the internal morning-plan action at a fixed safe cadence; the function compares current Asia/Kolkata time against `morning_send_time` and uses the daily idempotency key before sending. This allows Admin to change the morning send time without changing deployment code or exposing scheduling credentials.
+
+Only one Morning Study Plan delivery per student/channel/date may become `sent`, even if the scheduler invokes the function more than once around the configured time.
+
 ## Database
 
 ### `academy_communication_settings`
@@ -149,13 +154,17 @@ Delivery audit and idempotency table:
 - recipient_masked
 - provider
 - status (`pending`, `sent`, `failed`, `skipped`)
+- attempt_count
 - provider_message_id
 - failure_reason
 - attempted_at
 - sent_at
 - created_at
+- updated_at
 
 Unique key: `(event_key, student_id, channel)` to prevent duplicate delivery.
+
+Retry updates the existing failed row, increments `attempt_count`, clears the prior provider error before the new provider call, and never inserts a second logical delivery row.
 
 This table is service-only through the communication Edge Function. No secret provider payloads are stored.
 
@@ -165,7 +174,7 @@ Examples:
 - `result_published:<attempt_id>`
 - `morning_plan:<student_id>:YYYY-MM-DD`
 
-Repeated clicks, retries, page reloads, or repeated publish requests must not create duplicate successful messages.
+Repeated clicks, retries, page reloads, repeated publish requests, or repeated scheduler invocations must not create duplicate successful messages.
 
 ## Reliability Rule
 Communication is secondary to the core Academy workflow.
@@ -194,6 +203,7 @@ Current browser-direct `exam_results.is_published` update must move behind an au
 - Resend and Meta credentials: Supabase secrets only.
 - No service-role / secret keys in frontend JavaScript.
 - Admin authorization checked server-side.
+- Internal scheduled delivery cannot be invoked as a privileged public Admin action without server-side authorization.
 - Student PII is not exposed in general logs; recipient is masked in Admin delivery log.
 - Communication tables use RLS and/or service-only grants according to their exposure model.
 - WhatsApp utility messaging requires valid student phone data and approved templates.
@@ -217,12 +227,15 @@ Tests must cover:
 - correct sender alias per event
 - correct student email / phone selection
 - India-date filtering for Today Studied and Morning Plan
+- morning scheduler sends at most once per student/channel/date
 - no duplicate successful delivery
+- retry reuses the same failed logical delivery and increments attempt count
 - failed provider call does not block exam/result publication
 - disabled channel/event is skipped
 - missing recipient is skipped safely
 - provider secret never appears in frontend files or API responses
 - Admin-only settings/test/retry actions
+- scheduled/internal action cannot be abused by an ordinary browser caller
 - result summary uses published result values and existing Performance Intelligence only
 
 ## Out of Scope
