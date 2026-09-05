@@ -5,15 +5,18 @@ import fs from 'node:fs'
 const access=fs.readFileSync('supabase/functions/student-exam-access/index.ts','utf8')
 const notifications=fs.readFileSync('student-notifications.js','utf8')
 const html=fs.readFileSync('student-notifications.html','utf8')
+const listStart=access.indexOf("if(action==='list')")
+const listEnd=access.indexOf('const examCode',listStart)
+const listBranch=listStart>=0&&listEnd>listStart?access.slice(listStart,listEnd):''
 
 test('student exam access list returns official notice metadata without password or answer keys',()=>{
-  assert.match(access,/exam_type/)
-  assert.match(access,/exam_date/)
-  assert.match(access,/expected_questions/)
-  assert.match(access,/exam_code/)
-  assert.match(access,/question_count/)
-  assert.doesNotMatch(access,/visible\.push\([\s\S]*password_hash/)
-  assert.doesNotMatch(access,/visible\.push\([\s\S]*correct_option/)
+  assert.match(listBranch,/exam_type/)
+  assert.match(listBranch,/exam_date/)
+  assert.match(listBranch,/expected_questions/)
+  assert.match(listBranch,/exam_code/)
+  assert.match(listBranch,/question_count/)
+  assert.doesNotMatch(listBranch,/password_hash/)
+  assert.doesNotMatch(listBranch,/correct_option/)
 })
 
 test('notifications page loads eligible exams through student-exam-access instead of inserting notification rows',()=>{
