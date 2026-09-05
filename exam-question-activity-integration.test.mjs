@@ -58,3 +58,8 @@ test('server validates event and bounded deltas before activity RPC',()=>{
   assert.match(server,/300/)
   assert.match(server,/10/)
 })
+
+test('server RPC payload matches the database activity function parameter names',()=>{
+  assert.match(server,/p_active_seconds_delta\s*:\s*activeSeconds/)
+  assert.doesNotMatch(server,/p_active_seconds\s*:\s*activeSeconds/)
+})
