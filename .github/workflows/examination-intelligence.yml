@@ -34,6 +34,8 @@ jobs:
           exam-question-activity-integration.test.mjs
           student-answer-review-utils.test.cjs
           student-answer-review-intelligence.test.mjs
+          performance-intelligence-policy.test.mjs
+          performance-intelligence-integration.test.mjs
 
       - name: Check browser JavaScript syntax
         run: |
@@ -43,6 +45,7 @@ jobs:
           node --check student-exam-attempt.js
           node --check student-results.js
           node --check student-answer-review-utils.js
+          node --check student-performance.js
 
       - name: Parse Edge Function TypeScript
         run: |
@@ -50,3 +53,4 @@ jobs:
           npx -y esbuild@0.25.9 supabase/functions/student-exam-access/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/student-exam-access.js --external:*
           npx -y esbuild@0.25.9 supabase/functions/student-exam-attempt/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/student-exam-attempt.js --external:*
           npx -y esbuild@0.25.9 supabase/functions/student-result-review/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/student-result-review.js --external:*
+          npx -y esbuild@0.25.9 supabase/functions/exam-performance/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/exam-performance.js --external:*
