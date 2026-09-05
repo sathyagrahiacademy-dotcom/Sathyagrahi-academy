@@ -6,9 +6,15 @@ import { gradeQuestions } from './grading-logic.mjs'
 import { buildScopePerformance } from './performance-logic.mjs'
 
 const FINAL_SYNC_GRACE_MS = 15_000
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 function json(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+}
+
+function boundedInteger(value: unknown, min: number, max: number) {
+  const n = Number(value)
+  return Number.isInteger(n) && n >= min && n <= max ? n : null
 }
 
 async function performanceInputs(admin: any, attempt: any, exam: any, questions: any[], keys: any[], responses: any[]) {
@@ -215,6 +221,44 @@ Deno.serve(async (req: Request) => {
       }
 
       return json({ ok: true, exam, attempt, ends_at: new Date(endsAt).toISOString(), questions, responses: responses || [] })
+    }
+
+    if (action === 'activity') {
+      const attemptId = String(body.attemptId || '')
+      const questionId = String(body.questionId || '')
+      const eventId = String(body.eventId || '')
+      const activeSeconds = boundedInteger(body.activeSeconds, 0, 300)
+      const visitDelta = boundedInteger(body.visitDelta, 0, 10)
+      const answerChangeDelta = boundedInteger(body.answerChangeDelta, 0, 10)
+      if (!UUID_RE.test(eventId)) return json({ error: 'Invalid activity event' }, 400)
+      if (activeSeconds === null || visitDelta === null || answerChangeDelta === null) return json({ error: 'Invalid activity delta' }, 400)
+      if (activeSeconds === 0 && visitDelta === 0 && answerChangeDelta === 0) return json({ ok: true, recorded: false })
+
+      const { data: attempt } = await admin.from('exam_attempts').select('id,student_id,exam_id,started_at,status').eq('id', attemptId).maybeSingle()
+      if (!attempt || attempt.student_id !== user.id) return json({ error: 'Attempt not found' }, 404)
+      if (attempt.status !== 'in_progress') return json({ error: 'Exam attempt is not active' }, 409)
+
+      const { data: exam } = await admin.from('exams').select('duration_minutes').eq('id', attempt.exam_id).single()
+      const endsAt = new Date(attempt.started_at).getTime() + Number(exam?.duration_minutes || 0) * 60_000
+      if (Date.now() >= endsAt) return json({ error: 'Time is over' }, 409)
+      const { data: question } = await admin.from('exam_questions').select('id').eq('id', questionId).eq('exam_id', attempt.exam_id).maybeSingle()
+      if (!question) return json({ error: 'Question not found' }, 404)
+
+      const clientViewedAt = Date.parse(String(body.viewedAt || ''))
+      const safeViewedAt = Number.isFinite(clientViewedAt)
+        ? new Date(Math.min(clientViewedAt, Date.now())).toISOString()
+        : new Date().toISOString()
+      const { data: recorded, error } = await admin.rpc('record_exam_question_activity', {
+        p_event_id: eventId,
+        p_attempt_id: attemptId,
+        p_question_id: questionId,
+        p_active_seconds: activeSeconds,
+        p_visit_delta: visitDelta,
+        p_answer_change_delta: answerChangeDelta,
+        p_viewed_at: safeViewedAt
+      })
+      if (error) return json({ error: error.message }, 400)
+      return json({ ok: true, recorded: Boolean(recorded) })
     }
 
     if (action === 'save') {
