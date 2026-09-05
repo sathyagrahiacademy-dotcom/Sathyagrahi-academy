@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const fn=fs.readFileSync('supabase/functions/exam-performance/index.ts','utf8');
+const loaderPath='supabase/functions/exam-performance/student-intelligence-loader.mjs';
+const loader=fs.existsSync(loaderPath)?fs.readFileSync(loaderPath,'utf8'):'';
+const server=fn+'\n'+loader;
 const ui=fs.readFileSync('student-performance.js','utf8');
 const html=fs.readFileSync('student-performance.html','utf8');
 
@@ -13,19 +16,20 @@ test('student intelligence action is student-only and bound to authenticated use
 });
 
 test('student intelligence reads only published-result attempts before building evidence',()=>{
-  assert.match(fn,/exam_results/);
-  assert.match(fn,/is_published/);
-  assert.match(fn,/publishedAttemptIds/);
-  assert.match(fn,/exam_question_activity/);
-  assert.match(fn,/question_bank_questions/);
-  assert.match(fn,/bank_question_id/);
+  assert.ok(fs.existsSync(loaderPath),'student intelligence loader is missing');
+  assert.match(server,/exam_results/);
+  assert.match(server,/is_published/);
+  assert.match(server,/publishedAttemptIds/);
+  assert.match(server,/exam_question_activity/);
+  assert.match(server,/question_bank_questions/);
+  assert.match(server,/bank_question_id/);
 });
 
 test('student intelligence may use answer keys internally but never returns them',()=>{
-  assert.match(fn,/exam_answer_keys/);
-  const returnSlice=fn.slice(fn.indexOf('async function loadStudentIntelligence'));
-  assert.doesNotMatch(returnSlice,/answerKeys\s*:/);
-  assert.doesNotMatch(returnSlice,/correct_option\s*:/);
+  assert.match(server,/exam_answer_keys/);
+  assert.match(loader,/buildPerformanceIntelligence/);
+  assert.doesNotMatch(loader,/answerKeys\s*:/);
+  assert.doesNotMatch(loader,/correct_option\s*:/);
 });
 
 test('student performance UI requests intelligence and preserves existing syllabus E-history',()=>{
