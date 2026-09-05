@@ -25,9 +25,12 @@ jobs:
           exam-intelligence-schema.test.mjs
           admin-exam-intelligence-contract.test.mjs
           question-bank-import-policy.test.mjs
+          question-bank-import-ui.test.mjs
 
       - name: Check browser JavaScript syntax
-        run: node --check admin-exams.js
+        run: |
+          node --check admin-exams.js
+          node --check admin-exam-questions.js
 
       - name: Parse admin exams Edge Function TypeScript
         run: >-
