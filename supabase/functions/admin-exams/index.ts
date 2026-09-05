@@ -109,7 +109,7 @@ function validateScopeDraftAgainstTree(items:any[], lookup:any) {
     const chapter=lookup.chapters.get(item.chapterId)||lookup.chapters.get(String(item.chapterId))
     if (!chapter || Number(chapter.unit_id)!==Number(item.unitId)) return {ok:false,error:'Selected Chapter does not belong to selected Unit'}
     if (item.subtopicId!=null) {
-      const subtopic=lookup.subtopics.get(item.subtopicId)||lookup.subtopics.get(String(item.subtopicId)))
+      const subtopic=lookup.subtopics.get(item.subtopicId)||lookup.subtopics.get(String(item.subtopicId))
       if (!subtopic || Number(subtopic.chapter_id)!==Number(item.chapterId)) return {ok:false,error:'Selected Topic does not belong to selected Chapter'}
     }
   }
