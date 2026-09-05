@@ -1,8 +1,15 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { existsSync,readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 
-const sql=readFileSync(new URL('./ACADEMY_COMMUNICATIONS_MIGRATION.sql',import.meta.url),'utf8').toLowerCase()
+const migrationUrl=new URL('./ACADEMY_COMMUNICATIONS_MIGRATION.sql',import.meta.url)
+const migrationPath=fileURLToPath(migrationUrl)
+const sql=existsSync(migrationPath)?readFileSync(migrationPath,'utf8').toLowerCase():''
+
+test('academy communications migration exists',()=>{
+  assert.equal(existsSync(migrationPath),true,'ACADEMY_COMMUNICATIONS_MIGRATION.sql must exist')
+})
 
 test('migration creates disabled-by-default communications settings',()=>{
   assert.match(sql,/create table if not exists public\.academy_communication_settings/)
