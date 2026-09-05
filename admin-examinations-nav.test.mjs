@@ -11,13 +11,14 @@ test('shared examinations navigation exposes exactly five destinations',()=>{
     ['admin-exams.html','Exams'],
     ['admin-question-bank.html','Question Bank'],
     ['admin-results.html','Results'],
-    ['admin-performance.html','Exam Performance'],
+    ['admin-performance.html','Performance'],
     ['admin-manual-exams.html','Manual Exams']
   ];
   for (const [href,label] of expected) {
     assert.match(nav,new RegExp(href.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
     assert.match(nav,new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
   }
+  assert.match(nav,/Student Exam Analysis/);
 });
 
 test('legacy sidebar hides only Question Bank and Results links',()=>{

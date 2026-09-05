@@ -4,6 +4,7 @@ import { canReadPerformance } from './visibility-policy.mjs'
 import { validateExamMapping } from '../_shared/exam-mapping-logic.mjs'
 import { buildScopePerformance } from '../student-exam-attempt/performance-logic.mjs'
 import { buildQuestionSubjectMap, subjectsForExam, buildSubjectAttempt, buildStudentExamMonitor } from './admin-student-performance.mjs'
+import { loadStudentIntelligence } from './student-intelligence-loader.mjs'
 
 function json(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
@@ -183,7 +184,7 @@ Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (req.method !== 'POST') return json({ error:'Method not allowed' },405)
   const authHeader = req.headers.get('Authorization') || ''
-  if (!authHeader.startsWith('Bearer ')) return json({ error:'Unauthorized' },401)
+  if (!authHeader.startsWith('Bearer ')) return json({ error:'Unauthorized'},401)
   try {
     const url = Deno.env.get('SUPABASE_URL')!
     const pub = JSON.parse(Deno.env.get('SUPABASE_PUBLISHABLE_KEYS') || '{}').default || Deno.env.get('SUPABASE_ANON_KEY')!
@@ -199,6 +200,7 @@ Deno.serve(async (req: Request) => {
     if (action === 'admin_students') {if (profile.role !== 'admin') return json({error:'Admin access required'},403);return json({ok:true,students:await loadStudentFirstList(admin)})}
     if (action === 'admin_student_detail') {if (profile.role !== 'admin') return json({error:'Admin access required'},403);const studentId=text(body.studentId);if (!studentId) return json({error:'Student ID is required'},400);return json({ok:true,...await loadStudentDetail(admin,studentId)})}
     if (action === 'admin_list') {if (profile.role !== 'admin') return json({error:'Admin access required'},403);const { data, error } = await admin.from('exam_scope_performance_sequenced').select('*').order('submitted_at',{ascending:true});if (error) return json({error:error.message},400);const enriched = await enrichRows(admin,data || []);return json({ok:true,rows:applyFilters(enriched,body.filters || {})})}
+    if (action === 'student_intelligence') {if (profile.role !== 'student') return json({error:'Student access required'},403);return json({ok:true,intelligence:await loadStudentIntelligence(admin,user.id)})}
     if (action === 'student_list') {if (profile.role !== 'student') return json({error:'Student access required'},403);const { data, error } = await admin.from('exam_scope_performance_sequenced').select('*').eq('student_id',user.id).order('submitted_at',{ascending:true});if (error) return json({error:error.message},400);const attemptIds = uniq((data || []).map((r:any)=>r.attempt_id));let publishedResults:any[] = [];if (attemptIds.length) { const r = await admin.from('exam_results').select('attempt_id,is_published').in('attempt_id',attemptIds).eq('is_published',true); if (r.error) return json({error:r.error.message},400); publishedResults = r.data || [] }const published = new Set(publishedResults.map((r:any)=>text(r.attempt_id)));const visible = (data || []).filter((row:any)=>canReadPerformance({requesterRole:'student',requesterId:user.id,rowStudentId:row.student_id,resultPublished:published.has(text(row.attempt_id))}));const enriched = await enrichRows(admin,visible);return json({ok:true,rows:applyFilters(enriched,{subject:body.subject})})}
     if (action === 'rebuild_exam') {if (profile.role !== 'admin') return json({error:'Admin access required'},403);const examId = text(body.examId);if (!examId) return json({error:'Exam ID is required'},400);try { const rebuilt = await rebuildExam(admin,examId); return json({ok:true,...rebuilt}) }catch (e:any) { return json({error:e?.message || 'Could not rebuild performance',validation:e?.validation || null},409) }}
     return json({error:'Unknown action'},400)

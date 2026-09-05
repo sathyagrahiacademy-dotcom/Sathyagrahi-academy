@@ -3,6 +3,7 @@ import { corsHeaders } from 'jsr:@supabase/supabase-js@2/cors'
 import { normaliseAudience, nextMaxAttempts } from './audience-policy.mjs'
 import { normaliseExamScopeDraftV2, canSaveExamScope, buildExamScopeSummary } from './exam-scope-logic.mjs'
 import { validateExamMapping } from '../_shared/exam-mapping-logic.mjs'
+import { normaliseExamType, templateForExamType } from '../_shared/exam-intelligence-policy.mjs'
 import { canPublishExam } from './publish-validation.mjs'
 
 function json(body: Record<string, unknown>, status = 200) {
@@ -11,6 +12,13 @@ function json(body: Record<string, unknown>, status = 200) {
 function hashPassword(password: string) {
   const enc = new TextEncoder().encode(password)
   return crypto.subtle.digest('SHA-256', enc).then(buf => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join(''))
+}
+function normaliseIsoExamDate(value: unknown) {
+  const text=String(value??'').trim()
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return null
+  const d=new Date(`${text}T00:00:00Z`)
+  if (Number.isNaN(d.getTime()) || d.toISOString().slice(0,10)!==text) return null
+  return text
 }
 async function activeStudents(admin: any) {
   const { data, error } = await admin.from('profiles').select('id,full_name,student_id').eq('role','student').eq('is_active',true).order('full_name')
@@ -173,24 +181,23 @@ Deno.serve(async (req: Request) => {
       const examId=String(body.examId||'')
       const title=String(body.title||'').trim()
       const subject=String(body.subject||'NEET')
-      const durationMinutes=Number(body.durationMinutes||0)
-      const totalMarks=Number(body.totalMarks||0)
-      const negativeMarking=Boolean(body.negativeMarking)
+      const requestedExamType=normaliseExamType(body.examType)
+      const requestedExamDate=normaliseIsoExamDate(body.examDate)
+      const legacyDurationMinutes=Number(body.durationMinutes||0)
+      const legacyTotalMarks=Number(body.totalMarks||0)
+      const legacyNegativeMarking=Boolean(body.negativeMarking)
       const instructions=String(body.instructions||'').trim()
-      const examCode=String(body.examCode||'').trim().toUpperCase()
+      const legacyExamCode=String(body.legacyExamCode||body.examCode||'').trim().toUpperCase()
       const examPassword=String(body.examPassword||'')
       if (title.length<3) return json({error:'Enter exam title'},400)
       if (!['Physics','Chemistry','Biology','NEET','Mixed'].includes(subject)) return json({error:'Invalid subject'},400)
-      if (!Number.isFinite(durationMinutes)||durationMinutes<=0) return json({error:'Enter valid duration'},400)
-      if (!Number.isFinite(totalMarks)||totalMarks<=0) return json({error:'Enter total marks'},400)
-      if (!/^[A-Z0-9-]{4,20}$/.test(examCode)) return json({error:'Exam Code must be 4-20 letters/numbers'},400)
       if (action==='create'&&examPassword.length<4) return json({error:'Exam password must be at least 4 characters'},400)
       if (action==='update'&&examPassword&&examPassword.length<4) return json({error:'New password must be at least 4 characters'},400)
 
       let existing:any=null,hadStructuredScope=false
       if (action==='update') {
         if (!examId) return json({error:'Exam ID is required'},400)
-        const existingRes=await admin.from('exams').select('id,is_published,status,syllabus').eq('id',examId).maybeSingle()
+        const existingRes=await admin.from('exams').select('id,is_published,status,syllabus,exam_type,exam_date,expected_questions,duration_minutes,total_marks,negative_marking').eq('id',examId).maybeSingle()
         if (existingRes.error) return json({error:existingRes.error.message},400)
         existing=existingRes.data
         if (!existing) return json({error:'Exam not found'},404)
@@ -198,6 +205,34 @@ Deno.serve(async (req: Request) => {
         if (countRes.error) return json({error:countRes.error.message},400)
         hadStructuredScope=Number(countRes.count||0)>0
       }
+
+      const isLegacyUpdate=action==='update'&&!existing?.exam_type
+      const isLegacyCreate=action==='create'&&!requestedExamType&&!requestedExamDate&&Boolean(String(body.examCode||'').trim())
+      let examType:string|null=null,examDate:string|null=null,template:any=null
+
+      if (action==='create'&&!isLegacyCreate) {
+        if (!requestedExamType) return json({error:'Select Exam Type'},400)
+        if (!requestedExamDate) return json({error:'Enter valid Exam Date'},400)
+        examType=requestedExamType
+        examDate=requestedExamDate
+        template=templateForExamType(examType)
+        if ((examType==='unit'||examType==='monthly')&&subject!=='NEET') return json({error:'Unit and Monthly exams must use NEET subject distribution'},400)
+      } else if (action==='update'&&existing?.exam_type) {
+        const storedType=normaliseExamType(existing.exam_type)
+        if (!storedType) return json({error:'Stored official Exam Type is invalid'},409)
+        if (body.examType!=null && requestedExamType!==storedType) return json({error:'Official Exam Type cannot be changed'},409)
+        const storedDate=String(existing.exam_date||'')
+        if (body.examDate!=null && requestedExamDate!==storedDate) return json({error:'Official Exam Date cannot be changed'},409)
+        examType=storedType
+        examDate=storedDate
+        template=templateForExamType(examType)
+        if ((examType==='unit'||examType==='monthly')&&subject!=='NEET') return json({error:'Unit and Monthly exams must use NEET subject distribution'},400)
+      } else {
+        if (!Number.isFinite(legacyDurationMinutes)||legacyDurationMinutes<=0) return json({error:'Enter valid duration'},400)
+        if (!Number.isFinite(legacyTotalMarks)||legacyTotalMarks<=0) return json({error:'Enter total marks'},400)
+        if (!/^[A-Z0-9-]{4,20}$/.test(legacyExamCode)) return json({error:'Legacy Exam Code must be 4-20 letters/numbers'},400)
+      }
+
       const {lookup}=await loadScopeTree(admin)
       const hydrated=hydrateLegacyScopeInput(body.scopeItems||[],lookup)
       const scopeNorm=normaliseExamScopeDraftV2(hydrated)
@@ -208,8 +243,28 @@ Deno.serve(async (req: Request) => {
       if (!hierarchyCheck.ok) return json({error:hierarchyCheck.error},400)
 
       if (action==='create') {
-        const {data:exam,error:examError}=await admin.from('exams').insert({title,subject,syllabus:null,scheduled_start:null,scheduled_end:null,duration_minutes:durationMinutes,total_marks:totalMarks,negative_marking:negativeMarking,instructions:instructions||null,status:'draft',is_published:false,result_published:false,audience_mode:'all',created_by:user.id}).select('id').single()
+        if (isLegacyCreate) {
+          const {data:exam,error:examError}=await admin.from('exams').insert({title,subject,syllabus:null,scheduled_start:null,scheduled_end:null,duration_minutes:legacyDurationMinutes,total_marks:legacyTotalMarks,negative_marking:legacyNegativeMarking,instructions:instructions||null,status:'draft',is_published:false,result_published:false,audience_mode:'all',created_by:user.id}).select('id').single()
+          if (examError||!exam) return json({error:examError?.message||'Could not create legacy exam'},400)
+          const passwordHash=await hashPassword(examPassword)
+          const {error:accessError}=await admin.from('exam_access').insert({exam_id:exam.id,exam_code:legacyExamCode,password_hash:passwordHash})
+          if (accessError) {await admin.from('exams').delete().eq('id',exam.id);return json({error:accessError.message||'Exam access setup failed'},400)}
+          const {data:scopeData,error:scopeError}=await admin.rpc('replace_exam_scope_items_v2',{p_exam_id:exam.id,p_items:scopeNorm.items,p_created_by:user.id})
+          if (scopeError) {await admin.from('exams').delete().eq('id',exam.id);return json({error:scopeError.message||'Exam syllabus scope setup failed'},400)}
+          const {lookup:resolvedLookup}=await loadScopeTree(admin)
+          const resolvedItems=Array.isArray(scopeData?.items)?scopeData.items:[]
+          const syllabusSummary=buildExamScopeSummary(resolvedItems,resolvedLookup)
+          if (!syllabusSummary) {await admin.from('exams').delete().eq('id',exam.id);return json({error:'Could not build syllabus scope summary'},400)}
+          const sumUpdate=await admin.from('exams').update({syllabus:syllabusSummary}).eq('id',exam.id)
+          if (sumUpdate.error) {await admin.from('exams').delete().eq('id',exam.id);return json({error:sumUpdate.error.message},400)}
+          return json({ok:true,examId:exam.id,examCode:legacyExamCode,scopeItems:resolvedItems,legacy:true})
+        }
+
+        const {data:exam,error:examError}=await admin.from('exams').insert({title,subject,syllabus:null,exam_type:examType,exam_date:examDate,expected_questions:template.questions,scheduled_start:null,scheduled_end:null,duration_minutes:template.durationMinutes,total_marks:template.totalMarks,negative_marking:template.negativeMarking,instructions:instructions||null,status:'draft',is_published:false,result_published:false,audience_mode:'all',created_by:user.id}).select('id').single()
         if (examError||!exam) return json({error:examError?.message||'Could not create exam'},400)
+        const codeRes=await admin.rpc('allocate_exam_code',{p_exam_type:examType,p_exam_date:examDate})
+        if (codeRes.error||!codeRes.data) {await admin.from('exams').delete().eq('id',exam.id);return json({error:codeRes.error?.message||'Could not generate Exam Code'},400)}
+        const examCode=String(codeRes.data)
         const passwordHash=await hashPassword(examPassword)
         const {error:accessError}=await admin.from('exam_access').insert({exam_id:exam.id,exam_code:examCode,password_hash:passwordHash})
         if (accessError) {await admin.from('exams').delete().eq('id',exam.id);return json({error:accessError.message||'Exam access setup failed'},400)}
@@ -221,16 +276,22 @@ Deno.serve(async (req: Request) => {
         if (!syllabusSummary) {await admin.from('exams').delete().eq('id',exam.id);return json({error:'Could not build syllabus scope summary'},400)}
         const sumUpdate=await admin.from('exams').update({syllabus:syllabusSummary}).eq('id',exam.id)
         if (sumUpdate.error) {await admin.from('exams').delete().eq('id',exam.id);return json({error:sumUpdate.error.message},400)}
-        return json({ok:true,examId:exam.id,scopeItems:resolvedItems})
+        return json({ok:true,examId:exam.id,examCode,scopeItems:resolvedItems})
       }
 
       const nextStatus=existing.is_published?'active':(existing.status==='completed'?'completed':'draft')
-      const {error:examError}=await admin.from('exams').update({title,subject,scheduled_start:null,scheduled_end:null,duration_minutes:durationMinutes,total_marks:totalMarks,negative_marking:negativeMarking,instructions:instructions||null,status:nextStatus}).eq('id',examId)
+      const examUpdate=existing.exam_type
+        ? {title,subject,scheduled_start:null,scheduled_end:null,duration_minutes:template.durationMinutes,total_marks:template.totalMarks,negative_marking:template.negativeMarking,instructions:instructions||null,status:nextStatus}
+        : {title,subject,scheduled_start:null,scheduled_end:null,duration_minutes:legacyDurationMinutes,total_marks:legacyTotalMarks,negative_marking:legacyNegativeMarking,instructions:instructions||null,status:nextStatus}
+      const {error:examError}=await admin.from('exams').update(examUpdate).eq('id',examId)
       if (examError) return json({error:examError.message},400)
-      const accessUpdate:any={exam_code:examCode}
+      const accessUpdate:any={}
+      if (isLegacyUpdate) accessUpdate.exam_code=legacyExamCode
       if (examPassword) accessUpdate.password_hash=await hashPassword(examPassword)
-      const {error:accessError}=await admin.from('exam_access').update(accessUpdate).eq('exam_id',examId)
-      if (accessError) return json({error:accessError.message},400)
+      if (Object.keys(accessUpdate).length) {
+        const {error:accessError}=await admin.from('exam_access').update(accessUpdate).eq('exam_id',examId)
+        if (accessError) return json({error:accessError.message},400)
+      }
       if (hadStructuredScope||scopeNorm.items.length) {
         const {data:scopeData,error:scopeError}=await admin.rpc('replace_exam_scope_items_v2',{p_exam_id:examId,p_items:scopeNorm.items,p_created_by:user.id})
         if (scopeError) return json({error:scopeError.message||'Could not update exam syllabus scope'},400)

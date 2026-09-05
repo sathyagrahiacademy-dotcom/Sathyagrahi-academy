@@ -1,0 +1,62 @@
+name: Examination Intelligence Verification
+
+on:
+  push:
+    branches:
+      - feature/examination-intelligence-foundation
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run intelligence contracts
+        run: >-
+          node --test
+          exam-intelligence-policy.test.mjs
+          exam-intelligence-schema.test.mjs
+          admin-exam-intelligence-contract.test.mjs
+          question-bank-import-policy.test.mjs
+          question-bank-import-ui.test.mjs
+          exam-publish-validation.test.mjs
+          admin-publish-template-contract.test.mjs
+          student-exam-notice-utils.test.cjs
+          student-exam-notice-integration.test.mjs
+          exam-question-activity-utils.test.cjs
+          exam-question-activity-integration.test.mjs
+          student-answer-review-utils.test.cjs
+          student-answer-review-intelligence.test.mjs
+          performance-intelligence-policy.test.mjs
+          performance-intelligence-integration.test.mjs
+
+      - name: Run full root regression suite
+        run: node --test *.test.js *.test.mjs *.test.cjs
+
+      - name: Check browser JavaScript syntax
+        run: |
+          node --check admin-exams.js
+          node --check admin-exam-questions.js
+          node --check student-notifications.js
+          node --check student-exam-attempt.js
+          node --check student-results.js
+          node --check student-answer-review-utils.js
+          node --check student-performance.js
+
+      - name: Check all root JavaScript syntax
+        run: find . -maxdepth 1 -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+
+      - name: Parse Edge Function TypeScript
+        run: |
+          npx -y esbuild@0.25.9 supabase/functions/admin-exams/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/admin-exams.js --external:*
+          npx -y esbuild@0.25.9 supabase/functions/student-exam-access/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/student-exam-access.js --external:*
+          npx -y esbuild@0.25.9 supabase/functions/student-exam-attempt/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/student-exam-attempt.js --external:*
+          npx -y esbuild@0.25.9 supabase/functions/student-result-review/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/student-result-review.js --external:*
+          npx -y esbuild@0.25.9 supabase/functions/exam-performance/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/exam-performance.js --external:*
