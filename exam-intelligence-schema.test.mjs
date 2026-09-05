@@ -45,7 +45,7 @@ test('new server owned activity and counter tables are locked to service role',(
 })
 
 test('activity ownership and lookup columns are indexed',()=>{
-  assert.match(sql,/create index if not exists exam_question_activity_attempt_idx on public\.exam_question_activity \(attempt_id\)/)
-  assert.match(sql,/create index if not exists exam_question_activity_question_idx on public\.exam_question_activity \(question_id\)/)
-  assert.match(sql,/create index if not exists exam_question_activity_events_attempt_idx on public\.exam_question_activity_events \(attempt_id\)/)
+  assert.match(sql,/create index if not exists exam_question_activity_attempt_idx\s+on public\.exam_question_activity \(attempt_id\)/)
+  assert.match(sql,/create index if not exists exam_question_activity_question_idx\s+on public\.exam_question_activity \(question_id\)/)
+  assert.match(sql,/create index if not exists exam_question_activity_events_attempt_idx\s+on public\.exam_question_activity_events \(attempt_id\)/)
 })
