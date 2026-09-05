@@ -1,0 +1,49 @@
+name: Examination Intelligence Verification
+
+on:
+  push:
+    branches:
+      - feature/examination-intelligence-foundation
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run intelligence contracts
+        run: >-
+          node --test
+          exam-intelligence-policy.test.mjs
+          exam-intelligence-schema.test.mjs
+          admin-exam-intelligence-contract.test.mjs
+
+      - name: Check browser JavaScript syntax
+        run: node --check admin-exams.js
+
+      - name: Parse admin exams Edge Function TypeScript
+        run: |
+          npx -y -p typescript@5.8.3 node - <<'NODE'
+          const fs=require('fs')
+          const ts=require('typescript')
+          const file='supabase/functions/admin-exams/index.ts'
+          const source=fs.readFileSync(file,'utf8')
+          const parsed=ts.transpileModule(source,{
+            compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext},
+            fileName:file,
+            reportDiagnostics:true
+          })
+          const errors=(parsed.diagnostics||[]).filter(d=>d.category===ts.DiagnosticCategory.Error)
+          if(errors.length){
+            for(const d of errors) console.error(ts.flattenDiagnosticMessageText(d.messageText,'\n'))
+            process.exit(1)
+          }
+          console.log('TypeScript parse OK')
+          NODE
