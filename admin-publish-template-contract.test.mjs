@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 
-const migration=fs.readFileSync('EXAMINATION_INTELLIGENCE_FOUNDATION_MIGRATION.sql','utf8')
+const migration=fs.readFileSync('EXAMINATION_INTELLIGENCE_PUBLISH_GUARD_MIGRATION.sql','utf8')
 
 test('official publish template is protected by a database trigger',()=>{
   assert.match(migration,/create or replace function public\.validate_official_exam_publish/i)
