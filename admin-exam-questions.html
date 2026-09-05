@@ -19,6 +19,7 @@
     .primary{background:#10213c;color:#fff}.secondary{background:#eef2f7;color:#172033}.danger{background:#fff0f0;color:#a11}
     .msg{margin:12px 0;font-size:14px}.error{color:#b42318}.ok{color:#087443}
     table{width:100%;border-collapse:collapse;margin-top:14px}th,td{text-align:left;padding:10px;border-bottom:1px solid #edf0f4;font-size:13px}
+    .format-guide{margin:12px 0 14px;border:1px solid #d7e3f0;border-left:4px solid #123b68;border-radius:9px;background:#f8fbff;padding:12px 14px;font-size:12px;line-height:1.55;color:#425466}.format-guide b{color:#173653}.format-guide span{display:block;margin-top:3px}
     .mapping-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}.mapping-head h2{margin:0}.mapping-note{color:#667085;font-size:13px;margin-top:5px;max-width:720px}
     .mapping-summary{margin-top:16px;padding:13px 14px;border:1px solid #dce5ef;border-radius:10px;background:#f8fbff;font-weight:800;color:#173653}
     .mapping-metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin:12px 0 18px}.mapping-metric{border:1px solid #e4e9ef;border-radius:9px;padding:10px;background:#fff}.mapping-metric small{display:block;color:#718096;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px}.mapping-metric strong{display:block;margin-top:4px;font-size:18px;color:#10213c}
@@ -63,6 +64,11 @@
           <div style="color:#667085;margin-top:5px">Upload Excel (.xlsx) or CSV. Use the template for error-free import.</div>
         </div>
         <button id="downloadTemplate" class="secondary" type="button">DOWNLOAD TEMPLATE</button>
+      </div>
+      <div id="officialFormatGuide" class="format-guide">
+        <b>Official Question Bank Rules</b>
+        <span>Marking: +4 / −1 / 0 (correct / wrong / unattempted).</span>
+        <span>Question Type must match the approved format for its Subject. The server re-checks Subject → Unit → Chapter → Topic, Question Type and marking before any write.</span>
       </div>
       <input id="bulkFile" type="file" accept=".xlsx,.xls,.csv">
       <div id="bulkSummary" class="msg">No file selected.</div>
