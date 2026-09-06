@@ -332,13 +332,13 @@ async function testDelivery(admin:any,settings:any,env:any,studentId:string,chan
   const unique=`${channel==='email'?'test_email':'test_whatsapp'}:${student.id}:${crypto.randomUUID()}`
   if(channel==='email'){
     const message=buildMorningMessage({student,date,tasks:[{subject:'Academy',chapter:'Communications',topic:'Test email',task_type:'System Test'}],siteUrl:env.SGA_SITE_URL})
-    return deliverStudent({admin,settings,env,eventType:'test_email',key:unique,student,message:{...message,from:SENDERS.morning_plan,subject:'Sathyagrahi Academy — Test Email'},respectSettings:false})
+    return [await deliverChannel({admin,settings,env,eventType:'test_email',key:unique,student,message:{...message,from:SENDERS.morning_plan,subject:'Sathyagrahi Academy — Test Email'},channel:'email',respectSettings:false})]
   }
   const sampleExam={title:'Academy Communication Test',exam_date:date,duration_minutes:1,total_marks:0,subject:'System'}
   const message=buildExamMessage({student,exam:sampleExam,examCode:'TEST',scopeSummary:'WhatsApp connectivity test',siteUrl:env.SGA_SITE_URL})
   // Reuse the approved Exam Published utility-template shape for connectivity testing.
   const testEnv={...env,WHATSAPP_TEMPLATE_EXAM_PUBLISHED:env.WHATSAPP_TEMPLATE_EXAM_PUBLISHED}
-  return deliverChannel({admin,settings,env:testEnv,eventType:'test_whatsapp',key:unique,student,message,channel:'whatsapp',respectSettings:false})
+  return [await deliverChannel({admin,settings,env:testEnv,eventType:'test_whatsapp',key:unique,student,message,channel:'whatsapp',respectSettings:false})]
 }
 
 async function retryDelivery(admin:any,settings:any,env:any,deliveryId:string){
