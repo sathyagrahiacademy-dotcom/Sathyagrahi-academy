@@ -1,0 +1,60 @@
+name: Apply Communications Review Fixes
+
+on:
+  push:
+    branches:
+      - feature/academy-communications-hub
+    paths:
+      - '.github/workflows/apply-communications-review-fixes.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/academy-communications-hub
+
+      - name: Apply exact review fixes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          edge_path=Path('supabase/functions/academy-communications/index.ts')
+          edge=edge_path.read_text()
+          old_template="if(eventType==='exam_published')return text(env.WHATSAPP_TEMPLATE_EXAM_PUBLISHED)"
+          new_template="if(eventType==='exam_published'||eventType==='test_whatsapp')return text(env.WHATSAPP_TEMPLATE_EXAM_PUBLISHED)"
+          if new_template not in edge:
+              if old_template not in edge: raise SystemExit('WhatsApp template anchor not found')
+              edge=edge.replace(old_template,new_template,1)
+          old_test="eventType:'exam_published',key:unique,student,message,channel:'whatsapp'"
+          new_test="eventType:'test_whatsapp',key:unique,student,message,channel:'whatsapp'"
+          if new_test not in edge:
+              if old_test not in edge: raise SystemExit('WhatsApp test event anchor not found')
+              edge=edge.replace(old_test,new_test,1)
+          edge_path.write_text(edge)
+
+          js_path=Path('admin-communications.js')
+          js=js_path.read_text()
+          old_retry="['exam_published','result_published'].includes(row.event_type)"
+          new_retry="['exam_published','result_published','morning_plan'].includes(row.event_type)"
+          if new_retry not in js:
+              if old_retry not in js: raise SystemExit('Admin retry anchor not found')
+              js=js.replace(old_retry,new_retry,1)
+          js_path.write_text(js)
+          PY
+
+      - name: Commit patch
+        run: |
+          if git diff --quiet; then
+            echo 'Patch already applied.'
+            exit 0
+          fi
+          git config user.name 'sathyagrahiacademy-dotcom'
+          git config user.email 'sathyagrahiacademy@gmail.com'
+          git add supabase/functions/academy-communications/index.ts admin-communications.js
+          git commit -m 'fix: align communications test logs and retries'
+          git push origin HEAD:feature/academy-communications-hub
