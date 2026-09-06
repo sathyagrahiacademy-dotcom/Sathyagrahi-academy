@@ -15,7 +15,7 @@ if(existsSync(modulePath)){
 
   test('locked sender aliases match Academy Google Workspace structure',()=>{
     assert.equal(SENDERS.morning_plan,'info@sathyagrahiacademy.com')
-    assert.equal(SENDERS.exam_published,'exams@sathyagrahiacademy.com')
+    assert.equal(SENDERS.exam_published,'examinations@sathyagrahiacademy.com')
     assert.equal(SENDERS.result_published,'results@sathyagrahiacademy.com')
   })
 

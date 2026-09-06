@@ -1,6 +1,6 @@
 export const SENDERS=Object.freeze({
   morning_plan:'info@sathyagrahiacademy.com',
-  exam_published:'exams@sathyagrahiacademy.com',
+  exam_published:'examinations@sathyagrahiacademy.com',
   result_published:'results@sathyagrahiacademy.com'
 })
 
