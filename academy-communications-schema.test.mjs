@@ -20,6 +20,7 @@ test('migration creates disabled-by-default communications settings',()=>{
   assert.match(sql,/result_performance_enabled boolean not null default false/)
   assert.match(sql,/morning_send_time time not null default '07:00:00'/)
   assert.match(sql,/timezone text not null default 'asia\/kolkata'/)
+  assert.match(sql,/create index if not exists academy_communication_settings_updated_by_idx/)
 })
 
 test('migration creates idempotent delivery audit storage',()=>{
