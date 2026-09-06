@@ -22,7 +22,7 @@ test('Admin can control channels events and Morning Plan time',()=>{
 
 test('locked Google Workspace sender map is visible',()=>{
   assert.match(html,/info@sathyagrahiacademy\.com/)
-  assert.match(html,/exams@sathyagrahiacademy\.com/)
+  assert.match(html,/examinations@sathyagrahiacademy\.com/)
   assert.match(html,/results@sathyagrahiacademy\.com/)
 })
 
