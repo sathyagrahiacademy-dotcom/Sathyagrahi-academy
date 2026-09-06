@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Communications | Sathyagrahi Academy Admin</title>
+<link rel="icon" href="assets/favicon.png">
+<link rel="stylesheet" href="admin-dashboard.css">
+<style>
+.page{padding:26px}.page-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:16px}.page-head h2{margin:0 0 5px;color:#123b68}.muted{font-size:10px;color:#6d7b8b;line-height:1.55}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.card{background:#fff;border:1px solid #e1e8ef;border-radius:14px;padding:17px}.wide{grid-column:1/-1}.card h3{margin:0 0 5px;color:#123b68;font-size:14px}.provider-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:13px}.provider{border:1px solid #e0e7ef;border-radius:11px;padding:13px;background:#f9fbfd}.provider-top{display:flex;justify-content:space-between;gap:8px;align-items:center}.provider b{font-size:12px;color:#173653}.status{display:inline-flex;align-items:center;border-radius:99px;padding:5px 8px;font-size:8px;font-weight:900;letter-spacing:.35px;background:#fff3df;color:#85551a}.status.ready{background:#e9f7ee;color:#267447}.status.error{background:#fff0f0;color:#a13a3a}.status::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;margin-right:5px}.route-list{margin-top:12px;border:1px solid #e2e8ef;border-radius:10px;overflow:hidden}.route{display:grid;grid-template-columns:145px 1fr;gap:10px;padding:10px 12px;border-top:1px solid #edf1f5;font-size:10px}.route:first-child{border-top:0}.route span{color:#6b7b8d}.route b{color:#143c67;word-break:break-all}.control-list{margin-top:13px}.control{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:12px 0;border-top:1px solid #edf1f5}.control:first-child{border-top:0}.control strong{display:block;font-size:11px;color:#1c3855}.control small{display:block;margin-top:3px;font-size:9px;color:#718095;line-height:1.4}.switch{position:relative;display:inline-block;width:42px;height:24px;flex:0 0 auto}.switch input{opacity:0;width:0;height:0}.slider{position:absolute;inset:0;border-radius:99px;background:#cbd5df;cursor:pointer;transition:.18s}.slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.18s;box-shadow:0 1px 4px #0002}.switch input:checked+.slider{background:#123b68}.switch input:checked+.slider:before{transform:translateX(18px)}.time-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:13px}.field label{display:block;font-size:9px;font-weight:900;color:#536476}.field input,.field select{width:100%;box-sizing:border-box;margin-top:5px;border:1px solid #ccd7e2;border-radius:9px;padding:10px;font:inherit;font-size:10px;background:#fff}.field input[readonly]{background:#f5f7fa;color:#67788a}.actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:14px}.btn{border:1px solid #cbd6e1;background:#fff;color:#123b68;border-radius:8px;padding:9px 12px;font-size:9px;font-weight:900;cursor:pointer}.btn.primary{background:#123b68;color:#fff;border-color:#123b68}.btn.danger{color:#a13a3a;border-color:#e5b7b7}.btn:disabled{opacity:.5;cursor:not-allowed}.msg{font-size:9px;color:#6d7b8b;min-height:16px}.test-box{display:grid;grid-template-columns:1fr auto;gap:9px;align-items:end;margin-top:13px}.test-buttons{display:flex;gap:7px;flex-wrap:wrap}.table-wrap{overflow:auto;margin-top:12px;border:1px solid #e2e8ef;border-radius:10px}table{width:100%;border-collapse:collapse;min-width:950px;font-size:10px}th,td{padding:10px 11px;text-align:left;border-bottom:1px solid #edf1f5;vertical-align:top}th{background:#f8fafc;color:#718095;font-size:8px;letter-spacing:.45px}.delivery-status{display:inline-block;border-radius:99px;padding:4px 7px;font-size:8px;font-weight:900;background:#edf2f7;color:#536476}.delivery-status.sent{background:#e9f7ee;color:#267447}.delivery-status.failed{background:#fff0f0;color:#a13a3a}.delivery-status.skipped{background:#fff5e8;color:#85551a}.failure{max-width:260px;color:#8a4a4a;line-height:1.4}.empty{text-align:center;color:#788698;padding:18px}.note{margin-top:12px;padding:10px;border-radius:9px;background:#f6f9fc;border:1px solid #e2e8ef;color:#66778a;font-size:9px;line-height:1.55}
+@media(max-width:900px){.grid,.provider-grid{grid-template-columns:1fr}.wide{grid-column:auto}.test-box{grid-template-columns:1fr}}@media(max-width:560px){.page{padding:18px}.time-row{grid-template-columns:1fr}.route{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside>
+<div class="brand"><img src="assets/favicon.png"><b>SATHYAGRAHI<br><small>ACADEMY ADMIN</small></b></div>
+<nav><a href="admin-dashboard.html">Dashboard</a><a href="admin-students.html">Students</a><a href="admin-student-performance.html">Student Performance</a><a href="admin-preparation.html">Preparation Guide</a><a href="admin-enrollments.html">New Enrollments</a><a href="admin-exams.html">Examinations</a><a href="admin-question-bank.html">Question Bank</a><a href="admin-results.html">Results & Performance</a><a href="admin-attendance.html">Attendance</a><a href="admin-study-material.html">Study Material</a><a href="admin-notifications.html">Notifications</a><a class="active" href="admin-communications.html">Communications</a><a href="admin-help-feedback.html">Help & Feedback</a><a href="admin-my-account.html">My Account</a><a href="admin-settings.html">Settings</a></nav>
+</aside>
+<main>
+<header><div><h1>Communications</h1><p>Email & WhatsApp automation control centre</p></div><button id="logout">LOGOUT</button></header>
+<section class="page">
+<div class="page-head"><div><h2>Academy Communication Hub</h2><div class="muted">Control official student communication. Core exam and result publishing remains independent from delivery status.</div></div></div>
+<div class="grid">
+<section class="card">
+<h3>Provider Readiness</h3><div class="muted">External delivery is enabled only after each provider is fully configured.</div>
+<div class="provider-grid">
+<div class="provider"><div class="provider-top"><b>Email · Resend</b><span id="emailProviderStatus" class="status">CHECKING</span></div><div class="muted" style="margin-top:7px">Automatic Academy email delivery.</div></div>
+<div class="provider"><div class="provider-top"><b>WhatsApp · Meta Cloud</b><span id="whatsappProviderStatus" class="status">CHECKING</span></div><div class="muted" style="margin-top:7px">Approved utility-template delivery.</div></div>
+</div>
+<div class="note">Google Workspace remains the Academy mailbox and reply inbox. Automatic delivery uses the same locked Academy sender identities below.</div>
+</section>
+
+<section class="card">
+<h3>Official Email Routing</h3><div class="muted">Locked Sathyagrahi Academy sender structure.</div>
+<div class="route-list">
+<div class="route"><span>Morning Study Plan</span><b>info@sathyagrahiacademy.com</b></div>
+<div class="route"><span>Exam Communication</span><b>exams@sathyagrahiacademy.com</b></div>
+<div class="route"><span>Results & Performance</span><b>results@sathyagrahiacademy.com</b></div>
+<div class="route"><span>Student Support</span><b>support@sathyagrahiacademy.com</b></div>
+<div class="route"><span>Admissions</span><b>admissions@sathyagrahiacademy.com</b></div>
+</div>
+</section>
+
+<section class="card">
+<h3>Channel Controls</h3><div class="muted">Master switches for automatic external communication.</div>
+<div class="control-list">
+<div class="control"><div><strong>Email</strong><small>Send automated Academy emails through the official sender mapping.</small></div><label class="switch"><input id="emailEnabled" type="checkbox"><span class="slider"></span></label></div>
+<div class="control"><div><strong>WhatsApp</strong><small>Send approved utility notifications to the student phone number.</small></div><label class="switch"><input id="whatsappEnabled" type="checkbox"><span class="slider"></span></label></div>
+</div>
+</section>
+
+<section class="card">
+<h3>Automation Events</h3><div class="muted">Choose which Academy events can generate external communication.</div>
+<div class="control-list">
+<div class="control"><div><strong>Morning Study Plan</strong><small>Uses today’s existing Preparation Tasks.</small></div><label class="switch"><input id="morningPlanEnabled" type="checkbox"><span class="slider"></span></label></div>
+<div class="control"><div><strong>Exam Published</strong><small>Notifies the eligible exam audience after successful publication.</small></div><label class="switch"><input id="examPublishedEnabled" type="checkbox"><span class="slider"></span></label></div>
+<div class="control"><div><strong>Result / Daily Performance</strong><small>Combines published result, Today Studied and evidence-based performance signals.</small></div><label class="switch"><input id="resultPerformanceEnabled" type="checkbox"><span class="slider"></span></label></div>
+</div>
+<div class="time-row"><div class="field"><label>Morning Send Time<input id="morningSendTime" type="time" value="07:00"></label></div><div class="field"><label>Timezone<input value="Asia/Kolkata" readonly></label></div></div>
+<div class="actions"><button id="saveSettings" class="btn primary" type="button">SAVE COMMUNICATION SETTINGS</button><span id="settingsMsg" class="msg"></span></div>
+</section>
+
+<section class="card wide">
+<h3>Test Delivery</h3><div class="muted">Choose an active student and test only the available recipient channel.</div>
+<div class="test-box"><div class="field"><label>Student<select id="testStudent"><option value="">Loading students...</option></select></label></div><div class="test-buttons"><button id="testEmail" class="btn" type="button">TEST EMAIL</button><button id="testWhatsapp" class="btn" type="button">TEST WHATSAPP</button></div></div>
+<div id="testMsg" class="msg" style="margin-top:10px"></div>
+</section>
+
+<section class="card wide">
+<h3>Recent Delivery Log</h3><div class="muted">Masked recipient data only. Failed Exam/Result deliveries can be retried from here.</div>
+<div class="table-wrap"><table><thead><tr><th>STUDENT</th><th>EVENT</th><th>CHANNEL</th><th>STATUS</th><th>ATTEMPTS</th><th>SENT / ATTEMPTED</th><th>FAILURE</th><th>ACTION</th></tr></thead><tbody id="deliveryRows"><tr><td colspan="8" class="empty">Loading delivery history...</td></tr></tbody></table></div>
+</section>
+</div>
+</section>
+</main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="admin-communications.js?v=20260906-1"></script>
+</body>
+</html>

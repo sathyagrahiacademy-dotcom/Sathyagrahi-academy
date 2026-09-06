@@ -20,6 +20,24 @@ function normaliseIsoExamDate(value: unknown) {
   if (Number.isNaN(d.getTime()) || d.toISOString().slice(0,10)!==text) return null
   return text
 }
+async function bestEffortCommunicate(action: string, payload: Record<string, unknown>) {
+  const url = Deno.env.get('SUPABASE_URL') || ''
+  const key = Deno.env.get('ACADEMY_COMMUNICATIONS_INTERNAL_KEY') || ''
+  if (!url || !key) return { ok:false, skipped:true, reason:'Communications internal delivery is not configured' }
+  try {
+    const response = await fetch(`${url}/functions/v1/academy-communications`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-sga-internal-key':key},
+      body:JSON.stringify({action,...payload})
+    })
+    const data = await response.json().catch(()=>({}))
+    if (!response.ok) return { ok:false, error:String(data?.error||'Communication request failed') }
+    return { ok:true, response:data }
+  } catch (error) {
+    console.error('best-effort communication failed', error instanceof Error ? error.message : String(error))
+    return { ok:false, error:error instanceof Error ? error.message : 'Communication request failed' }
+  }
+}
 async function activeStudents(admin: any) {
   const { data, error } = await admin.from('profiles').select('id,full_name,student_id').eq('role','student').eq('is_active',true).order('full_name')
   if (error) throw new Error(error.message)
@@ -328,9 +346,26 @@ Deno.serve(async (req: Request) => {
       }
       const {error}=await admin.from('exams').update({is_published:true,status:'active',scheduled_start:null,scheduled_end:null}).eq('id',examId)
       if (error) return json({error:error.message},400)
-      return json({ok:true})
+      const communication=await bestEffortCommunicate('exam_published',{examId})
+      return json({ok:true,communication})
     }
-    if (action === 'set_audience') {
+    if (action === 'publish_result') {
+    const attemptId=String(body.attemptId||'')
+    if (!attemptId) return json({error:'Attempt ID is required'},400)
+    const {data:attempt,error:attemptError}=await admin.from('exam_attempts').select('id,exam_id,student_id').eq('id',attemptId).maybeSingle()
+    if (attemptError) return json({error:attemptError.message},400)
+    if (!attempt) return json({error:'Attempt not found'},404)
+    const {data:result,error:resultError}=await admin.from('exam_results').select('attempt_id').eq('attempt_id',attemptId).maybeSingle()
+    if (resultError) return json({error:resultError.message},400)
+    if (!result) return json({error:'Result not found'},404)
+    const resultUpdate=await admin.from('exam_results').update({is_published:true}).eq('attempt_id',attemptId)
+    if (resultUpdate.error) return json({error:resultUpdate.error.message},400)
+    const examUpdate=await admin.from('exams').update({result_published:true}).eq('id',attempt.exam_id)
+    if (examUpdate.error) return json({error:examUpdate.error.message},400)
+    const communication=await bestEffortCommunicate('result_published',{attemptId})
+    return json({ok:true,communication})
+  }
+  if (action === 'set_audience') {
       const examId=String(body.examId||''),applied=await applyAudience(admin,examId,String(body.audienceMode||''),body.studentIds)
       if (!applied.ok) return json({error:applied.error},400)
       return json({ok:true,assignedCount:applied.assignedCount,audienceMode:applied.mode})
