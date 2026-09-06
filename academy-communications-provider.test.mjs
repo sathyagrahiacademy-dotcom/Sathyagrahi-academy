@@ -15,6 +15,28 @@ test('WhatsApp connectivity tests are logged as test_whatsapp events',()=>{
   assert.match(edge,/eventType:['"]test_whatsapp['"]/)
 })
 
+test('Test Email dispatches only the email channel',()=>{
+  const start=edge.indexOf('async function testDelivery')
+  const end=edge.indexOf('async function retryDelivery',start)
+  const section=edge.slice(start,end)
+  const emailStart=section.indexOf("if(channel==='email')")
+  const whatsappStart=section.indexOf('const sampleExam=',emailStart)
+  const emailBranch=section.slice(emailStart,whatsappStart)
+  assert.doesNotMatch(emailBranch,/deliverStudent\(/,'Test Email must not fan out to WhatsApp')
+  assert.match(emailBranch,/channel:['"]email['"]/,'Test Email must target the email channel directly')
+  assert.match(emailBranch,/return\s*\[\s*await\s+deliverChannel\(/,'Test Email response must remain an array for the Admin UI contract')
+})
+
+test('Test WhatsApp returns the same delivery-array shape as Test Email',()=>{
+  const start=edge.indexOf('async function testDelivery')
+  const end=edge.indexOf('async function retryDelivery',start)
+  const section=edge.slice(start,end)
+  const whatsappStart=section.indexOf('const sampleExam=')
+  const whatsappBranch=section.slice(whatsappStart)
+  assert.match(whatsappBranch,/channel:['"]whatsapp['"]/)
+  assert.match(whatsappBranch,/return\s*\[\s*await\s+deliverChannel\(/,'Test WhatsApp response must be an array for the Admin UI contract')
+})
+
 if(existsSync(modulePath)){
   const {sendResendEmail,sendMetaTemplate}=await import(moduleUrl)
 
