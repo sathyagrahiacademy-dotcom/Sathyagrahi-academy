@@ -30,7 +30,7 @@ if(existsSync(modulePath)){
     assert.deepEqual(out.whatsappValues.slice(0,2),['Rahul','06 Sep 2026'])
   })
 
-  test('exam published message uses exams sender and exam facts',()=>{
+  test('exam published message uses examinations sender and exam facts',()=>{
     const out=buildExamMessage({
       student:{full_name:'Rahul'},
       exam:{title:'Thermodynamics Daily Test',exam_type:'daily',exam_date:'2026-09-06',duration_minutes:45,total_marks:180,subject:'Chemistry'},
@@ -38,7 +38,7 @@ if(existsSync(modulePath)){
       scopeSummary:'Thermodynamics — First Law',
       siteUrl:'https://sathyagrahiacademy.com'
     })
-    assert.equal(out.from,'exams@sathyagrahiacademy.com')
+    assert.equal(out.from,'examinations@sathyagrahiacademy.com')
     assert.match(out.subject,/exam/i)
     assert.match(out.html,/SGA-DLY-20260906-001/)
     assert.match(out.html,/45 min/)
