@@ -32,7 +32,7 @@ jobs:
               if old_import not in s: raise SystemExit('morning import anchor not found')
               s=s.replace(old_import,new_import,1)
 
-          anchor="""async function safeStatus(admin:any,settings:any,env:any){"""
+          anchor="async function safeStatus(admin:any,settings:any,env:any){"
           block="""async function loadMorningTasks(admin:any,studentId:string,date:string){
             const {data,error}=await admin.from('preparation_tasks')
               .select('id,student_id,subject,chapter,topic,task_type,target_date,target_minutes,priority,status,created_at')
@@ -78,16 +78,8 @@ jobs:
               if anchor not in s: raise SystemExit('morning helper anchor not found')
               s=s.replace(anchor,block,1)
 
-          retry_old="""  if(row.event_type==='result_published'){
-            const attemptId=text(row.event_key).replace(/^result_published:/,'')
-            return deliverResultEvent(admin,settings,env,attemptId,row)
-          }
-          throw new Error('This delivery type cannot be retried from the log')"""
-          retry_new="""  if(row.event_type==='result_published'){
-            const attemptId=text(row.event_key).replace(/^result_published:/,'')
-            return deliverResultEvent(admin,settings,env,attemptId,row)
-          }
-          if(row.event_type==='morning_plan'){
+          retry_anchor="  throw new Error('This delivery type cannot be retried from the log')"
+          retry_branch="""  if(row.event_type==='morning_plan'){
             const match=/^morning_plan:([^:]+):(\\d{4}-\\d{2}-\\d{2})$/.exec(text(row.event_key))
             if(!match)throw new Error('Morning delivery key is invalid')
             const student=await loadStudent(admin,text(row.student_id))
@@ -95,10 +87,10 @@ jobs:
             if(text(student.id)!==match[1])throw new Error('Morning delivery student does not match event key')
             return deliverMorningStudent(admin,settings,env,student,match[2],row)
           }
-          throw new Error('This delivery type cannot be retried from the log')"""
+          """
           if "row.event_type==='morning_plan'" not in s:
-              if retry_old not in s: raise SystemExit('morning retry anchor not found')
-              s=s.replace(retry_old,retry_new,1)
+              if retry_anchor not in s: raise SystemExit('morning retry throw anchor not found')
+              s=s.replace(retry_anchor,retry_branch+retry_anchor,1)
 
           old_action="if(action==='morning_dispatch')return json({error:'Morning dispatcher is not enabled in this build'},501)"
           new_action="if(action==='morning_dispatch')return json({ok:true,dispatch:await dispatchMorning(admin,settings,env,body.now||new Date())})"
