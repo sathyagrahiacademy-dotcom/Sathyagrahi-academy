@@ -33,6 +33,10 @@ test('provider readiness tests and delivery log controls are present',()=>{
   assert.match(js,/retry_delivery/)
 })
 
+test('failed Morning Plan deliveries are retryable from Admin Communications',()=>{
+  assert.match(js,/\['exam_published','result_published','morning_plan'\]\.includes\(row\.event_type\)/)
+})
+
 test('frontend calls communication Edge Function and never writes communication tables directly',()=>{
   assert.match(js,/functions\/v1\/academy-communications/)
   assert.doesNotMatch(js,/\.from\(['"]academy_communication_/)
