@@ -5,6 +5,7 @@ import { eventKey, indiaDateKey, maskRecipient, normalisePhone, SENDERS } from '
 import { buildMorningMessage, buildExamMessage, buildResultMessage } from './message-builders.mjs'
 import { sendResendEmail, sendMetaTemplate } from './provider-adapters.mjs'
 import { loadStudentIntelligence } from '../exam-performance/student-intelligence-loader.mjs'
+import { indiaClock, withinMorningWindow } from './morning-policy.mjs'
 
 function json(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
@@ -246,6 +247,46 @@ async function deliverResultEvent(admin:any,settings:any,env:any,attemptId:strin
   return deliverStudent({admin,settings,env,eventType:'result_published',key,student:ctx.student,message,retryRow})
 }
 
+async function loadMorningTasks(admin:any,studentId:string,date:string){
+  const {data,error}=await admin.from('preparation_tasks')
+    .select('id,student_id,subject,chapter,topic,task_type,target_date,target_minutes,priority,status,created_at')
+    .eq('student_id',studentId).eq('target_date',date).eq('status','pending').order('created_at',{ascending:true})
+  if(error)throw new Error(error.message)
+  return data||[]
+}
+
+async function deliverMorningStudent(admin:any,settings:any,env:any,student:any,date:string,retryRow:any=null){
+  const tasks=await loadMorningTasks(admin,student.id,date)
+  if(!tasks.length){
+    if(retryRow)throw new Error('No pending morning plan tasks found for this student and date')
+    return {studentId:student.id,status:'no_tasks',deliveries:[]}
+  }
+  const key=eventKey('morning_plan',{studentId:student.id,date})
+  const message=buildMorningMessage({student,date,tasks,siteUrl:env.SGA_SITE_URL})
+  return {studentId:student.id,status:'processed',deliveries:await deliverStudent({admin,settings,env,eventType:'morning_plan',key,student,message,retryRow})}
+}
+
+async function dispatchMorning(admin:any,settings:any,env:any,nowValue:any=new Date()){
+  if(!settings?.morning_plan_enabled)return {status:'disabled',reason:'Morning Plan is disabled'}
+  const clock=indiaClock(nowValue)
+  if(!clock.date||!clock.time)throw new Error('Could not resolve India date and time')
+  const configured=text(settings?.morning_send_time).slice(0,5)||'07:00'
+  if(!withinMorningWindow(clock.time,configured,5))return {status:'outside_window',date:clock.date,time:clock.time,configuredTime:configured}
+
+  const {data:tasks,error:taskError}=await admin.from('preparation_tasks')
+    .select('student_id,target_date,status').eq('target_date',clock.date).eq('status','pending')
+  if(taskError)throw new Error(taskError.message)
+  const studentIds=[...new Set((tasks||[]).map((row:any)=>text(row.student_id)).filter(Boolean))]
+  if(!studentIds.length)return {status:'no_tasks',date:clock.date,time:clock.time,students:0,results:[]}
+
+  const {data:students,error:studentError}=await admin.from('profiles')
+    .select('id,full_name,student_id,email,phone').eq('role','student').eq('is_active',true).in('id',studentIds).order('full_name')
+  if(studentError)throw new Error(studentError.message)
+  const results=[]
+  for(const student of students||[])results.push(await deliverMorningStudent(admin,settings,env,student,clock.date))
+  return {status:'processed',date:clock.date,time:clock.time,students:results.length,results}
+}
+
 async function safeStatus(admin:any,settings:any,env:any){
   const [deliveriesRes,studentsRes]=await Promise.all([
     admin.from('academy_communication_deliveries').select('id,event_type,event_key,student_id,channel,recipient_masked,provider,status,attempt_count,failure_reason,attempted_at,sent_at,created_at,updated_at').order('created_at',{ascending:false}).limit(50),
@@ -313,6 +354,14 @@ async function retryDelivery(admin:any,settings:any,env:any,deliveryId:string){
     const attemptId=text(row.event_key).replace(/^result_published:/,'')
     return deliverResultEvent(admin,settings,env,attemptId,row)
   }
+  if(row.event_type==='morning_plan'){
+  const match=/^morning_plan:([^:]+):(\d{4}-\d{2}-\d{2})$/.exec(text(row.event_key))
+  if(!match)throw new Error('Morning delivery key is invalid')
+  const student=await loadStudent(admin,text(row.student_id))
+  if(!student)throw new Error('Active student not found')
+  if(text(student.id)!==match[1])throw new Error('Morning delivery student does not match event key')
+  return deliverMorningStudent(admin,settings,env,student,match[2],row)
+}
   throw new Error('This delivery type cannot be retried from the log')
 }
 
@@ -354,7 +403,7 @@ Deno.serve(async (req:Request)=>{
     if(action==='retry_delivery')return json({ok:true,deliveries:await retryDelivery(admin,settings,env,text(body.deliveryId))})
     if(action==='exam_published')return json({ok:true,deliveries:await deliverExamEvent(admin,settings,env,text(body.examId))})
     if(action==='result_published')return json({ok:true,deliveries:await deliverResultEvent(admin,settings,env,text(body.attemptId))})
-    if(action==='morning_dispatch')return json({error:'Morning dispatcher is not enabled in this build'},501)
+    if(action==='morning_dispatch')return json({ok:true,dispatch:await dispatchMorning(admin,settings,env,body.now||new Date())})
     return json({error:'Unsupported action'},400)
   }catch(error){
     console.error('academy-communications error',text((error as Error)?.message))
