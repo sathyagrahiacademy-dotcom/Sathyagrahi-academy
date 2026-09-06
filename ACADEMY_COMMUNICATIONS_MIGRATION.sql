@@ -17,6 +17,9 @@ insert into public.academy_communication_settings (id)
 values (1)
 on conflict (id) do nothing;
 
+create index if not exists academy_communication_settings_updated_by_idx
+  on public.academy_communication_settings (updated_by);
+
 create table if not exists public.academy_communication_deliveries (
   id uuid primary key default gen_random_uuid(),
   event_type text not null check (event_type in ('morning_plan','exam_published','result_published','test_email','test_whatsapp')),
