@@ -1,13 +1,18 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { existsSync } from 'node:fs'
+import { existsSync,readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 const moduleUrl=new URL('./supabase/functions/academy-communications/provider-adapters.mjs',import.meta.url)
 const modulePath=fileURLToPath(moduleUrl)
+const edge=readFileSync(new URL('./supabase/functions/academy-communications/index.ts',import.meta.url),'utf8')
 
 test('provider adapters module exists',()=>{
   assert.equal(existsSync(modulePath),true,'provider-adapters.mjs must exist')
+})
+
+test('WhatsApp connectivity tests are logged as test_whatsapp events',()=>{
+  assert.match(edge,/eventType:['"]test_whatsapp['"]/)
 })
 
 if(existsSync(modulePath)){
