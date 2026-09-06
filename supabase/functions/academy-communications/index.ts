@@ -70,7 +70,7 @@ function channelToggle(settings:any,channel:string){
 function providerName(channel:string){return channel==='email'?'resend':'meta_whatsapp'}
 function templateName(eventType:string,env:any){
   if(eventType==='morning_plan')return text(env.WHATSAPP_TEMPLATE_MORNING_PLAN)
-  if(eventType==='exam_published')return text(env.WHATSAPP_TEMPLATE_EXAM_PUBLISHED)
+  if(eventType==='exam_published'||eventType==='test_whatsapp')return text(env.WHATSAPP_TEMPLATE_EXAM_PUBLISHED)
   if(eventType==='result_published')return text(env.WHATSAPP_TEMPLATE_RESULT_PUBLISHED)
   return ''
 }
@@ -338,7 +338,7 @@ async function testDelivery(admin:any,settings:any,env:any,studentId:string,chan
   const message=buildExamMessage({student,exam:sampleExam,examCode:'TEST',scopeSummary:'WhatsApp connectivity test',siteUrl:env.SGA_SITE_URL})
   // Reuse the approved Exam Published utility-template shape for connectivity testing.
   const testEnv={...env,WHATSAPP_TEMPLATE_EXAM_PUBLISHED:env.WHATSAPP_TEMPLATE_EXAM_PUBLISHED}
-  return deliverChannel({admin,settings,env:testEnv,eventType:'exam_published',key:unique,student,message,channel:'whatsapp',respectSettings:false})
+  return deliverChannel({admin,settings,env:testEnv,eventType:'test_whatsapp',key:unique,student,message,channel:'whatsapp',respectSettings:false})
 }
 
 async function retryDelivery(admin:any,settings:any,env:any,deliveryId:string){

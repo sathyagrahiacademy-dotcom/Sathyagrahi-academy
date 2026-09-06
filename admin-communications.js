@@ -55,7 +55,7 @@ function renderDeliveries(rows=[]){
   $('deliveryRows').innerHTML=rows.length?rows.map(row=>{
     const student=row.student||{};
     const when=row.sent_at||row.attempted_at||row.created_at;
-    const canRetry=row.status==='failed'&&['exam_published','result_published'].includes(row.event_type);
+    const canRetry=row.status==='failed'&&['exam_published','result_published','morning_plan'].includes(row.event_type);
     return `<tr><td><b>${esc(student.fullName||'Student')}</b><br><span class="muted">${esc(student.studentCode||'—')}</span></td><td>${esc(eventLabel(row.event_type))}</td><td>${esc(String(row.channel||'').toUpperCase())}<br><span class="muted">${esc(row.recipient_masked||'—')}</span></td><td><span class="delivery-status ${esc(row.status)}">${esc(String(row.status||'').toUpperCase())}</span></td><td>${Number(row.attempt_count||0)}</td><td>${esc(dateTime(when))}</td><td class="failure">${esc(row.failure_reason||'—')}</td><td>${canRetry?`<button class="btn danger" data-retry="${esc(row.id)}" type="button">RETRY</button>`:'—'}</td></tr>`;
   }).join(''):'<tr><td colspan="8" class="empty">No communication delivery history yet.</td></tr>';
 }
