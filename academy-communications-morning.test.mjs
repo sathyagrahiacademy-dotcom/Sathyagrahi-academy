@@ -27,10 +27,10 @@ if(existsSync(policyPath)){
   })
 }
 
-test('morning dispatcher uses the shared source-locked daily study plan',()=>{
+test('legacy manual morning dispatcher remains available for assigned preparation tasks',()=>{
   assert.match(edge,/action===['"]morning_dispatch['"]|action\s*===\s*['"]morning_dispatch['"]/)
-  assert.match(edge,/from\(['"]academy_daily_study_plan['"]\)/)
-  assert.match(edge,/plan_date/)
+  assert.match(edge,/from\(['"]preparation_tasks['"]\)/)
+  assert.match(edge,/target_date/)
   assert.match(edge,/eventKey\(['"]morning_plan['"]/)
   assert.match(edge,/buildMorningMessage\(/)
   assert.doesNotMatch(edge,/Morning dispatcher is not enabled in this build/)
