@@ -1,8 +1,8 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { buildMorningMessage } from '../academy-communications/message-builders.mjs'
-import { sendResendEmail } from '../academy-communications/provider-adapters.mjs'
-import { maskRecipient, SENDERS } from '../academy-communications/communication-policy.mjs'
-import { indiaClock, withinMorningWindow } from '../academy-communications/morning-policy.mjs'
+import { buildMorningMessage } from './morning-message.mjs'
+import { sendResendEmail } from './resend.mjs'
+import { maskRecipient, SENDERS } from './policy.mjs'
+import { indiaClock, withinMorningWindow } from './time.mjs'
 
 const text=(value:unknown)=>String(value??'').trim()
 const roman=(stage:string)=>({R1:'I',R2:'II',R3:'III',R4:'IV'}[stage]||stage)
