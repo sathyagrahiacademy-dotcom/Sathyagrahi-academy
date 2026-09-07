@@ -1,11 +1,26 @@
 (()=>{
 const c=window.sgaSupabase,$=id=>document.getElementById(id);
-let profile=null,rows=[],active=null;
+let profile=null,rows=[],active=null,dailyPlanRows=[],activePlanDate='';
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[x]));
 const num=v=>Number(v||0);
 const toast=m=>{const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)};
 const dateOnly=v=>v?new Date(v).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'—';
+const indiaDateKey=(value=new Date())=>{
+  const d=value instanceof Date?value:new Date(value);
+  return new Date(d.getTime()+330*60*1000).toISOString().slice(0,10);
+};
+const addDays=(iso,days)=>{
+  const d=new Date(`${iso}T00:00:00.000Z`);
+  d.setUTCDate(d.getUTCDate()+days);
+  return d.toISOString().slice(0,10);
+};
+const planDateLabel=iso=>{
+  const [y,m,d]=String(iso||'').split('-').map(Number);
+  if(!y||!m||!d)return 'Today';
+  return new Date(Date.UTC(y,m-1,d)).toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'});
+};
+const revisionRoman=stage=>({R1:'I',R2:'II',R3:'III',R4:'IV'}[stage]||stage||'—');
 
 async function auth(){
   const{data:{session}}=await c.auth.getSession();
@@ -78,6 +93,111 @@ function renderSubjectCards(){
       <small>${done} of ${all.length} completed · ${due} revision due</small>
     </div>`;
   }).join('');
+}
+
+function ensureDayWisePlanUi(){
+  if($('dayWisePlanSection'))return;
+  const style=document.createElement('style');
+  style.id='dayWisePlanStyles';
+  style.textContent=`
+    .day-plan-section{margin-bottom:16px;overflow:hidden}
+    .day-plan-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px}
+    .day-plan-head h3{margin:3px 0 0;color:#0b2f68;font-size:19px}
+    .day-plan-controls{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+    .day-plan-controls button{border:1px solid #0b2f68;background:#fff;color:#0b2f68;border-radius:8px;padding:8px 11px;font-size:10px;font-weight:900;cursor:pointer}
+    .day-plan-controls button.today{background:#0b2f68;color:#fff}
+    .day-plan-date{font-size:12px;font-weight:800;color:#0b2f68;margin:0 0 12px;border-left:3px solid #f47a1f;padding-left:9px}
+    .day-plan-list{display:grid;gap:10px}
+    .day-plan-card{display:grid;grid-template-columns:120px minmax(0,1fr) 150px 120px;border:1px solid #0b2f68;border-radius:12px;overflow:hidden;background:#fff;min-height:118px}
+    .day-plan-subject{background:#0b2f68;color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;padding:14px;font-size:12px;font-weight:900;letter-spacing:.7px}
+    .day-plan-content{display:grid;grid-template-rows:1fr 1fr}
+    .day-plan-row{padding:12px 15px;display:flex;flex-direction:column;justify-content:center}
+    .day-plan-row:first-child{border-bottom:1px solid #0b2f68}
+    .day-plan-label{font-size:9px;font-weight:900;letter-spacing:.8px;color:#f47a1f;margin-bottom:4px}
+    .day-plan-topic{font-size:14px;font-weight:800;line-height:1.35;color:#0b2f68}
+    .day-plan-stage{display:grid;grid-template-rows:1fr 1fr;border-left:1px solid #0b2f68}
+    .day-plan-stage div{display:flex;align-items:center;justify-content:center;text-align:center;padding:10px;color:#0b2f68;font-size:12px;font-weight:900}
+    .day-plan-stage div:first-child{border-bottom:1px solid #0b2f68}
+    .day-plan-hours{border-left:1px solid #0b2f68;display:flex;align-items:center;justify-content:center;text-align:center;color:#0b2f68;font-size:17px;font-weight:900;padding:10px}
+    .day-plan-empty{padding:20px;text-align:center;border:1px dashed #0b2f68;border-radius:10px;color:#0b2f68;font-size:12px;background:#fff}
+    @media(max-width:850px){.day-plan-card{grid-template-columns:100px minmax(0,1fr) 120px}.day-plan-hours{grid-column:1/-1;border-left:0;border-top:1px solid #0b2f68;padding:9px}.day-plan-head{align-items:flex-start;flex-direction:column}}
+    @media(max-width:560px){.day-plan-card{grid-template-columns:1fr}.day-plan-subject{padding:10px}.day-plan-stage{border-left:0;border-top:1px solid #0b2f68}.day-plan-hours{grid-column:auto}.day-plan-controls button{padding:7px 9px}}
+  `;
+  document.head.appendChild(style);
+
+  const section=document.createElement('section');
+  section.id='dayWisePlanSection';
+  section.className='section-card day-plan-section';
+  section.innerHTML=`
+    <div class="day-plan-head">
+      <div><span class="card-label">DAY-WISE STUDY PLAN</span><h3>Study & Revision Schedule</h3></div>
+      <div class="day-plan-controls">
+        <button type="button" id="planPrevious">Previous</button>
+        <button type="button" id="planToday" class="today">Today</button>
+        <button type="button" id="planUpcoming">Upcoming</button>
+      </div>
+    </div>
+    <div id="dayPlanDate" class="day-plan-date"></div>
+    <div id="dayPlanList" class="day-plan-list"></div>`;
+
+  const tracker=document.querySelector('.lp-summary')?.nextElementSibling;
+  if(tracker?.parentNode)tracker.parentNode.insertBefore(section,tracker);
+  else document.querySelector('.content.lp-wrap')?.appendChild(section);
+
+  $('planPrevious').onclick=()=>{activePlanDate=addDays(activePlanDate,-1);renderDayWisePlan()};
+  $('planToday').onclick=()=>{activePlanDate=indiaDateKey();renderDayWisePlan()};
+  $('planUpcoming').onclick=()=>{activePlanDate=addDays(activePlanDate,1);renderDayWisePlan()};
+}
+
+function renderDayWisePlan(){
+  ensureDayWisePlanUi();
+  if(!activePlanDate)activePlanDate=indiaDateKey();
+  $('dayPlanDate').textContent=planDateLabel(activePlanDate);
+  const today=indiaDateKey();
+  $('planToday').classList.toggle('today',activePlanDate===today);
+
+  const dateRows=dailyPlanRows.filter(x=>x.plan_date===activePlanDate);
+  const subjects=['Biology','Chemistry','Physics'];
+  const cards=subjects.map(subject=>{
+    const subjectRows=dateRows.filter(x=>x.subject===subject);
+    const study=subjectRows.find(x=>x.event_type==='study')||null;
+    const revision=subjectRows.find(x=>x.event_type==='revision')||null;
+    if(!study&&!revision)return '';
+    const studyTopic=study?.chapter||'No New Study';
+    const studyStage=study?`Day ${num(study.day_no)} of ${num(study.total_days)}`:'—';
+    const revisionTopic=revision?.chapter||'No Revision';
+    const revisionStage=revision?`Revision - ${revisionRoman(revision.revision_stage)}`:'—';
+    return `<article class="day-plan-card">
+      <div class="day-plan-subject">${esc(subject.toUpperCase())}</div>
+      <div class="day-plan-content">
+        <div class="day-plan-row"><span class="day-plan-label">STUDY TODAY</span><span class="day-plan-topic">${esc(studyTopic)}</span></div>
+        <div class="day-plan-row"><span class="day-plan-label">REVISION TODAY</span><span class="day-plan-topic">${esc(revisionTopic)}</span></div>
+      </div>
+      <div class="day-plan-stage"><div>${esc(studyStage)}</div><div>${esc(revisionStage)}</div></div>
+      <div class="day-plan-hours">4 HOURS</div>
+    </article>`;
+  }).filter(Boolean);
+
+  $('dayPlanList').innerHTML=cards.length?cards.join(''):'<div class="day-plan-empty">No study or revision is scheduled for this date.</div>';
+}
+
+async function loadDayWisePlan(){
+  ensureDayWisePlanUi();
+  const today=indiaDateKey();
+  activePlanDate=today;
+  const from=addDays(today,-30),to=addDays(today,60);
+  const r=await c.from('academy_daily_study_plan')
+    .select('plan_date,subject,plan_group,unit_no,chapter_no,chapter,event_type,day_no,total_days,revision_stage,planned_minutes')
+    .gte('plan_date',from)
+    .lte('plan_date',to)
+    .order('plan_date')
+    .order('subject');
+  if(r.error){
+    $('dayPlanList').innerHTML=`<div class="day-plan-empty">Day-wise plan could not be loaded: ${esc(r.error.message)}</div>`;
+    return;
+  }
+  dailyPlanRows=(r.data||[]).map(x=>({...x,plan_date:String(x.plan_date||'').slice(0,10)}));
+  renderDayWisePlan();
 }
 
 function fillUnits(){
@@ -316,5 +436,6 @@ async function load(){
   $('studentName').textContent=profile.full_name;
   $('studentCode').textContent='ID: '+profile.student_id;
   await load();
+  await loadDayWisePlan();
 })();
 })();
