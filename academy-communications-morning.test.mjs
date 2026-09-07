@@ -27,7 +27,7 @@ if(existsSync(policyPath)){
   })
 }
 
-test('morning dispatcher uses existing assigned preparation tasks for the India date',()=>{
+test('legacy manual morning dispatcher remains available for assigned preparation tasks',()=>{
   assert.match(edge,/action===['"]morning_dispatch['"]|action\s*===\s*['"]morning_dispatch['"]/)
   assert.match(edge,/from\(['"]preparation_tasks['"]\)/)
   assert.match(edge,/target_date/)

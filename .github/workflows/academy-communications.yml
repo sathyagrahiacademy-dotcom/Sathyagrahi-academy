@@ -4,16 +4,21 @@ on:
   push:
     branches:
       - feature/academy-communications-hub
+      - fix/sep08-student-plan-and-morning-email
   pull_request:
     paths:
       - 'ACADEMY_COMMUNICATIONS_MIGRATION.sql'
       - 'academy-communications-*'
+      - 'academy-study-plan*'
       - 'admin-communications.*'
+      - 'admin-communications-nav.test.mjs'
       - 'admin-results.js'
       - 'admin-results.html'
       - 'admin-exams.html'
       - 'admin-dashboard.html'
       - 'admin-settings.html'
+      - 'admin-*.html'
+      - 'student-learning-progress.*'
       - 'supabase/functions/academy-communications/**'
       - 'supabase/functions/admin-exams/**'
       - '.github/workflows/academy-communications.yml'
@@ -29,7 +34,7 @@ jobs:
           node-version: '22'
 
       - name: Communication contracts
-        run: node --test academy-communications-*.test.mjs
+        run: node --test academy-communications-*.test.mjs academy-study-plan.test.mjs admin-communications-nav.test.mjs
 
       - name: Full root regression
         run: node --test *.test.js *.test.mjs *.test.cjs
