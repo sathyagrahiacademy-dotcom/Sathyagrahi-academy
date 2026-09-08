@@ -18,7 +18,9 @@ test('control center action exists after active Admin authorization',()=>{
 })
 
 test('control center reads only lightweight exam facts and correct assignment table',()=>{
-  assert.match(src,/batch_no,result_publish_mode,result_publish_at,new_starts_closed_at,blueprint_approved_at,archived_at/)
+  for(const field of ['batch_no','result_publish_mode','result_publish_at','new_starts_closed_at','blueprint_approved_at','archived_at']){
+    assert.match(src,new RegExp(field),`control center source should reference ${field}`)
+  }
   assert.match(src,/exam_access\(exam_code\)/)
   assert.match(src,/from\('exam_student_assignments'\)/)
   assert.match(src,/\.eq\('is_assigned',true\)/)
