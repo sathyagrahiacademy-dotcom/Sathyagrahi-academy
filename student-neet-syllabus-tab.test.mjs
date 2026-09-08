@@ -15,23 +15,30 @@ const studentPages = [
   'student-my-profile.html'
 ];
 
-const syllabusLink = 'href="student-neet-syllabus.html">NEET Syllabus</a>';
-
-test('student portal pages expose a separate NEET Syllabus sidebar tab', () => {
+test('all core student pages load the shared nav bootstrap', () => {
   for (const page of studentPages) {
     const html = fs.readFileSync(page, 'utf8');
-    assert.ok(html.includes(syllabusLink), `${page} is missing the NEET Syllabus tab`);
+    assert.ok(html.includes('supabase-config.js'), `${page} must load supabase-config.js`);
   }
+});
+
+test('shared bootstrap injects a separate NEET Syllabus tab after Learning Progress', () => {
+  const js = fs.readFileSync('supabase-config.js', 'utf8');
+  assert.ok(js.includes('ensureStudentSyllabusNav'));
+  assert.ok(js.includes("student-neet-syllabus.html"));
+  assert.ok(js.includes("student-learning-progress.html"));
+  assert.ok(js.includes("currentFile === 'student-neet-syllabus.html'"));
 });
 
 test('student NEET Syllabus page exists inside the student portal shell', () => {
   assert.ok(fs.existsSync('student-neet-syllabus.html'), 'student-neet-syllabus.html must exist');
   const html = fs.readFileSync('student-neet-syllabus.html', 'utf8');
-  assert.ok(html.includes('class="side-link active" href="student-neet-syllabus.html">NEET Syllabus</a>'));
   assert.ok(html.includes('NEET Syllabus'));
   assert.ok(html.includes('Physics'));
   assert.ok(html.includes('Chemistry'));
   assert.ok(html.includes('Biology'));
+  assert.ok(html.includes('dashboard.css'));
+  assert.ok(html.includes('supabase-config.js'));
 });
 
 test('student syllabus page is read-only and uses only the syllabus master tables', () => {
