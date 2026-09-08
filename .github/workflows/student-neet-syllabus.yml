@@ -1,0 +1,31 @@
+name: Student NEET Syllabus
+
+on:
+  push:
+    branches:
+      - feature/student-neet-syllabus-tab
+  pull_request:
+    paths:
+      - 'student-neet-syllabus.*'
+      - 'student-neet-syllabus-tab.test.mjs'
+      - 'dashboard.html'
+      - 'student-*.html'
+      - '.github/workflows/student-neet-syllabus.yml'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Student syllabus contract
+        run: node --test student-neet-syllabus-tab.test.mjs
+      - name: Root regression
+        run: node --test *.test.js *.test.mjs *.test.cjs
+      - name: Root JavaScript syntax
+        run: |
+          for f in *.js; do
+            node --check "$f"
+          done

@@ -4,6 +4,7 @@
 
   const currentFile = (window.location.pathname.split('/').pop() || '').toLowerCase();
   const isAdminArea = currentFile.startsWith('admin-');
+  const isStudentArea = currentFile === 'dashboard.html' || currentFile.startsWith('student-');
 
   function ensureAdminCommunicationsNav() {
     if (!isAdminArea) return;
@@ -26,10 +27,37 @@
     else communications.classList.remove('active');
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', ensureAdminCommunicationsNav, { once: true });
-  } else {
+  function ensureStudentSyllabusNav() {
+    if (!isStudentArea) return;
+    const nav = document.querySelector('.sidebar nav') || document.querySelector('aside nav');
+    if (!nav) return;
+
+    let syllabus = nav.querySelector('a[href="student-neet-syllabus.html"]');
+    if (!syllabus) {
+      syllabus = document.createElement('a');
+      syllabus.href = 'student-neet-syllabus.html';
+      syllabus.textContent = 'NEET Syllabus';
+      syllabus.className = 'side-link';
+
+      const learning = nav.querySelector('a[href="student-learning-progress.html"]');
+      if (learning?.nextSibling) nav.insertBefore(syllabus, learning.nextSibling);
+      else if (learning) nav.appendChild(syllabus);
+      else nav.insertBefore(syllabus, nav.firstChild);
+    }
+
+    if (currentFile === 'student-neet-syllabus.html') syllabus.classList.add('active');
+    else syllabus.classList.remove('active');
+  }
+
+  function ensurePortalNavigation() {
     ensureAdminCommunicationsNav();
+    ensureStudentSyllabusNav();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ensurePortalNavigation, { once: true });
+  } else {
+    ensurePortalNavigation();
   }
 
   if (!window.supabase?.createClient) {
