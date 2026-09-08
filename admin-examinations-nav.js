@@ -17,7 +17,7 @@
   if(subtitle)subtitle.textContent='Create • Conduct • Evaluate • Analyse';
 
   const items=[
-    ['admin-exams.html','01','Exams','Control Center & Exam Lifecycle'],
+    ['admin-exams.html','01','Exams','Create & Manage Exams'],
     ['admin-question-bank.html','02','Question Bank','Questions & Mapping'],
     ['admin-results.html','03','Results','Publish & Review Results'],
     ['admin-performance.html','04','Performance','Student Exam Analysis'],
