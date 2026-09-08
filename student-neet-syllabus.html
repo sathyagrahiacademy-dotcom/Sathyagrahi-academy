@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#06275f">
+  <title>NEET Syllabus | Sathyagrahi Academy</title>
+  <link rel="icon" href="assets/favicon.png">
+  <link rel="stylesheet" href="dashboard.css">
+  <style>
+    .syllabus-wrap{max-width:1400px}
+    .syllabus-hero{background:linear-gradient(135deg,#0b2f68,#174d86);color:#fff;border-radius:18px;padding:24px;margin-bottom:16px}
+    .syllabus-hero h2{margin:5px 0 7px;font-size:27px}.syllabus-hero p{margin:0;max-width:820px;color:#dce8f5;line-height:1.6;font-size:13px}
+    .syllabus-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:15px 0}
+    .subject-card{border:1px solid #dbe5ef;background:#fff;border-radius:13px;padding:16px;cursor:pointer;text-align:left}
+    .subject-card.active{border-color:#123b68;box-shadow:0 0 0 2px rgba(18,59,104,.08)}
+    .subject-card span{display:block;font-size:10px;font-weight:900;letter-spacing:.7px;color:#f47a1f}.subject-card b{display:block;margin:5px 0 3px;color:#123b68;font-size:19px}.subject-card small{color:#6e7e90}
+    .syllabus-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}.syllabus-tools input{flex:1;min-width:230px;border:1px solid #ccd8e4;border-radius:9px;padding:11px 12px;font-size:13px}.syllabus-tools button{border:1px solid #123b68;background:#fff;color:#123b68;border-radius:8px;padding:10px 12px;font-size:11px;font-weight:900;cursor:pointer}
+    .syllabus-meta{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.syllabus-meta span{background:#eef3f8;border-radius:99px;padding:7px 10px;font-size:10px;font-weight:800;color:#4f6276}
+    .syllabus-list{display:grid;gap:10px}.syllabus-unit{background:#fff;border:1px solid #dce5ee;border-radius:12px;overflow:hidden}.syllabus-unit-head{width:100%;border:0;background:#f8fafc;padding:14px 16px;display:grid;grid-template-columns:80px minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;cursor:pointer}.syllabus-unit-head strong{color:#123b68;font-size:15px}.syllabus-unit-head small{color:#6f8091}.syllabus-unit-code{font-size:10px;font-weight:900;color:#f47a1f}.syllabus-unit-count{font-size:10px;font-weight:800;color:#64758a}.syllabus-unit-body{display:none;padding:8px 14px 14px}.syllabus-unit.open .syllabus-unit-body{display:block}.syllabus-topic{padding:10px 4px;border-bottom:1px solid #edf1f5}.syllabus-topic:last-child{border-bottom:0}.syllabus-topic b{display:block;color:#173b63;font-size:13px}.syllabus-topic p{margin:4px 0 0;color:#5e6f81;font-size:11.5px;line-height:1.55}.syllabus-empty{padding:24px;text-align:center;background:#fff;border:1px dashed #bdcad8;border-radius:11px;color:#697b8f}
+    .syllabus-note{margin-top:14px;padding:11px 13px;border-left:3px solid #f47a1f;background:#fff7ef;color:#6d573f;font-size:11px;line-height:1.5}
+    @media(max-width:760px){.syllabus-summary{grid-template-columns:1fr}.syllabus-unit-head{grid-template-columns:65px minmax(0,1fr)}.syllabus-unit-count{grid-column:2}.syllabus-hero h2{font-size:23px}}
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><img src="assets/favicon.png" alt=""><div><strong>SATHYAGRAHI</strong><span>ACADEMY</span></div></div>
+    <nav>
+      <a class="side-link" href="dashboard.html">Dashboard</a>
+      <a class="side-link" href="student-learning-progress.html">Learning Progress</a>
+      <a class="side-link" href="student-examinations.html">Examinations</a>
+      <a class="side-link" href="student-results.html">Results</a>
+      <a class="side-link" href="student-performance.html">Performance</a>
+      <a class="side-link" href="student-attendance.html">Attendance</a>
+      <a class="side-link" href="student-study-material.html">Study Material</a>
+      <a class="side-link" href="student-notifications.html">Notifications</a>
+      <a class="side-link" href="student-help-feedback.html">Help & Feedback</a>
+      <a class="side-link" href="student-my-profile.html">My Profile</a>
+    </nav>
+    <div class="sidebar-help"><strong>Need Help?</strong><span>+91 9059995537</span></div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn" type="button">☰</button>
+      <div><h1>NEET Syllabus</h1><p>Official syllabus reference — separate from your progress tracking.</p></div>
+      <div class="student-area"><div class="student-meta"><strong id="studentName">Student</strong><span id="studentCode">—</span></div><button id="logoutBtn" class="logout-btn">LOGOUT</button></div>
+    </header>
+
+    <section class="content syllabus-wrap">
+      <section class="syllabus-hero">
+        <span class="card-label">NEET (UG) 2026 · OFFICIAL SYLLABUS</span>
+        <h2>Physics · Chemistry · Biology</h2>
+        <p>This page is only for syllabus reference. Your Learning Progress, revision tracking and Performance remain in their existing unit-wise sections.</p>
+      </section>
+
+      <section class="syllabus-summary" aria-label="Subjects">
+        <button class="subject-card active" type="button" data-subject="Physics"><span>SUBJECT</span><b>Physics</b><small>20 official units</small></button>
+        <button class="subject-card" type="button" data-subject="Chemistry"><span>SUBJECT</span><b>Chemistry</b><small>20 official units · Physical / Inorganic / Organic</small></button>
+        <button class="subject-card" type="button" data-subject="Biology"><span>SUBJECT</span><b>Biology</b><small>10 official units</small></button>
+      </section>
+
+      <section class="section-card">
+        <div class="section-heading"><div><span class="card-label">COMPLETE SYLLABUS</span><h3 id="subjectTitle">Physics Syllabus</h3></div></div>
+        <div class="syllabus-tools"><input id="syllabusSearch" type="search" placeholder="Search unit or topic..."><button id="expandAll" type="button">EXPAND ALL</button><button id="collapseAll" type="button">COLLAPSE ALL</button></div>
+        <div class="syllabus-meta"><span id="unitMeta">Units: —</span><span id="topicMeta">Topics: —</span><span>Read-only official reference</span></div>
+        <div id="syllabusStatus" class="helper-text">Loading syllabus…</div>
+        <div id="syllabusList" class="syllabus-list"></div>
+        <div class="syllabus-note">Syllabus reference only. No completion status, revision status, marks or performance data is changed from this page.</div>
+      </section>
+    </section>
+  </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="student-neet-syllabus.js"></script>
+</body>
+</html>
