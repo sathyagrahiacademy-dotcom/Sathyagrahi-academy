@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/examination-intelligence-foundation
+      - feature/examinations-master-phase-1
   workflow_dispatch:
 
 jobs:
