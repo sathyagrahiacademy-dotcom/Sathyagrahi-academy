@@ -17,7 +17,7 @@
   if(subtitle)subtitle.textContent='Create • Conduct • Evaluate • Analyse';
 
   const items=[
-    ['admin-exams.html','01','Exams','Create & Manage Exams'],
+    ['admin-exams.html','01','Exams','Control Center & Exam Lifecycle'],
     ['admin-question-bank.html','02','Question Bank','Questions & Mapping'],
     ['admin-results.html','03','Results','Publish & Review Results'],
     ['admin-performance.html','04','Performance','Student Exam Analysis'],
@@ -34,12 +34,9 @@
   }
 
   if(current==='admin-exams.html'){
-    if(!document.getElementById('adminExamsEnhancements')){
-      const script=document.createElement('script');
-      script.id='adminExamsEnhancements';
-      script.src='admin-exams-enhancements.js?v=20260905-1';
-      document.body.appendChild(script);
-    }
+    loadScript('examControlCenterUi','exam-control-center-ui.js?v=20260908-1',()=>{
+      loadScript('adminExamControlCenter','admin-exam-control-center.js?v=20260908-1');
+    });
     loadScript('sgaJsPdf','https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',()=>{
       loadScript('sgaJsPdfAutoTable','https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js',()=>{
         loadScript('adminExamBlueprint','admin-exam-blueprint.js?v=20260905-1');
