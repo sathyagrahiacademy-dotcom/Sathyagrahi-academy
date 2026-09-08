@@ -1,10 +1,12 @@
 name: Examination Intelligence Verification
 
 on:
-  push:
+  pull_request:
     branches:
-      - feature/examination-intelligence-foundation
-      - feature/examinations-master-phase-1
+      - main
+  push:
+    branches-ignore:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -25,6 +27,12 @@ jobs:
           exam-intelligence-policy.test.mjs
           exam-intelligence-schema.test.mjs
           admin-exam-intelligence-contract.test.mjs
+          exam-master-policy.test.mjs
+          examinations-master-foundation-schema.test.mjs
+          exam-control-center-policy.test.mjs
+          admin-exam-control-center-contract.test.mjs
+          exam-control-center-ui.test.cjs
+          admin-exam-control-center-ui.test.mjs
           question-bank-import-policy.test.mjs
           question-bank-import-ui.test.mjs
           exam-publish-validation.test.mjs
@@ -44,6 +52,8 @@ jobs:
       - name: Check browser JavaScript syntax
         run: |
           node --check admin-exams.js
+          node --check exam-control-center-ui.js
+          node --check admin-exam-control-center.js
           node --check admin-exam-questions.js
           node --check student-notifications.js
           node --check student-exam-attempt.js
