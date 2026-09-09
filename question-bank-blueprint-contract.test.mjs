@@ -58,10 +58,11 @@ test('question bank reads protected central-bank API instead of exam_questions d
   assert.match(js,/unitTitle/);assert.match(js,/chapterTitle/);assert.match(js,/topicTitle/);
 });
 
-test('question bank filters include source and source year', () => {
+test('question bank sorting includes source and source year', () => {
   const html=read('admin-question-bank.html'),js=read('admin-question-bank.js');
-  assert.match(html,/id=["']source["']/i);
-  assert.match(html,/id=["']sourceYear["']/i);
+  assert.match(html,/id=["']qbSort["']/i);
+  assert.match(html,/<option value=["']source["']>Source<\/option>/i);
+  assert.match(html,/<option value=["']source_year["']>Source Year<\/option>/i);
   assert.match(js,/source_label/);
   assert.match(js,/source_year/);
 });
