@@ -24,9 +24,9 @@ Deno.serve(async(req:Request)=>{
     if(!examId)return json({error:'Exam ID is required'},400)
 
     const [examRes,accessRes,scopeRes,qRes,groupRes,mapRes,assignRes,attemptRes,unitsRes,chaptersRes,topicsRes]=await Promise.all([
-      admin.from('exams').select('id,title,subject,syllabus,duration_minutes,total_marks,negative_marking,instructions,status,is_published,result_published,audience_mode,created_at,updated_at').eq('id',examId).maybeSingle(),
+      admin.from('exams').select('id,title,subject,syllabus,exam_type,exam_date,batch_no,expected_questions,duration_minutes,total_marks,negative_marking,instructions,status,is_published,result_published,audience_mode,result_publish_mode,result_publish_at,blueprint_approved_at,created_at,updated_at').eq('id',examId).maybeSingle(),
       admin.from('exam_access').select('exam_code').eq('exam_id',examId).maybeSingle(),
-      admin.from('exam_scope_items').select('id,unit_id,chapter_id,subtopic_id,sort_order').eq('exam_id',examId).order('sort_order'),
+      admin.from('exam_scope_items').select('id,unit_id,chapter_id,subtopic_id,sort_order,planned_questions').eq('exam_id',examId).order('sort_order'),
       admin.from('exam_questions').select('id,exam_id,question_no,marks,negative_marks,difficulty,question_type,source_label,source_year').eq('exam_id',examId).order('question_no'),
       admin.from('exam_mapping_groups').select('id,subtopic_id,coverage,selector_text,sort_order').eq('exam_id',examId).order('sort_order'),
       admin.from('exam_question_syllabus_map').select('question_id,exam_id,mapping_group_id,subtopic_id').eq('exam_id',examId),
@@ -57,7 +57,7 @@ Deno.serve(async(req:Request)=>{
     }
     const coverage=(scopeRes.data||[]).map((s:any)=>{
       const unit=units.get(String(s.unit_id)),chapter=chapters.get(String(s.chapter_id)),topic=s.subtopic_id?topics.get(String(s.subtopic_id)):null
-      return {subject:unit?.subject||'',unitId:s.unit_id,unitNo:unit?.unit_no??null,unitTitle:unit?.unit_title||'',chapterId:s.chapter_id,chapterTitle:chapter?.topic_title||'',scopeType:s.subtopic_id?'topic':'chapter',topicId:s.subtopic_id,topicTitle:topic?.subtopic_title||''}
+      return {subject:unit?.subject||'',unitId:s.unit_id,unitNo:unit?.unit_no??null,unitTitle:unit?.unit_title||'',chapterId:s.chapter_id,chapterTitle:chapter?.topic_title||'',scopeType:s.subtopic_id?'topic':'chapter',topicId:s.subtopic_id,topicTitle:topic?.subtopic_title||'',plannedQuestions:Number(s.planned_questions||0)}
     })
     const mapByQuestion=new Map((mapRes.data||[]).map((m:any)=>[String(m.question_id),m]))
     const questions=(qRes.data||[]).map((q:any)=>{const m=mapByQuestion.get(String(q.id));return {...q,...(m?locate(m.subtopic_id):{subject:'',unitTitle:'',chapterTitle:'',topicTitle:''}),subtopicId:m?.subtopic_id||null}})

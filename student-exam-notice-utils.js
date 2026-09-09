@@ -3,7 +3,7 @@
   if(typeof module==='object'&&module.exports)module.exports=api;
   if(root)root.SGAExamNotices=api;
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
-  const TYPE_LABELS=Object.freeze({daily:'Daily Exam',unit:'Unit Exam',monthly:'Monthly Exam'});
+  const TYPE_LABELS=Object.freeze({daily:'Daily Exam',weekly:'Weekly Exam',monthly:'Monthly Exam',grand:'Grand Exam',unit:'Unit Exam'});
   const MONTHS=Object.freeze(['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']);
 
   function clean(value){return String(value??'').trim()}
@@ -20,6 +20,17 @@
     const type=clean(exam?.exam_type).toLowerCase();
     return TYPE_LABELS[type]||clean(exam?.subject)||'Exam';
   }
+  function resultReleaseLabel(exam){
+    const mode=clean(exam?.result_publish_mode).toLowerCase();
+    if(mode==='scheduled'){
+      const text=clean(exam?.result_publish_at);
+      const date=new Date(text);
+      if(text&&!Number.isNaN(date.getTime()))return `Result release: Scheduled ${date.toLocaleString('en-IN')}`;
+      return 'Result release: Scheduled';
+    }
+    if(mode==='manual')return 'Result release: After Admin publishes results';
+    return '';
+  }
   function buildExamNotice(exam={}){
     const id=clean(exam.id);
     const type=typeLabel(exam);
@@ -33,6 +44,7 @@
     const canStart=Boolean(exam.can_start);
     const attemptCount=Math.max(0,Number(exam.attempt_count)||0);
     const maxAttempts=Math.max(1,Number(exam.max_attempts)||1);
+    const masterType=['daily','weekly','monthly','grand'].includes(clean(exam.exam_type).toLowerCase());
     const parts=[type];
     if(subject&&subject!==type)parts.push(subject);
     if(code)parts.push(`Code: ${code}`);
@@ -41,6 +53,8 @@
     if(duration>0)parts.push(`${duration} min`);
     if(marks>0)parts.push(`${marks} marks`);
     if(syllabus)parts.push(`Syllabus: ${syllabus}`);
+    if(masterType&&canStart)parts.push('Start Anytime while available');
+    const release=resultReleaseLabel(exam);if(release)parts.push(release);
     if(!canStart)parts.push(`Completed / attempts used: ${attemptCount}/${maxAttempts}`);
     return {
       kind:'exam',
@@ -56,5 +70,5 @@
     };
   }
 
-  return {buildExamNotice,formatDate,typeLabel};
+  return {buildExamNotice,formatDate,typeLabel,resultReleaseLabel};
 });

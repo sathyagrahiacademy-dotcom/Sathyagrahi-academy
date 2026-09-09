@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Exam Workspace | Sathyagrahi Academy</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body{margin:0;background:#f6f8fc;color:#172033;font-family:'Trebuchet MS','Segoe UI',Arial,sans-serif}.workspace{max-width:1220px;margin:28px auto;padding:0 18px}.ws-top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:16px}.ws-top h1{margin:0;color:#06275f;font-size:24px}.ws-sub{margin-top:5px;color:#6b7a90;font-size:12px}.ws-card{background:#fff;border:1px solid #dfe6ef;border-radius:13px;box-shadow:0 5px 20px rgba(3,32,75,.04);padding:18px}.ws-nav{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}.ws-tab{border:1px solid #cbd7e6;background:#fff;color:#36516f;border-radius:22px;padding:8px 12px;font-size:9px;font-weight:900;cursor:pointer}.ws-tab.active{background:#06275f;color:#fff;border-color:#06275f}.ws-tab[disabled]{opacity:.42;cursor:not-allowed;background:#f1f4f8}.ws-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.ws-metric{border:1px solid #dce5ef;border-radius:9px;padding:12px;background:#f9fbfe}.ws-metric small{display:block;font-size:8px;font-weight:900;letter-spacing:.35px;color:#718096}.ws-metric b{display:block;margin-top:5px;color:#06275f;font-size:13px}.ws-section{margin-top:14px;border-top:1px solid #e8edf4;padding-top:14px}.ws-section h2{margin:0 0 10px;color:#173653;font-size:16px}.ws-issue{border:1px solid #f0d0b5;background:#fff9f2;border-radius:8px;padding:10px 12px;margin-top:8px;color:#7f471d;font-size:11px}.ws-row{display:flex;justify-content:space-between;gap:12px;align-items:center;border-top:1px solid #edf1f6;padding:10px 0;font-size:11px}.ws-row:first-child{border-top:0}.ws-row small{color:#718096}.ws-btn{display:inline-block;border:1px solid #b9c9dc;background:#fff;color:#07316d;border-radius:7px;padding:8px 11px;text-decoration:none;font-size:9px;font-weight:900;cursor:pointer}.ws-btn.primary{background:#06275f;color:#fff;border-color:#06275f}.ws-empty{border:1px dashed #cbd7e6;border-radius:9px;padding:20px;text-align:center;color:#718096}.ws-status{display:inline-block;padding:5px 8px;border-radius:99px;background:#eef4fb;color:#174c83;font-size:9px;font-weight:900}.ws-status.good{background:#eaf7ef;color:#087443}.ws-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}@media(max-width:850px){.ws-grid{grid-template-columns:1fr 1fr}.ws-top{flex-direction:column}}@media(max-width:540px){.ws-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <main class="workspace">
+    <div class="ws-top"><div><h1 id="wsTitle">EXAM WORKSPACE</h1><div id="wsSubtitle" class="ws-sub">Loading exam...</div></div><a class="ws-btn" href="admin-exams.html">← EXAMS</a></div>
+    <nav class="ws-nav" id="workspaceTabs" aria-label="Exam Workspace">
+      <button class="ws-tab" data-tab="overview">OVERVIEW</button>
+      <button class="ws-tab" data-tab="coverage">COVERAGE</button>
+      <button class="ws-tab" data-tab="questions">QUESTIONS</button>
+      <button class="ws-tab" data-tab="blueprint">BLUEPRINT</button>
+      <button class="ws-tab" data-tab="students">STUDENTS</button>
+      <button class="ws-tab" disabled>LIVE</button>
+      <button class="ws-tab" disabled>RESULTS</button>
+      <button class="ws-tab" disabled>PERFORMANCE</button>
+      <button class="ws-tab" disabled>FILES</button>
+      <button class="ws-tab" disabled>AUDIT</button>
+    </nav>
+    <section id="workspaceHost" class="ws-card"><div class="ws-empty">Loading Workspace...</div></section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="admin-exam-workspace.js?v=20260909-1"></script>
+</body>
+</html>

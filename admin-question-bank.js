@@ -1,5 +1,6 @@
 (async()=>{
 const c=window.sgaSupabase,$=id=>document.getElementById(id);let exams=[],questions=[],selected=new Set();
+const params=new URLSearchParams(location.search),requestedExam=params.get('exam');
 const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
 const {data:{session}}=await c.auth.getSession();if(!session)return location.replace('admin-login.html');const {data:me}=await c.from('profiles').select('role,is_active').eq('id',session.user.id).single();if(!me||me.role!=='admin'||!me.is_active)return location.replace('admin-login.html');
 async function invoke(body){const {data,error}=await c.functions.invoke('admin-question-bank',{body});if(error){let d=null;try{d=await error.context?.json?.()}catch(_){}throw new Error(d?.error||error.message||'Question Bank operation failed.')}if(data?.error)throw new Error(data.error);return data}
@@ -31,6 +32,7 @@ async function load(){
  const [bank,er]=await Promise.all([invoke({action:'list'}),c.from('exams').select('id,title,subject,is_published,status').order('created_at',{ascending:false})]);
  if(er.error)throw er.error;questions=bank.questions||[];exams=(er.data||[]).filter(e=>!e.is_published&&e.status!=='completed');
  $('targetExam').innerHTML='<option value="">Select target exam</option>'+exams.map(e=>`<option value="${e.id}">${esc(e.title)} — ${esc(e.subject)}</option>`).join('');
+ if(requestedExam&&[...$('targetExam').options].some(o=>o.value===requestedExam))$('targetExam').value=requestedExam;
  stats();refreshFilterOptions();render();$('loadState').textContent=`${questions.length} permanent question(s)`;
 }
 $('rows').onchange=e=>{if(!e.target.classList.contains('pick'))return;e.target.checked?selected.add(e.target.dataset.id):selected.delete(e.target.dataset.id);render()};

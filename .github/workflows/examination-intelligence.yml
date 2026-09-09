@@ -30,6 +30,17 @@ jobs:
           admin-exam-control-center-contract.test.mjs
           exam-control-center-ui.test.cjs
           admin-exam-control-center-ui.test.mjs
+          exam-wizard-policy.test.mjs
+          examinations-master-phase2-schema.test.mjs
+          admin-exam-wizard-basic-contract.test.mjs
+          admin-exam-wizard-ui.test.mjs
+          exam-wizard-coverage.test.mjs
+          exam-wizard-questions-integration.test.mjs
+          exam-blueprint-approval.test.mjs
+          exam-wizard-audience.test.mjs
+          exam-master-publish-contract.test.mjs
+          admin-exam-workspace.test.mjs
+          examinations-phase2-integration.test.mjs
           question-bank-import-policy.test.mjs
           question-bank-import-ui.test.mjs
           exam-publish-validation.test.mjs
@@ -51,8 +62,13 @@ jobs:
           node --check admin-exams.js
           node --check exam-control-center-ui.js
           node --check admin-exam-control-center.js
+          node --check admin-exam-wizard.js
+          node --check admin-exam-wizard-release.js
+          node --check admin-exam-workspace.js
+          node --check admin-exam-workspace-route.js
           node --check admin-exam-questions.js
           node --check student-notifications.js
+          node --check student-exam-notice-utils.js
           node --check student-exam-attempt.js
           node --check student-results.js
           node --check student-answer-review-utils.js
@@ -64,6 +80,7 @@ jobs:
       - name: Parse Edge Function TypeScript
         run: |
           npx -y esbuild@0.25.9 supabase/functions/admin-exams/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/admin-exams.js --external:*
+          npx -y esbuild@0.25.9 supabase/functions/admin-exam-wizard/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/admin-exam-wizard.js --external:*
           npx -y esbuild@0.25.9 supabase/functions/student-exam-access/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/student-exam-access.js --external:*
           npx -y esbuild@0.25.9 supabase/functions/student-exam-attempt/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/student-exam-attempt.js --external:*
           npx -y esbuild@0.25.9 supabase/functions/student-result-review/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/student-result-review.js --external:*

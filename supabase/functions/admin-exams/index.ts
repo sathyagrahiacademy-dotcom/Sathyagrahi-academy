@@ -4,7 +4,7 @@ import { normaliseAudience, nextMaxAttempts } from './audience-policy.mjs'
 import { normaliseExamScopeDraftV2, canSaveExamScope, buildExamScopeSummary } from './exam-scope-logic.mjs'
 import { validateExamMapping } from '../_shared/exam-mapping-logic.mjs'
 import { normaliseExamType, templateForExamType } from '../_shared/exam-intelligence-policy.mjs'
-import { canPublishExam } from './publish-validation.mjs'
+import { canPublishExam, validateMasterBlueprint } from './publish-validation.mjs'
 import { buildExamControlItem, buildControlCenterSummary } from './control-center-policy.mjs'
 
 function json(body: Record<string, unknown>, status = 200) {
@@ -169,6 +169,53 @@ async function loadPublishValidation(admin: any, examId: string) {
   return validateExamMapping({questions:questions || [],answerKeys,mappingRows,approvedSubtopicIds:(approvedRows || []).map((row:any)=>row.id),totalMarks:exam.total_marks})
 }
 
+async function loadMasterBlueprintValidation(admin:any,examId:string){
+  const [examRes,scopeRes,mapRes]=await Promise.all([
+    admin.from('exams').select('id,is_published,exam_type,expected_questions,total_marks,blueprint_approved_at').eq('id',examId).maybeSingle(),
+    admin.from('exam_scope_items').select('unit_id,chapter_id,subtopic_id,planned_questions').eq('exam_id',examId).order('sort_order').order('id'),
+    admin.from('exam_question_syllabus_map').select('question_id,subtopic_id').eq('exam_id',examId)
+  ])
+  if(examRes.error)throw new Error(examRes.error.message)
+  if(scopeRes.error)throw new Error(scopeRes.error.message)
+  if(mapRes.error)throw new Error(mapRes.error.message)
+  if(!examRes.data)throw new Error('Exam not found')
+  const mappingValidation=await loadPublishValidation(admin,examId)
+  const {lookup}=await loadScopeTree(admin)
+  const plannedSubjectCounts:{[key:string]:number}={Physics:0,Chemistry:0,Biology:0}
+  const scopeIssues:any[]=[]
+  const seen=new Set<string>(),whole=new Set<string>(),specific=new Set<string>()
+  for(const row of scopeRes.data||[]){
+    const unit=lookup.units.get(row.unit_id)||lookup.units.get(String(row.unit_id))
+    const subject=String(unit?.subject||'')
+    if(subject in plannedSubjectCounts)plannedSubjectCounts[subject]+=Number(row.planned_questions||0)
+    const chapterKey=`${row.unit_id}:${row.chapter_id}`
+    const exactKey=`${chapterKey}:${row.subtopic_id==null?'WHOLE':row.subtopic_id}`
+    if(seen.has(exactKey))scopeIssues.push({message:'Duplicate syllabus coverage row remains unresolved.'})
+    seen.add(exactKey)
+    if(row.subtopic_id==null){
+      if(specific.has(chapterKey))scopeIssues.push({message:'Whole Chapter overlaps a Specific Topic in the same Chapter.'})
+      whole.add(chapterKey)
+    }else{
+      if(whole.has(chapterKey))scopeIssues.push({message:'Whole Chapter overlaps a Specific Topic in the same Chapter.'})
+      specific.add(chapterKey)
+    }
+  }
+  const actualSubjectCounts:{[key:string]:number}={Physics:0,Chemistry:0,Biology:0}
+  const seenQuestions=new Set<string>()
+  for(const row of mapRes.data||[]){
+    const questionId=String(row.question_id||'')
+    if(!questionId||seenQuestions.has(questionId))continue
+    const subtopic=lookup.subtopics.get(row.subtopic_id)||lookup.subtopics.get(String(row.subtopic_id))
+    const chapter=subtopic?(lookup.chapters.get(subtopic.chapter_id)||lookup.chapters.get(String(subtopic.chapter_id))):null
+    const unit=chapter?(lookup.units.get(chapter.unit_id)||lookup.units.get(String(chapter.unit_id))):null
+    const subject=String(unit?.subject||'')
+    if(subject in actualSubjectCounts)actualSubjectCounts[subject]++
+    seenQuestions.add(questionId)
+  }
+  const validation=validateMasterBlueprint({exam:examRes.data,mappingValidation,plannedSubjectCounts,actualSubjectCounts,scopeIssues})
+  return {exam:examRes.data,validation,plannedSubjectCounts,actualSubjectCounts}
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
@@ -271,6 +318,23 @@ Deno.serve(async (req: Request) => {
       if (scopeError) return json({error:scopeError.message},400)
       const {lookup}=await loadScopeTree(admin)
       return json({ok:true,scopeItems:enrichScopeRows(scopeRows||[],lookup),legacySyllabus:exam.syllabus||''})
+    }
+    if(action === 'master_blueprint_validation'){
+      const examId=String(body.examId||'')
+      if(!examId)return json({error:'Exam ID is required'},400)
+      const result=await loadMasterBlueprintValidation(admin,examId)
+      return json({ok:true,status:result.validation.status,validation:result.validation,approvedAt:result.exam.blueprint_approved_at||null})
+    }
+    if(action === 'approve_master_blueprint'){
+      const examId=String(body.examId||'')
+      if(!examId)return json({error:'Exam ID is required'},400)
+      const result=await loadMasterBlueprintValidation(admin,examId)
+      if(result.exam.is_published)return json({error:'Published exam blueprint cannot be re-approved in setup.'},409)
+      if(!result.validation.ok)return json({error:'Blueprint has unresolved validation issues.',status:result.validation.status,validation:result.validation},409)
+      const approvedAt=new Date().toISOString()
+      const {error}=await admin.from('exams').update({blueprint_approved_at:approvedAt}).eq('id',examId)
+      if(error)return json({error:error.message},400)
+      return json({ok:true,status:'EXAM READY',approvedAt,validation:result.validation})
     }
     if (action === 'create' || action === 'update') {
       const examId=String(body.examId||'')
@@ -376,7 +440,7 @@ Deno.serve(async (req: Request) => {
 
       const nextStatus=existing.is_published?'active':(existing.status==='completed'?'completed':'draft')
       const examUpdate=existing.exam_type
-        ? {title,subject,scheduled_start:null,scheduled_end:null,duration_minutes:template.durationMinutes,total_marks:template.totalMarks,negative_marking:template.negativeMarking,instructions:instructions||null,status:nextStatus}
+        ? {title,subject,scheduled_start:null,scheduled_end:null,duration_minutes:template.durationMinutes,total_marks:template.totalMarks,negative_marking:template.negativeMarking,instructions:instructions||null,status:nextStatus,blueprint_approved_at:null}
         : {title,subject,scheduled_start:null,scheduled_end:null,duration_minutes:legacyDurationMinutes,total_marks:legacyTotalMarks,negative_marking:legacyNegativeMarking,instructions:instructions||null,status:nextStatus}
       const {error:examError}=await admin.from('exams').update(examUpdate).eq('id',examId)
       if (examError) return json({error:examError.message},400)
@@ -394,7 +458,7 @@ Deno.serve(async (req: Request) => {
         const resolvedItems=Array.isArray(scopeData?.items)?scopeData.items:[]
         const syllabusSummary=buildExamScopeSummary(resolvedItems,resolvedLookup)
         if (!syllabusSummary) return json({error:'Could not build syllabus scope summary'},400)
-        const sumUpdate=await admin.from('exams').update({syllabus:syllabusSummary}).eq('id',examId)
+        const sumUpdate=await admin.from('exams').update({syllabus:syllabusSummary,blueprint_approved_at:existing.exam_type?null:undefined}).eq('id',examId)
         if (sumUpdate.error) return json({error:sumUpdate.error.message},400)
         return json({ok:true,scopeItems:resolvedItems})
       }
