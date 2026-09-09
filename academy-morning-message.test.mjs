@@ -14,8 +14,8 @@ const message=buildMorningMessage({
 
 test('morning email locks the approved Sep-10 poster header and date strip',()=>{
   assert.match(message.html,/header-brand\.png/)
-  assert.match(message.html,/DISCIPLINE TODAY/)
-  assert.match(message.html,/A DOCTOR TOMORROW/)
+  assert.match(message.html,/DISCIPLINE(?:<br>)?TODAY/)
+  assert.match(message.html,/A DOCTOR(?:<br>)?TOMORROW/)
   assert.match(message.html,/MORNING STUDY PLAN/)
   assert.match(message.html,/10 SEP/)
   assert.match(message.html,/2026/)
@@ -53,7 +53,7 @@ test('morning email has no study-plan button',()=>{
 })
 
 test('morning email uses only the locked deep-blue white orange palette',()=>{
-  const colours=[...message.html.matchAll(/#[0-9a-f]{6}/gi)].map(m=>m[0].toUpperCase())
+  const colours=[...message.html.matchAll(/(?<!&)#[0-9a-f]{6}/gi)].map(m=>m[0].toUpperCase())
   const allowed=new Set(['#0B2F68','#123B68','#F47A1F','#FFFFFF','#EEF6FD'])
   assert.ok(colours.length>0)
   assert.deepEqual([...new Set(colours.filter(c=>!allowed.has(c)))],[])
