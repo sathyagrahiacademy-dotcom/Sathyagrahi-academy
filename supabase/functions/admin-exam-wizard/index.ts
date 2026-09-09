@@ -139,6 +139,38 @@ Deno.serve(async(req:Request)=>{
       return json({ok:true,examId,totalMarks:v.totalMarks})
     }
 
+    if(action === 'get_master_scope'){
+      const examId=String(body.examId||'')
+      if(!examId) return json({error:'Exam ID is required'},400)
+      const {data:exam,error:examError}=await admin.from('exams').select('id,expected_questions').eq('id',examId).maybeSingle()
+      if(examError) return json({error:examError.message},400)
+      if(!exam) return json({error:'Exam not found'},404)
+      const {data:items,error:scopeError}=await admin.from('exam_scope_items')
+        .select('unit_id,chapter_id,subtopic_id,sort_order,planned_questions')
+        .eq('exam_id',examId).order('sort_order').order('id')
+      if(scopeError) return json({error:scopeError.message},400)
+      return json({ok:true,examId,expectedQuestions:Number(exam.expected_questions||0),items:items||[]})
+    }
+
+    if(action === 'replace_master_scope'){
+      const examId=String(body.examId||'')
+      if(!examId) return json({error:'Exam ID is required'},400)
+      const items=Array.isArray(body.items)?body.items:[]
+      const {data:exam,error:examError}=await admin.from('exams').select('id,is_published,expected_questions').eq('id',examId).maybeSingle()
+      if(examError) return json({error:examError.message},400)
+      if(!exam) return json({error:'Exam not found'},404)
+      if(exam.is_published) return json({error:'Published exam coverage cannot be changed here'},409)
+      if(!items.length) return json({error:'Add at least one coverage row'},400)
+      const plannedTotal=items.reduce((sum:number,item:any)=>sum+(Number.isInteger(Number(item?.plannedQuestions))?Number(item.plannedQuestions):0),0)
+      if(items.some((item:any)=>!Number.isInteger(Number(item?.plannedQuestions))||Number(item.plannedQuestions)<=0)) return json({error:'Every coverage row needs positive Questions Planned'},400)
+      if(plannedTotal!==Number(exam.expected_questions||0)) return json({error:`Coverage planned total must equal ${Number(exam.expected_questions||0)} questions`},400)
+      const rpc=await admin.rpc('replace_exam_scope_items_v3',{p_exam_id:examId,p_items:items,p_created_by:user.id})
+      if(rpc.error) return json({error:rpc.error.message},400)
+      const {error:invalidateError}=await admin.from('exams').update({blueprint_approved_at:null}).eq('id',examId)
+      if(invalidateError) return json({error:invalidateError.message},400)
+      return json({ok:true,examId,plannedTotal,count:Number(rpc.data?.count||items.length),items:rpc.data?.items||items})
+    }
+
     return json({error:'Unknown action'},400)
   }catch(error){
     console.error('admin-exam-wizard failed',error)
