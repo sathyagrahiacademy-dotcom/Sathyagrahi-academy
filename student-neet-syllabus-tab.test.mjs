@@ -5,6 +5,7 @@ import fs from 'node:fs';
 const studentPages = [
   'dashboard.html',
   'student-learning-progress.html',
+  'student-neet-syllabus.html',
   'student-examinations.html',
   'student-results.html',
   'student-performance.html',
@@ -22,12 +23,25 @@ test('all core student pages load the shared nav bootstrap', () => {
   }
 });
 
-test('shared bootstrap injects a separate NEET Syllabus tab after Learning Progress', () => {
+test('all core student pages render NEET Syllabus statically after Learning Progress', () => {
+  for (const page of studentPages) {
+    const html = fs.readFileSync(page, 'utf8');
+    const learningIndex = html.indexOf('href="student-learning-progress.html"');
+    const syllabusIndex = html.indexOf('href="student-neet-syllabus.html"');
+    assert.ok(learningIndex >= 0, `${page} missing Learning Progress link`);
+    assert.ok(syllabusIndex >= 0, `${page} missing static NEET Syllabus link`);
+    assert.ok(syllabusIndex > learningIndex, `${page} must place NEET Syllabus after Learning Progress`);
+    assert.match(html, /<a[^>]*href="student-neet-syllabus\.html"[^>]*>\s*NEET Syllabus\s*<\/a>/i, `${page} must render a real NEET Syllabus anchor`);
+  }
+});
+
+test('shared bootstrap keeps NEET Syllabus as an idempotent fallback only', () => {
   const js = fs.readFileSync('supabase-config.js', 'utf8');
   assert.ok(js.includes('ensureStudentSyllabusNav'));
   assert.ok(js.includes("student-neet-syllabus.html"));
   assert.ok(js.includes("student-learning-progress.html"));
   assert.ok(js.includes("currentFile === 'student-neet-syllabus.html'"));
+  assert.ok(js.includes('if (!syllabus)'));
 });
 
 test('student NEET Syllabus page exists inside the student portal shell', () => {

@@ -44,6 +44,6 @@ test('manual exams page is an explicit next-phase shell',()=>{
 
 test('results page is results-only and no longer has redundant performance button',()=>{
   const html = fs.readFileSync('admin-results.html','utf8');
-  assert.match(html,/<h2>Results<\/h2>/i);
+  assert.match(html,/<main>\s*<header>[\s\S]*<h1>Results<\/h1>/i);
   assert.doesNotMatch(html,/PERFORMANCE ANALYTICS/);
 });
