@@ -32,4 +32,4 @@ test('branch shell gives the section nav one consistent vertical rhythm', async 
   assert.ok(css.includes('.examination-branch-page .content'));
   assert.ok(css.includes('padding-top:30px'));
   assert.ok(css.includes('.examination-branch-page main>header'));
-}
+});
