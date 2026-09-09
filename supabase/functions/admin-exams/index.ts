@@ -5,6 +5,7 @@ import { normaliseExamScopeDraftV2, canSaveExamScope, buildExamScopeSummary } fr
 import { validateExamMapping } from '../_shared/exam-mapping-logic.mjs'
 import { normaliseExamType, templateForExamType } from '../_shared/exam-intelligence-policy.mjs'
 import { canPublishExam } from './publish-validation.mjs'
+import { buildExamControlItem, buildControlCenterSummary } from './control-center-policy.mjs'
 
 function json(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
@@ -19,6 +20,11 @@ function normaliseIsoExamDate(value: unknown) {
   const d=new Date(`${text}T00:00:00Z`)
   if (Number.isNaN(d.getTime()) || d.toISOString().slice(0,10)!==text) return null
   return text
+}
+function indiaToday() {
+  const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date())
+  const get=(type:string)=>parts.find(p=>p.type===type)?.value||''
+  return `${get('year')}-${get('month')}-${get('day')}`
 }
 async function bestEffortCommunicate(action: string, payload: Record<string, unknown>) {
   const url = Deno.env.get('SUPABASE_URL') || ''
@@ -180,6 +186,77 @@ Deno.serve(async (req: Request) => {
     const admin = createClient(url, sec, { auth: { persistSession: false } })
     const body = await req.json()
     const action = String(body.action || '')
+
+    if (action === 'control_center') {
+      const examsRes=await admin.from('exams').select('id,title,exam_type,exam_date,batch_no,expected_questions,is_published,result_published,status,result_publish_mode,result_publish_at,new_starts_closed_at,blueprint_approved_at,archived_at,exam_access(exam_code)').order('created_at',{ascending:false})
+      if (examsRes.error) return json({error:examsRes.error.message},400)
+      const [assignmentsRes,attemptsRes,resultsRes]=await Promise.all([
+        admin.from('exam_student_assignments').select('exam_id,student_id,is_assigned').eq('is_assigned',true),
+        admin.from('exam_attempts').select('id,exam_id,status,submitted_at'),
+        admin.from('exam_results').select('attempt_id,is_published')
+      ])
+      if (assignmentsRes.error) return json({error:assignmentsRes.error.message},400)
+      if (attemptsRes.error) return json({error:attemptsRes.error.message},400)
+      if (resultsRes.error) return json({error:resultsRes.error.message},400)
+
+      const assignmentsByExam=new Map<string,number>()
+      for (const row of assignmentsRes.data||[]) {
+        const key=String(row.exam_id)
+        assignmentsByExam.set(key,(assignmentsByExam.get(key)||0)+1)
+      }
+      const attemptsByExam=new Map<string,any[]>()
+      const attemptToExam=new Map<string,string>()
+      for (const row of attemptsRes.data||[]) {
+        const key=String(row.exam_id)
+        if (!attemptsByExam.has(key)) attemptsByExam.set(key,[])
+        attemptsByExam.get(key)!.push(row)
+        attemptToExam.set(String(row.id),key)
+      }
+      const resultsByExam=new Map<string,any[]>()
+      for (const row of resultsRes.data||[]) {
+        const examId=attemptToExam.get(String(row.attempt_id))
+        if (!examId) continue
+        if (!resultsByExam.has(examId)) resultsByExam.set(examId,[])
+        resultsByExam.get(examId)!.push(row)
+      }
+
+      const items=await Promise.all((examsRes.data||[]).map(async (exam:any)=>{
+        const examId=String(exam.id)
+        const validation=await loadPublishValidation(admin,examId)
+        const attempts=attemptsByExam.get(examId)||[]
+        const results=resultsByExam.get(examId)||[]
+        const totalQuestions=Number(validation?.totalQuestions||0)
+        const missingKeys=Array.isArray(validation?.answerKeyMissingQuestionNos)?validation.answerKeyMissingQuestionNos.length:0
+        const access=Array.isArray(exam.exam_access)?exam.exam_access[0]:exam.exam_access
+        return buildExamControlItem({
+          id:exam.id,
+          title:exam.title,
+          examType:exam.exam_type,
+          examDate:exam.exam_date,
+          batchNo:exam.batch_no,
+          examCode:access?.exam_code||null,
+          isPublished:Boolean(exam.is_published),
+          resultPublished:Boolean(exam.result_published),
+          newStartsClosedAt:exam.new_starts_closed_at,
+          archivedAt:exam.archived_at,
+          legacyCompleted:exam.status==='completed',
+          expectedQuestions:exam.expected_questions,
+          questionCount:totalQuestions,
+          mappedQuestions:Number(validation?.mappedQuestions||0),
+          keyedQuestions:Math.max(0,totalQuestions-missingKeys),
+          blueprintApproved:Boolean(exam.blueprint_approved_at),
+          assignedCount:assignmentsByExam.get(examId)||0,
+          activeCount:attempts.filter((a:any)=>a.status==='in_progress').length,
+          submittedCount:attempts.filter((a:any)=>a.status==='submitted'&&a.submitted_at).length,
+          readyResultCount:results.filter((r:any)=>!r.is_published).length,
+          publishedResultCount:results.filter((r:any)=>r.is_published).length,
+          resultPublishMode:exam.result_publish_mode||'manual'
+        })
+      }))
+      const today=indiaToday()
+      const summary=buildControlCenterSummary(items,{today})
+      return json({ok:true,today,summary,exams:items})
+    }
 
     if (action === 'scope_tree') {
       const { syllabus } = await loadScopeTree(admin)
