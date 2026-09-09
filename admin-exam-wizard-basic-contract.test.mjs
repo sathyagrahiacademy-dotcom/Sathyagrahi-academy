@@ -17,9 +17,13 @@ test('wizard Edge Function uses pure master wizard policy and admin authorizatio
 
 test('wizard bootstrap exposes canonical syllabus and final master types only',()=>{
   const s=src()
-  assert.match(s,/action === 'wizard_bootstrap'/)
-  for(const value of ['daily','weekly','monthly','grand']) assert.match(s,new RegExp(value))
-  assert.doesNotMatch(s,/wizard_bootstrap[\s\S]{0,5000}password_hash|correct_option|selected_option/)
+  const start=s.indexOf("action === 'wizard_bootstrap'")
+  const end=s.indexOf("action === 'create_master_exam'",start)
+  assert.ok(start>=0,'wizard_bootstrap action missing')
+  assert.ok(end>start,'create_master_exam action must follow bootstrap')
+  const block=s.slice(start,end)
+  for(const value of ['daily','weekly','monthly','grand']) assert.match(block,new RegExp(value))
+  assert.doesNotMatch(block,/password_hash|correct_option|selected_option/)
 })
 
 test('master create uses v2 final code allocator and master metadata',()=>{
