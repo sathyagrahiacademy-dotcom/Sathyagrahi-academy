@@ -11,18 +11,20 @@ test('V2 syllabus controller has the active topic helper it calls',()=>{
   assert.match(helper,/activeSubtopicsForChapter/);
 });
 
-test('Exams page keeps syllabus scripts and loads the new Control Center from branch navigation',()=>{
+test('Exams page keeps syllabus scripts and contains the gated Control Center path',()=>{
   assert.match(html,/admin-examinations-nav\.js\?v=20260905-1/);
   assert.match(html,/exam-scope-ui-utils\.js\?v=20260905-1/);
+  assert.match(nav,/SGA_EXAMINATIONS_MASTER_PHASE1_ENABLED/);
   assert.match(nav,/exam-control-center-ui\.js\?v=20260908-1/);
   assert.match(nav,/admin-exam-control-center\.js\?v=20260908-1/);
-  assert.doesNotMatch(nav,/admin-exams-enhancements\.js/);
 });
 
-test('legacy archive overlay is retained as source history but no longer owns Exams navigation',()=>{
+test('legacy archive overlay remains the default production path while master gate is off',()=>{
   const legacy=fs.readFileSync('admin-exams-enhancements.js','utf8');
   assert.match(legacy,/Current Exams/);
-  assert.doesNotMatch(nav,/adminExamsEnhancements/);
+  assert.match(nav,/adminExamsEnhancements/);
+  assert.match(nav,/admin-exams-enhancements\.js/);
+  assert.match(nav,/if\s*\(masterPhase1Enabled\)[\s\S]*else[\s\S]*adminExamsEnhancements/);
 });
 
 test('master conducted grouping is exam-date based',()=>{
