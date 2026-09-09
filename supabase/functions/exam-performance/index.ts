@@ -12,30 +12,39 @@ function json(body: Record<string, unknown>, status = 200) {
 const text = (v: unknown) => String(v ?? '').trim()
 const uniq = (values: unknown[]) => [...new Set(values.map(v => text(v)).filter(Boolean))]
 
+async function loadExamCodes(admin:any, examIds:string[]) {
+  if (!examIds.length) return new Map<string,string>()
+  const { data, error } = await admin.from('exam_access').select('exam_id,exam_code').in('exam_id', examIds)
+  if (error) throw new Error(error.message)
+  return new Map((data || []).map((row:any)=>[text(row.exam_id),text(row.exam_code)]))
+}
+
 async function enrichRows(admin: any, rows: any[]) {
   const studentIds = uniq(rows.map(r => r.student_id))
   const examIds = uniq(rows.map(r => r.exam_id))
   const unitIds = uniq(rows.map(r => r.unit_id))
   const chapterIds = uniq(rows.map(r => r.chapter_id))
   const subtopicIds = uniq(rows.map(r => r.subtopic_id))
-  const [studentsR, examsR, unitsR, chaptersR, subtopicsR] = await Promise.all([
+  const [studentsR, examsR, accessR, unitsR, chaptersR, subtopicsR] = await Promise.all([
     studentIds.length ? admin.from('profiles').select('id,full_name,student_id').in('id', studentIds) : Promise.resolve({ data: [], error: null }),
-    examIds.length ? admin.from('exams').select('id,title,subject,total_marks').in('id', examIds) : Promise.resolve({ data: [], error: null }),
+    examIds.length ? admin.from('exams').select('id,title,subject,total_marks,exam_date').in('id', examIds) : Promise.resolve({ data: [], error: null }),
+    examIds.length ? admin.from('exam_access').select('exam_id,exam_code').in('exam_id', examIds) : Promise.resolve({ data: [], error: null }),
     unitIds.length ? admin.from('neet_syllabus_units').select('id,subject,unit_no,unit_title').in('id', unitIds) : Promise.resolve({ data: [], error: null }),
     chapterIds.length ? admin.from('neet_syllabus_topics').select('id,unit_id,topic_title').in('id', chapterIds) : Promise.resolve({ data: [], error: null }),
     subtopicIds.length ? admin.from('neet_syllabus_subtopics').select('id,chapter_id,subtopic_title').in('id', subtopicIds) : Promise.resolve({ data: [], error: null })
   ])
-  const err = studentsR.error || examsR.error || unitsR.error || chaptersR.error || subtopicsR.error
+  const err = studentsR.error || examsR.error || accessR.error || unitsR.error || chaptersR.error || subtopicsR.error
   if (err) throw new Error(err.message)
   const by = (list: any[]) => new Map((list || []).map(row => [text(row.id), row]))
   const students = by(studentsR.data || []), exams = by(examsR.data || []), units = by(unitsR.data || []), chapters = by(chaptersR.data || []), subtopics = by(subtopicsR.data || [])
+  const examCodes = new Map((accessR.data || []).map((row:any)=>[text(row.exam_id),text(row.exam_code)]))
   return rows.map(row => {
     const student = students.get(text(row.student_id)) || {}
     const exam = exams.get(text(row.exam_id)) || {}
     const unit = units.get(text(row.unit_id)) || {}
     const chapter = chapters.get(text(row.chapter_id)) || {}
     const subtopic = subtopics.get(text(row.subtopic_id)) || {}
-    return {...row,student_name: student.full_name || null,student_code: student.student_id || null,exam_title: exam.title || null,subject: unit.subject || exam.subject || null,exam_total_marks: exam.total_marks ?? null,unit_no: unit.unit_no ?? null,unit_title: unit.unit_title || null,chapter_title: chapter.topic_title || null,subtopic_title: subtopic.subtopic_title || null}
+    return {...row,student_name: student.full_name || null,student_code: student.student_id || null,exam_title: exam.title || null,exam_code: examCodes.get(text(row.exam_id)) || '',exam_date: exam.exam_date || null,subject: unit.subject || exam.subject || null,exam_total_marks: exam.total_marks ?? null,unit_no: unit.unit_no ?? null,unit_title: unit.unit_title || null,chapter_title: chapter.topic_title || null,subtopic_title: subtopic.subtopic_title || null}
   })
 }
 
@@ -45,8 +54,9 @@ function applyFilters(rows: any[], filters: any = {}) {
 }
 
 async function loadEligibleExams(admin:any, studentId:string) {
-  const { data: exams, error } = await admin.from('exams').select('id,title,subject,total_marks,negative_marking,audience_mode,is_published,result_published,created_at').eq('is_published',true).order('created_at',{ascending:true})
+  const { data: exams, error } = await admin.from('exams').select('id,title,subject,total_marks,negative_marking,audience_mode,is_published,result_published,exam_date,created_at').eq('is_published',true).order('created_at',{ascending:true})
   if (error) throw new Error(error.message)
+  const examCodes = await loadExamCodes(admin,(exams || []).map((e:any)=>text(e.id)))
   const selectedIds = (exams || []).filter((e:any)=>e.audience_mode === 'selected').map((e:any)=>e.id)
   let assigned = new Set<string>()
   if (selectedIds.length) {
@@ -54,7 +64,7 @@ async function loadEligibleExams(admin:any, studentId:string) {
     if (r.error) throw new Error(r.error.message)
     assigned = new Set((r.data || []).map((x:any)=>text(x.exam_id)))
   }
-  return (exams || []).filter((e:any)=>e.audience_mode !== 'selected' || assigned.has(text(e.id)))
+  return (exams || []).filter((e:any)=>e.audience_mode !== 'selected' || assigned.has(text(e.id))).map((e:any)=>({...e,exam_code:examCodes.get(text(e.id)) || ''}))
 }
 
 async function loadStudentFirstList(admin:any) {
