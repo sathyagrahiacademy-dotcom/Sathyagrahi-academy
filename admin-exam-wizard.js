@@ -8,7 +8,7 @@
   const TYPE_LABELS={daily:'DAILY TEST',weekly:'WEEKLY TEST',monthly:'MONTHLY TEST',grand:'GRAND TEST'};
   const SUBJECTS=['Physics','Chemistry','Biology'];
   const STEP_LABELS=['Basic Details','Coverage / Syllabus','Questions','Blueprint & Validation','Students / Audience','Publish / Result Release'];
-  const state={examId:null,examCode:'',step:1,bootstrap:null,basics:null,coverage:[],coverageLoaded:false,titleTouched:false,lastSuggestedTitle:''};
+  const state={examId:null,examCode:'',step:1,bootstrap:null,basics:null,coverage:[],coverageLoaded:false,blueprintValidation:null,titleTouched:false,lastSuggestedTitle:''};
 
   const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
   const indiaDate=()=>{
@@ -33,7 +33,7 @@
     const style=document.createElement('style');
     style.id='masterExamWizardStyles';
     style.textContent=`
-      #masterExamWizardModal{z-index:90}.master-wizard-card{width:min(1120px,97vw);max-height:94vh;overflow:auto;background:#fff;border-radius:14px;padding:0;box-shadow:0 24px 70px #04152f55}.mw-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;padding:20px 22px;border-bottom:1px solid #e3eaf3;background:linear-gradient(135deg,#f7fbff,#fffaf4)}.mw-head h3{margin:0;color:#06275f}.mw-head p{margin:5px 0 0;font-size:10px;color:#718096}.mw-close{border:1px solid #cbd7e6;background:#fff;border-radius:7px;padding:8px 11px;font-weight:900;color:#53637a;cursor:pointer}.mw-steps{display:grid;grid-template-columns:repeat(6,1fr);gap:0;border-bottom:1px solid #e3eaf3;background:#fbfcfe}.mw-step{padding:12px 8px;text-align:center;font-size:8px;font-weight:900;color:#7b8799;border:0;background:transparent}.mw-step span{display:block;width:22px;height:22px;line-height:22px;margin:0 auto 5px;border-radius:50%;background:#e9eef5;color:#53637a}.mw-step.active{color:#06275f;background:#f3f8ff}.mw-step.active span{background:#06275f;color:#fff}.mw-step.done span{background:#087443;color:#fff}.mw-body{padding:20px 22px}.mw-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.mw-field label{display:block;margin-bottom:5px;font-size:9px;font-weight:900;color:#43566f}.mw-field input,.mw-field select,.mw-field textarea{width:100%;box-sizing:border-box;padding:10px 11px;border:1px solid #cbd7e6;border-radius:7px;background:#fff;color:#17355d}.mw-field input[readonly]{background:#f5f8fc;color:#64748b}.mw-span2{grid-column:1/-1}.mw-score-strip{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px;background:#f8fbff;border:1px solid #dce7f3;border-radius:9px}.mw-score-strip div{background:#fff;border:1px solid #e5ebf3;border-radius:7px;padding:9px}.mw-score-strip small{display:block;font-size:8px;font-weight:900;color:#79869a}.mw-score-strip b{display:block;margin-top:3px;color:#06275f;font-size:12px}.mw-password-row{display:flex;gap:6px}.mw-password-row input{flex:1}.mw-mini{border:1px solid #b9c9dc;background:#fff;color:#07316d;border-radius:6px;padding:7px 9px;font-size:8px;font-weight:900;cursor:pointer;white-space:nowrap}.mw-note{font-size:9px;color:#7b8799;margin-top:5px;line-height:1.45}.mw-placeholder{border:1px dashed #b9c9dc;background:#f8fbff;border-radius:10px;padding:24px;text-align:center;color:#53637a}.mw-placeholder b{display:block;color:#06275f;margin-bottom:6px}.mw-msg{min-height:19px;margin-top:12px;color:#b42318;font-size:10px}.mw-msg.ok{color:#087443}.mw-actions{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid #e8edf4}.mw-actions-right{display:flex;gap:8px}.mw-btn{padding:9px 13px;border:1px solid #b8c8de;background:#fff;color:#07316d;border-radius:7px;font-size:9px;font-weight:900;cursor:pointer}.mw-btn.primary{background:#06275f!important;color:#fff!important;border-color:#06275f!important}.mw-btn:disabled{opacity:.5;cursor:not-allowed}.mw-coverage-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}.mw-coverage-head h4{margin:0;color:#06275f}.mw-coverage-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}.mw-summary-card{border:1px solid #dce5ef;border-radius:8px;padding:9px 10px;background:#f9fbfe}.mw-summary-card small{display:block;font-size:8px;font-weight:900;color:#7b8799}.mw-summary-card b{display:block;margin-top:3px;color:#06275f}.mw-coverage-table{overflow:auto;border:1px solid #dce5ef;border-radius:9px}.mw-coverage-row{display:grid;grid-template-columns:.8fr 1.15fr 1.3fr 1.25fr .65fr auto;gap:8px;align-items:end;padding:10px;border-top:1px solid #edf1f6;min-width:900px}.mw-coverage-row:first-child{border-top:0}.mw-coverage-row label{display:block;font-size:8px;font-weight:900;color:#63738a;margin-bottom:4px}.mw-coverage-row select,.mw-coverage-row input{width:100%;box-sizing:border-box;padding:8px;border:1px solid #cbd7e6;border-radius:6px;background:#fff;color:#17355d;font-size:9px}.mw-remove{border:1px solid #e8b4b4;background:#fff;color:#b42318;border-radius:6px;padding:8px 9px;font-size:8px;font-weight:900;cursor:pointer}.mw-coverage-alert{margin-top:9px;border-radius:7px;padding:9px 10px;font-size:9px;display:none}.mw-coverage-alert.show{display:block}.mw-coverage-alert.bad{background:#fff1f0;border:1px solid #ffc9c5;color:#a61b1b}.mw-coverage-alert.good{background:#edf9f2;border:1px solid #bfe4cf;color:#087443}.mw-question-methods{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.mw-question-method{border:1px solid #cbd7e6;background:#f8fbff;border-radius:10px;padding:16px;text-align:left;cursor:pointer;color:#07316d}.mw-question-method b{display:block;font-size:11px}.mw-question-method small{display:block;margin-top:5px;color:#718096;line-height:1.45}.mw-question-note{margin-top:12px;border:1px solid #dce7f3;background:#f8fbff;border-radius:9px;padding:11px;color:#53637a;font-size:9px;line-height:1.5}@media(max-width:900px){.mw-steps{grid-template-columns:repeat(3,1fr)}.mw-grid{grid-template-columns:1fr}.mw-span2,.mw-score-strip{grid-column:auto}.mw-score-strip,.mw-coverage-summary{grid-template-columns:1fr 1fr}.mw-question-methods{grid-template-columns:1fr}}`;
+      #masterExamWizardModal{z-index:90}.master-wizard-card{width:min(1120px,97vw);max-height:94vh;overflow:auto;background:#fff;border-radius:14px;padding:0;box-shadow:0 24px 70px #04152f55}.mw-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;padding:20px 22px;border-bottom:1px solid #e3eaf3;background:linear-gradient(135deg,#f7fbff,#fffaf4)}.mw-head h3{margin:0;color:#06275f}.mw-head p{margin:5px 0 0;font-size:10px;color:#718096}.mw-close{border:1px solid #cbd7e6;background:#fff;border-radius:7px;padding:8px 11px;font-weight:900;color:#53637a;cursor:pointer}.mw-steps{display:grid;grid-template-columns:repeat(6,1fr);gap:0;border-bottom:1px solid #e3eaf3;background:#fbfcfe}.mw-step{padding:12px 8px;text-align:center;font-size:8px;font-weight:900;color:#7b8799;border:0;background:transparent}.mw-step span{display:block;width:22px;height:22px;line-height:22px;margin:0 auto 5px;border-radius:50%;background:#e9eef5;color:#53637a}.mw-step.active{color:#06275f;background:#f3f8ff}.mw-step.active span{background:#06275f;color:#fff}.mw-step.done span{background:#087443;color:#fff}.mw-body{padding:20px 22px}.mw-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.mw-field label{display:block;margin-bottom:5px;font-size:9px;font-weight:900;color:#43566f}.mw-field input,.mw-field select,.mw-field textarea{width:100%;box-sizing:border-box;padding:10px 11px;border:1px solid #cbd7e6;border-radius:7px;background:#fff;color:#17355d}.mw-field input[readonly]{background:#f5f8fc;color:#64748b}.mw-span2{grid-column:1/-1}.mw-score-strip{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px;background:#f8fbff;border:1px solid #dce7f3;border-radius:9px}.mw-score-strip div{background:#fff;border:1px solid #e5ebf3;border-radius:7px;padding:9px}.mw-score-strip small{display:block;font-size:8px;font-weight:900;color:#79869a}.mw-score-strip b{display:block;margin-top:3px;color:#06275f;font-size:12px}.mw-password-row{display:flex;gap:6px}.mw-password-row input{flex:1}.mw-mini{border:1px solid #b9c9dc;background:#fff;color:#07316d;border-radius:6px;padding:7px 9px;font-size:8px;font-weight:900;cursor:pointer;white-space:nowrap}.mw-note{font-size:9px;color:#7b8799;margin-top:5px;line-height:1.45}.mw-placeholder{border:1px dashed #b9c9dc;background:#f8fbff;border-radius:10px;padding:24px;text-align:center;color:#53637a}.mw-placeholder b{display:block;color:#06275f;margin-bottom:6px}.mw-msg{min-height:19px;margin-top:12px;color:#b42318;font-size:10px}.mw-msg.ok{color:#087443}.mw-actions{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid #e8edf4}.mw-actions-right{display:flex;gap:8px}.mw-btn{padding:9px 13px;border:1px solid #b8c8de;background:#fff;color:#07316d;border-radius:7px;font-size:9px;font-weight:900;cursor:pointer}.mw-btn.primary{background:#06275f!important;color:#fff!important;border-color:#06275f!important}.mw-btn:disabled{opacity:.5;cursor:not-allowed}.mw-coverage-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}.mw-coverage-head h4{margin:0;color:#06275f}.mw-coverage-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}.mw-summary-card{border:1px solid #dce5ef;border-radius:8px;padding:9px 10px;background:#f9fbfe}.mw-summary-card small{display:block;font-size:8px;font-weight:900;color:#7b8799}.mw-summary-card b{display:block;margin-top:3px;color:#06275f}.mw-coverage-table{overflow:auto;border:1px solid #dce5ef;border-radius:9px}.mw-coverage-row{display:grid;grid-template-columns:.8fr 1.15fr 1.3fr 1.25fr .65fr auto;gap:8px;align-items:end;padding:10px;border-top:1px solid #edf1f6;min-width:900px}.mw-coverage-row:first-child{border-top:0}.mw-coverage-row label{display:block;font-size:8px;font-weight:900;color:#63738a;margin-bottom:4px}.mw-coverage-row select,.mw-coverage-row input{width:100%;box-sizing:border-box;padding:8px;border:1px solid #cbd7e6;border-radius:6px;background:#fff;color:#17355d;font-size:9px}.mw-remove{border:1px solid #e8b4b4;background:#fff;color:#b42318;border-radius:6px;padding:8px 9px;font-size:8px;font-weight:900;cursor:pointer}.mw-coverage-alert{margin-top:9px;border-radius:7px;padding:9px 10px;font-size:9px;display:none}.mw-coverage-alert.show{display:block}.mw-coverage-alert.bad{background:#fff1f0;border:1px solid #ffc9c5;color:#a61b1b}.mw-coverage-alert.good{background:#edf9f2;border:1px solid #bfe4cf;color:#087443}.mw-question-methods{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.mw-question-method{border:1px solid #cbd7e6;background:#f8fbff;border-radius:10px;padding:16px;text-align:left;cursor:pointer;color:#07316d}.mw-question-method b{display:block;font-size:11px}.mw-question-method small{display:block;margin-top:5px;color:#718096;line-height:1.45}.mw-question-note{margin-top:12px;border:1px solid #dce7f3;background:#f8fbff;border-radius:9px;padding:11px;color:#53637a;font-size:9px;line-height:1.5}.mw-blueprint-status{border-radius:12px;padding:16px 18px;border:1px solid #e2e8f0;background:#f8fafc}.mw-blueprint-status.ready{background:#edf9f2;border-color:#bfe4cf}.mw-blueprint-status.action{background:#fff7ed;border-color:#fed7aa}.mw-blueprint-status strong{display:block;font-size:18px;color:#06275f}.mw-blueprint-status span{display:block;margin-top:5px;font-size:10px;color:#667085}.mw-blueprint-metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:12px 0}.mw-blueprint-issue{display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid #f0d3b8;background:#fffaf4;border-radius:8px;padding:10px 12px;margin-top:8px}.mw-blueprint-issue b{display:block;color:#8a4b17;font-size:10px}.mw-blueprint-issue small{display:block;color:#667085;margin-top:3px}.mw-blueprint-approve{margin-top:14px;display:flex;justify-content:flex-end}@media(max-width:900px){.mw-steps{grid-template-columns:repeat(3,1fr)}.mw-grid{grid-template-columns:1fr}.mw-span2,.mw-score-strip{grid-column:auto}.mw-score-strip,.mw-coverage-summary{grid-template-columns:1fr 1fr}.mw-question-methods{grid-template-columns:1fr}.mw-blueprint-metrics{grid-template-columns:1fr 1fr 1fr}.mw-blueprint-issue{align-items:flex-start;flex-direction:column}}`;
     document.head.appendChild(style);
   }
 
@@ -279,10 +279,59 @@
     document.getElementById('mwManualQuestion')?.addEventListener('click',()=>openQuestionTool(`${questionSetup}#manualQuestionSection`));
   }
 
+  async function renderStep4(){
+    const host=document.getElementById('mwStepHost');if(!host||!state.examId)return;
+    const next=document.getElementById('mwNext');if(next)next.disabled=true;
+    host.innerHTML='<div class="mw-placeholder"><b>Blueprint & Validation</b>Running server-authoritative validation…</div>';
+    try{
+      const data=await callAdminExams({action:'master_blueprint_validation',examId:state.examId});
+      if(state.step!==4)return;
+      const validation=data.validation||{},summary=validation.summary||{},issues=Array.isArray(validation.issues)?validation.issues:[];
+      state.blueprintValidation=validation;
+      const ready=validation.status==='EXAM READY'&&validation.ok===true;
+      const statusText=ready?'EXAM READY':'ACTION REQUIRED';
+      host.innerHTML=`
+        <div id="mwBlueprintStatus" class="mw-blueprint-status ${ready?'ready':'action'}"><strong>${statusText}</strong><span>${ready?'Question count, marks, keys, syllabus mapping, subject plan and coverage checks are green.':'Resolve every issue below before Blueprint approval.'}${data.approvedAt?` • Previously approved: ${esc(new Date(data.approvedAt).toLocaleString())}`:''}</span></div>
+        <div class="mw-blueprint-metrics">
+          <div class="mw-summary-card"><small>EXPECTED Q</small><b>${esc(summary.expectedQuestions||0)}</b></div>
+          <div class="mw-summary-card"><small>ADDED Q</small><b>${esc(summary.totalQuestions||0)}</b></div>
+          <div class="mw-summary-card"><small>MAPPED</small><b>${esc(summary.mappedQuestions||0)}</b></div>
+          <div class="mw-summary-card"><small>ANSWER KEYS</small><b>${esc(summary.answerKeyCount||0)}</b></div>
+          <div class="mw-summary-card"><small>EXPECTED MARKS</small><b>${esc(summary.expectedMarks||0)}</b></div>
+          <div class="mw-summary-card"><small>QUESTION MARKS</small><b>${esc(summary.questionMarksTotal||0)}</b></div>
+        </div>
+        <div id="mwBlueprintIssues">${issues.length?issues.map(issue=>`<div class="mw-blueprint-issue"><div><b>${esc(issue.code||'ACTION REQUIRED')}</b><small>${esc(issue.message||'Resolve this validation issue.')}</small></div><button type="button" class="mw-mini" data-blueprint-target="${esc(issue.target||'QUESTIONS')}">GO TO ${esc(issue.target||'QUESTIONS')}</button></div>`).join(''):'<div class="mw-note" style="padding:10px 0">No unresolved Blueprint issues.</div>'}</div>
+        <div class="mw-blueprint-approve"><button type="button" id="mwApproveBlueprint" class="mw-btn primary" ${ready?'':'disabled'}>APPROVE BLUEPRINT & CONTINUE</button></div>`;
+      host.querySelectorAll('[data-blueprint-target]').forEach(btn=>btn.addEventListener('click',()=>setStep(btn.dataset.blueprintTarget==='COVERAGE'?2:3)));
+      document.getElementById('mwApproveBlueprint')?.addEventListener('click',approveStep4);
+      if(next)next.disabled=!ready;
+    }catch(error){
+      state.blueprintValidation=null;
+      host.innerHTML=`<div id="mwBlueprintStatus" class="mw-blueprint-status action"><strong>ACTION REQUIRED</strong><span>${esc(error?.message||'Could not validate Blueprint.')}</span></div><div id="mwBlueprintIssues"></div>`;
+      if(next)next.disabled=true;
+    }
+  }
+
+  async function approveStep4(){
+    if(!state.blueprintValidation?.ok){setMessage('Blueprint is not ready for approval.');return}
+    const buttons=[document.getElementById('mwNext'),document.getElementById('mwApproveBlueprint')].filter(Boolean);
+    buttons.forEach(btn=>btn.disabled=true);
+    setMessage('Approving Blueprint…');
+    try{
+      const data=await callAdminExams({action:'approve_master_blueprint',examId:state.examId});
+      if(data.status!=='EXAM READY')throw new Error('Blueprint approval did not reach EXAM READY status.');
+      setMessage('Blueprint approved. EXAM READY.',true);
+      setStep(5);
+    }catch(error){
+      setMessage(error?.message||'Could not approve Blueprint.');
+      await renderStep4();
+    }finally{buttons.forEach(btn=>btn.disabled=false)}
+  }
+
   function renderPlaceholder(){
     const host=document.getElementById('mwStepHost');if(!host)return;
     const label=STEP_LABELS[state.step-1];
-    const notes={4:'Pre-publish Blueprint validation and approval.',5:'All Active or Selected Student assignment.',6:'Final publish validation, portal notification and result release settings.'};
+    const notes={5:'All Active or Selected Student assignment.',6:'Final publish validation, portal notification and result release settings.'};
     host.innerHTML=`<div class="mw-placeholder"><b>${esc(label)}</b>${esc(notes[state.step]||'This setup step is being connected in Phase 2.')}</div>`;
   }
 
@@ -292,23 +341,25 @@
       const n=Number(btn.dataset.step);btn.classList.toggle('active',n===state.step);btn.classList.toggle('done',!!state.examId&&n<state.step);
     });
     const back=document.getElementById('mwBack');if(back)back.disabled=state.step===1;
-    const next=document.getElementById('mwNext');if(next)next.textContent=state.step===1?(state.examId?'SAVE CHANGES & CONTINUE':'CREATE DRAFT & CONTINUE'):state.step===2?'SAVE COVERAGE & CONTINUE':'CONTINUE';
+    const next=document.getElementById('mwNext');if(next){next.disabled=false;next.textContent=state.step===1?(state.examId?'SAVE CHANGES & CONTINUE':'CREATE DRAFT & CONTINUE'):state.step===2?'SAVE COVERAGE & CONTINUE':state.step===4?'APPROVE BLUEPRINT & CONTINUE':'CONTINUE';}
     setMessage('');
-    if(state.step===1)renderStep1();else if(state.step===2)renderStep2();else if(state.step===3)renderStep3();else renderPlaceholder();
+    if(state.step===1)renderStep1();else if(state.step===2)renderStep2();else if(state.step===3)renderStep3();else if(state.step===4)renderStep4();else renderPlaceholder();
   }
 
-  async function callWizard(payload){
+  async function callEndpoint(functionName,payload){
     const {data:{session}}=await c.auth.getSession();
     if(!session?.access_token)throw new Error('Admin session expired. Please sign in again.');
-    const res=await fetch(`${window.SGA_SUPABASE_URL}/functions/v1/admin-exam-wizard`,{
+    const res=await fetch(`${window.SGA_SUPABASE_URL}/functions/v1/${functionName}`,{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':`Bearer ${session.access_token}`,'apikey':window.SGA_SUPABASE_PUBLISHABLE_KEY},
       body:JSON.stringify(payload)
     });
     const data=await res.json().catch(()=>({}));
-    if(!res.ok)throw new Error(data.error||'Exam wizard request failed');
+    if(!res.ok){const error=new Error(data.error||'Exam request failed');error.validation=data.validation||null;throw error}
     return data;
   }
+  const callWizard=payload=>callEndpoint('admin-exam-wizard',payload);
+  const callAdminExams=payload=>callEndpoint('admin-exams',payload);
 
   function releaseValue(){
     if(document.getElementById('mwResultPublishMode')?.value!=='scheduled')return null;
@@ -343,6 +394,7 @@
       if(!state.examId){state.examId=data.examId;state.examCode=data.examCode}
       state.basics = payload;
       state.coverageLoaded=false;
+      state.blueprintValidation=null;
       setMessage(`Draft saved${state.examCode?` • ${state.examCode}`:''}`,true);
       setStep(2);
       window.dispatchEvent(new CustomEvent('sga:master-exam-draft-saved',{detail:{examId:state.examId,examCode:state.examCode}}));
@@ -365,6 +417,7 @@
     try{
       await callWizard({action:'replace_master_scope',examId:state.examId,items});
       state.coverageLoaded=true;
+      state.blueprintValidation=null;
       setMessage('Coverage saved.',true);
       setStep(3);
     }catch(error){setMessage(error?.message||'Could not save coverage')}
@@ -374,6 +427,7 @@
   async function onNext(){
     if(state.step===1){await saveStep1();return}
     if(state.step===2){await saveStep2();return}
+    if(state.step===4){await approveStep4();return}
     if(state.step<6)setStep(state.step+1);
   }
 
@@ -386,7 +440,7 @@
   }
 
   async function openWizard(){
-    state.examId=null;state.examCode='';state.step=1;state.basics=null;state.coverage=[];state.coverageLoaded=false;state.titleTouched=false;state.lastSuggestedTitle='';
+    state.examId=null;state.examCode='';state.step=1;state.basics=null;state.coverage=[];state.coverageLoaded=false;state.blueprintValidation=null;state.titleTouched=false;state.lastSuggestedTitle='';
     const modal=ensureModal();modal.classList.add('open');setStep(1);
     try{await loadBootstrap()}catch(error){setMessage(error?.message||'Could not load exam setup')}
   }
