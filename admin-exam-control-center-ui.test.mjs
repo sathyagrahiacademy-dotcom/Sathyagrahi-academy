@@ -5,10 +5,11 @@ import fs from 'node:fs'
 const nav=fs.readFileSync('admin-examinations-nav.js','utf8')
 const controller=fs.readFileSync('admin-exam-control-center.js','utf8')
 
-test('Exams page loads the new Control Center instead of legacy month-folder overlay',()=>{
+test('Exams page contains a gated Control Center path and stable legacy fallback',()=>{
+  assert.match(nav,/SGA_EXAMINATIONS_MASTER_PHASE1_ENABLED/)
   assert.match(nav,/exam-control-center-ui\.js/)
   assert.match(nav,/admin-exam-control-center\.js/)
-  assert.doesNotMatch(nav,/admin-exams-enhancements\.js/)
+  assert.match(nav,/admin-exams-enhancements\.js/)
 })
 
 test('Control Center requests authenticated server summary',()=>{
