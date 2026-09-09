@@ -3,6 +3,7 @@ import { corsHeaders } from 'jsr:@supabase/supabase-js@2/cors'
 import { MASTER_EXAM_TYPES } from '../_shared/exam-master-policy.mjs'
 import { normaliseWizardBasics, validateResultRelease } from '../admin-exams/wizard-policy.mjs'
 import { normaliseAudience } from '../admin-exams/audience-policy.mjs'
+import { validateExamPassword } from './password-policy.mjs'
 
 function json(body:Record<string,unknown>,status=200){
   return new Response(JSON.stringify(body),{status,headers:{...corsHeaders,'Content-Type':'application/json'}})
@@ -120,8 +121,8 @@ Deno.serve(async(req:Request)=>{
       const basic=normaliseWizardBasics(body)
       if(!basic.ok) return json({error:basic.error||'Invalid exam details'},400)
       const v=basic.value
-      const examPassword=String(body.examPassword||'')
-      if(examPassword.length<4||examPassword.length>64) return json({error:'Exam Password must be 4 to 64 characters'},400)
+      const passwordCheck=validateExamPassword(body.examPassword)
+      if(!passwordCheck.ok) return json({error:passwordCheck.error},400)
 
       const {data:exam,error:examError}=await admin.from('exams').insert({
         title:v.title,
@@ -151,7 +152,7 @@ Deno.serve(async(req:Request)=>{
       const codeRes=await admin.rpc('allocate_exam_code_v2',{p_exam_type:v.examType,p_batch_no:v.batchNo,p_exam_date:v.examDate})
       if(codeRes.error||!codeRes.data){await removePartialExam(admin,exam.id);return json({error:codeRes.error?.message||'Could not generate Exam Code'},400)}
       const examCode=String(codeRes.data)
-      const passwordHash=await hashPassword(examPassword)
+      const passwordHash=await hashPassword(passwordCheck.password)
       const {error:accessError}=await admin.from('exam_access').insert({exam_id:exam.id,exam_code:examCode,password_hash:passwordHash})
       if(accessError){await removePartialExam(admin,exam.id);return json({error:accessError.message||'Exam access setup failed'},400)}
       return json({ok:true,examId:exam.id,examCode,totalMarks:v.totalMarks})
@@ -185,8 +186,9 @@ Deno.serve(async(req:Request)=>{
 
       const examPassword=body.examPassword==null?'':String(body.examPassword)
       if(examPassword){
-        if(examPassword.length<4||examPassword.length>64) return json({error:'Exam Password must be 4 to 64 characters'},400)
-        const passwordHash=await hashPassword(examPassword)
+        const passwordCheck=validateExamPassword(examPassword)
+        if(!passwordCheck.ok) return json({error:passwordCheck.error},400)
+        const passwordHash=await hashPassword(passwordCheck.password)
         const {error:accessError}=await admin.from('exam_access').update({password_hash:passwordHash}).eq('exam_id',examId)
         if(accessError) return json({error:accessError.message},400)
       }
