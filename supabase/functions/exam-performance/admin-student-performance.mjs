@@ -41,7 +41,7 @@ export function buildSubjectAttempt({exam={},attempt={},questions=[],answerKeys=
   const maxMarks=subset.reduce((sum,q)=>sum+num(q.marks),0);
   const graded=gradeQuestions({questions:subset,answerKeys:keys,responses:rs,negativeMarking:Boolean(exam.negative_marking),totalMarks:maxMarks});
   return {
-    exam_id:text(exam.id),exam_title:exam.title||'',subject:String(subject),
+    exam_id:text(exam.id),exam_title:exam.title||'',exam_code:text(exam.exam_code),exam_date:exam.exam_date||null,subject:String(subject),
     attempt_id:text(attempt.id),attempt_no:num(attempt.attempt_no)||1,submitted_at:attempt.submitted_at||null,
     total_score:graded.summary.total_score,max_marks:maxMarks,percentage:graded.summary.percentage,
     correct_count:graded.summary.correct_count,wrong_count:graded.summary.wrong_count,unattempted_count:graded.summary.unattempted_count,
