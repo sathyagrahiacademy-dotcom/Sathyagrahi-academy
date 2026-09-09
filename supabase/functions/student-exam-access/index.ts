@@ -42,7 +42,7 @@ Deno.serve(async (req: Request) => {
     const action = String(body.action || 'verify')
 
     if(action==='list'){
-      const {data:exams,error}=await admin.from('exams').select('id,title,subject,syllabus,duration_minutes,total_marks,negative_marking,status,is_published,audience_mode,exam_type,exam_date,expected_questions,created_at').eq('is_published',true).neq('status','completed').order('created_at',{ascending:false})
+      const {data:exams,error}=await admin.from('exams').select('id,title,subject,syllabus,duration_minutes,total_marks,negative_marking,status,is_published,audience_mode,exam_type,exam_date,expected_questions,result_publish_mode,result_publish_at,created_at').eq('is_published',true).neq('status','completed').order('created_at',{ascending:false})
       if(error)return json({error:error.message},400)
       const examRows=exams||[]
       const examIds=examRows.map((e:any)=>e.id)
@@ -71,6 +71,7 @@ Deno.serve(async (req: Request) => {
           exam_type:exam.exam_type,exam_date:exam.exam_date,exam_code:codeByExam.get(String(exam.id))||'',expected_questions:exam.expected_questions,
           question_count:questionCountByExam.get(String(exam.id))||Number(exam.expected_questions)||0,
           duration_minutes:exam.duration_minutes,total_marks:exam.total_marks,negative_marking:exam.negative_marking,status:exam.status,created_at:exam.created_at,
+          result_publish_mode:exam.result_publish_mode||'manual',result_publish_at:exam.result_publish_at||null,
           availability:availability.can_start?'active':'completed',can_start:availability.can_start,
           attempt_count:availability.attempt_count,max_attempts:availability.max_attempts
         })
@@ -87,7 +88,7 @@ Deno.serve(async (req: Request) => {
     const incomingHash = await sha256(examPassword)
     if (incomingHash !== access.password_hash) return json({ error: 'Invalid Exam Code or Password' }, 401)
 
-    const { data: exam } = await admin.from('exams').select('id,title,subject,syllabus,duration_minutes,total_marks,negative_marking,instructions,status,is_published,audience_mode').eq('id', access.exam_id).maybeSingle()
+    const { data: exam } = await admin.from('exams').select('id,title,subject,syllabus,duration_minutes,total_marks,negative_marking,instructions,status,is_published,audience_mode,result_publish_mode,result_publish_at').eq('id', access.exam_id).maybeSingle()
     if (!exam || !exam.is_published || exam.status === 'completed') return json({ error: 'This exam is not currently available' }, 403)
     const assignment=await assignmentFor(admin,exam.id,user.id)
     if(!canAccessAudience(exam.audience_mode,assignment))return json({error:'This exam is not assigned to you'},403)
@@ -102,6 +103,7 @@ Deno.serve(async (req: Request) => {
       id: exam.id, title: exam.title, subject: exam.subject, syllabus: exam.syllabus,
       duration_minutes: exam.duration_minutes, total_marks: exam.total_marks,
       negative_marking: exam.negative_marking, instructions: exam.instructions,
+      result_publish_mode:exam.result_publish_mode||'manual',result_publish_at:exam.result_publish_at||null,
       question_count: questionCount, can_start: true, availability: 'active',
       attempt_count:availability.attempt_count,max_attempts:availability.max_attempts
     }})
