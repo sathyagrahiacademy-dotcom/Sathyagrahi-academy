@@ -4,7 +4,7 @@
 
 **Goal:** Deliver the five approved Examinations UX changes as one safe batch: six-digit numeric Exam Passwords, a stable Create Exam Wizard shell, lazy folder-style Question Bank navigation, Pending/Published Results organization, and compact syllabus-first Performance with E-series dialogs.
 
-**Architecture:** Preserve existing exam, grading, attempt, result, syllabus-mapping, question-snapshot, and communications semantics. Use focused browser utilities for pure presentation/grouping logic, add minimal protected Edge Function reads for scalable Question Bank browsing and Performance metadata, and keep all write paths on existing audited RPC/actions. No physical folder tables or existing-data rewrites are introduced.
+**Architecture:** Preserve existing exam, grading, attempt, result, syllabus-mapping, question-snapshot, and communications semantics. Use focused browser utilities for pure presentation/grouping logic, minimal protected Edge reads for scalable Question Bank browsing and safe Performance metadata, and existing audited RPC/actions for all writes. No physical folder tables or existing-data rewrites are introduced.
 
 **Tech Stack:** Static HTML/CSS/JavaScript, Node.js 22 test runner, Supabase/PostgreSQL, Supabase Edge Functions (Deno + `@supabase/supabase-js@2`), GitHub Actions, GitHub Pages.
 
@@ -21,11 +21,13 @@
 - Existing `add_bank_questions_to_exam` immutable snapshot behavior is preserved.
 - Results Pending contains unpublished result rows only.
 - Published Results grouping is derived from Exam Date month and exam type `DT / WT / MT / GT`; no physical folder records are created.
+- Each Published Results month renders all four type folders `DT`, `WT`, `MT`, `GT`; an empty type folder shows an empty state.
 - Partially published exams may appear in both Pending and Published Archive at different student-row level.
 - Performance E-numbering remains exact-scope-wise; Unit, Chapter, and Topic histories are independent and never guessed.
+- E-chip dialog scores/counts come from the exact scope-performance row; attempt number/status comes from the exact matching `attempt_id`.
 - No change to student exam timer/start/submit behavior, grading formulas, raw answer data, result publication meaning, Manual Exams, or communications routing.
 - No production migration, Edge deployment, PR merge, or live activation before exact-head tests are green and the user explicitly approves the merge/rollout.
-- Current production index audit already found `question_bank_syllabus_idx (subject, unit_id, chapter_id, subtopic_id, is_active)` and `question_bank_created_idx (created_at DESC)`; this batch does not add a database index migration.
+- Production index audit already found `question_bank_syllabus_idx (subject, unit_id, chapter_id, subtopic_id, is_active)` and `question_bank_created_idx (created_at DESC)`; this batch adds no database index migration.
 
 ---
 
@@ -33,33 +35,35 @@
 
 ### New focused files
 
-- `exam-password-utils.js` — browser-safe six-digit password generation and validation.
-- `supabase/functions/admin-exam-wizard/password-policy.mjs` — server-side exact six-digit password validator.
-- `exam-wizard-password.test.mjs` — client/server password contract.
+- `exam-password-utils.js` — browser six-digit password generation/validation.
+- `supabase/functions/admin-exam-wizard/password-policy.mjs` — server six-digit password validation.
+- `exam-wizard-password.test.mjs` — password contract.
 - `exam-wizard-shell.test.mjs` — stable Wizard geometry/scroll contract.
-- `supabase/functions/admin-question-bank/folder-policy.mjs` — allowed folder request/sort/pagination normalization and folder-summary builder.
+- `supabase/functions/admin-question-bank/folder-policy.mjs` — folder request/sort/paging normalization and summary builder.
 - `question-bank-folder-api.test.mjs` — protected lazy Question Bank API contract.
-- `question-bank-folder-ui.test.mjs` — subject/chapter/topic/questions UI contract.
-- `admin-results-archive-utils.js` — pure Pending partition and Published month/type/exam grouping.
-- `admin-results-archive.test.mjs` — Results grouping and UI contract.
-- `admin-performance-hierarchy.test.mjs` — compact hierarchy, E-chip, dialog contract.
+- `question-bank-folder-ui.test.mjs` — folder browser UI contract.
+- `admin-results-archive-utils.js` — Pending partition + Published month/type/exam grouping.
+- `admin-results-archive.test.mjs` — Results archive/UI contract.
+- `admin-performance-hierarchy.test.mjs` — hierarchy/E-chip/dialog contract.
+- `examinations-ux-consolidation-integration.test.mjs` — CI/scope integration contract.
 
 ### Existing files modified
 
-- `admin-exam-wizard.js` — use numeric password utility and stable fixed shell.
-- `admin-exam-wizard-release.js` — keep Step 5/6 content within the shared scroll host; no outer-size overrides.
-- `supabase/functions/admin-exam-wizard/index.ts` — use exact server password policy for create/update.
-- `admin-question-bank.html` — replace flat initial table/filter experience with folder browser + topic question panel.
-- `admin-question-bank.js` — folder-state controller and lazy API calls; preserve Add to Exam flow.
-- `supabase/functions/admin-question-bank/index.ts` — add `folder_summary` and `topic_questions`; keep legacy/write actions intact.
-- `admin-results.html` — Pending work queue + Published Results archive containers.
-- `admin-results.js` — partition/group current result rows and render archive drilldown while preserving actions.
-- `admin-performance.html` — compact hierarchy layout and E-detail dialog shell.
-- `admin-performance.js` — subject selector, hierarchy rendering, E-chip dialog, existing rebuild flow.
-- `exam-performance-ui-utils.js` — compact E-chip/dialog model helpers while preserving hierarchy helpers.
-- `supabase/functions/exam-performance/admin-student-performance.mjs` — carry exam metadata into subject history.
-- `supabase/functions/exam-performance/index.ts` — enrich scope rows with Exam Date and Exam Code from existing records.
-- `.github/workflows/examination-intelligence.yml` — include new focused contracts and parse changed Question Bank Edge Function.
+- `admin-examinations-nav.js` — load `exam-password-utils.js` before master Wizard.
+- `admin-exam-wizard.js` — numeric password utility + stable shell.
+- `admin-exam-wizard-release.js` — keep Steps 5/6 bounded inside shared scroll host.
+- `supabase/functions/admin-exam-wizard/index.ts` — exact server password policy.
+- `admin-question-bank.html` — folder browser + topic question panel.
+- `admin-question-bank.js` — folder-state/lazy API controller; existing Add to Exam write path retained.
+- `supabase/functions/admin-question-bank/index.ts` — `folder_summary` + `topic_questions`, existing actions retained.
+- `admin-results.html` — Pending work queue + Published Archive drilldown.
+- `admin-results.js` — partition/group rows, archive rendering, `?attempt=` result deep link.
+- `admin-performance.html` — compact hierarchy + E-detail dialog.
+- `admin-performance.js` — hierarchy rendering, E dialog, rebuild/full-result actions.
+- `exam-performance-ui-utils.js` — exact-scope chip/dialog helpers.
+- `supabase/functions/exam-performance/admin-student-performance.mjs` — safe exam metadata on subject history.
+- `supabase/functions/exam-performance/index.ts` — safe Exam Date/Exam Code enrichment.
+- `.github/workflows/examination-intelligence.yml` — focused contracts + changed Edge parse.
 
 ---
 
@@ -69,21 +73,18 @@
 - Create: `exam-password-utils.js`
 - Create: `supabase/functions/admin-exam-wizard/password-policy.mjs`
 - Create: `exam-wizard-password.test.mjs`
+- Modify: `admin-examinations-nav.js`
 - Modify: `admin-exam-wizard.js`
 - Modify: `supabase/functions/admin-exam-wizard/index.ts`
-- Verify unchanged behavior: `admin-exam-wizard-ui.test.mjs`, `admin-exam-wizard-basic-contract.test.mjs`, `student-exam-notice-integration.test.mjs`
 
 **Interfaces:**
-- Consumes: browser `crypto.getRandomValues()`, existing `hashPassword()` in `admin-exam-wizard/index.ts`.
-- Produces browser API `window.ExamPasswordUtils` and CommonJS export with:
-  - `isValidSixDigitPassword(value: unknown): boolean`
-  - `generateSixDigitPassword(cryptoLike = globalThis.crypto): string`
-- Produces server API:
-  - `validateExamPassword(value: unknown): {ok:true,password:string}|{ok:false,error:string}`
+- Browser API: `isValidSixDigitPassword(value): boolean`, `generateSixDigitPassword(cryptoLike=globalThis.crypto): string`.
+- Server API: `validateExamPassword(value): {ok:true,password:string}|{ok:false,error:string}`.
+- Existing `hashPassword()` remains the only persistence path.
 
 - [ ] **Step 1: Write the failing password contract**
 
-Create `exam-wizard-password.test.mjs` with focused assertions:
+Create `exam-wizard-password.test.mjs`:
 
 ```js
 import test from 'node:test';
@@ -91,11 +92,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import { validateExamPassword } from './supabase/functions/admin-exam-wizard/password-policy.mjs';
-
 const require=createRequire(import.meta.url);
 const client=require('./exam-password-utils.js');
 
-test('six digit password validation is exact and permits leading zero',()=>{
+test('password policy is exactly six digits and permits leading zero',()=>{
   for(const value of ['000001','482731','999999']){
     assert.equal(client.isValidSixDigitPassword(value),true);
     assert.deepEqual(validateExamPassword(value),{ok:true,password:value});
@@ -107,21 +107,20 @@ test('six digit password validation is exact and permits leading zero',()=>{
 });
 
 test('generator returns exactly six numeric characters',()=>{
-  const fake={getRandomValues(bytes){bytes.set([0,1,2,3,4,5]);return bytes;}};
+  const fake={getRandomValues(bytes){bytes[0]=123;return bytes;}};
   assert.match(client.generateSixDigitPassword(fake),/^\d{6}$/);
 });
 
-test('wizard and server both use the shared six digit policies',()=>{
+test('wizard and edge both use shared six digit policies',()=>{
   const wizard=fs.readFileSync('admin-exam-wizard.js','utf8');
   const edge=fs.readFileSync('supabase/functions/admin-exam-wizard/index.ts','utf8');
   assert.match(wizard,/ExamPasswordUtils/);
-  assert.match(wizard,/isValidSixDigitPassword/);
   assert.match(edge,/validateExamPassword/);
   assert.doesNotMatch(edge,/4 to 64 characters/);
 });
 ```
 
-- [ ] **Step 2: Run the focused test and confirm RED**
+- [ ] **Step 2: Verify RED**
 
 Run:
 
@@ -129,11 +128,11 @@ Run:
 node --test exam-wizard-password.test.mjs
 ```
 
-Expected: FAIL because `exam-password-utils.js` and `password-policy.mjs` do not exist yet.
+Expected: FAIL because the two policy files do not exist.
 
-- [ ] **Step 3: Implement the minimal client utility**
+- [ ] **Step 3: Implement browser utility**
 
-Create `exam-password-utils.js` as a small UMD module:
+Create `exam-password-utils.js`:
 
 ```js
 (function(root,factory){
@@ -153,7 +152,7 @@ Create `exam-password-utils.js` as a small UMD module:
 });
 ```
 
-- [ ] **Step 4: Implement the server policy**
+- [ ] **Step 4: Implement server policy**
 
 Create `supabase/functions/admin-exam-wizard/password-policy.mjs`:
 
@@ -165,7 +164,9 @@ export function validateExamPassword(value){
 }
 ```
 
-- [ ] **Step 5: Wire the Wizard to the client utility**
+- [ ] **Step 5: Load utility before Wizard and use it for generate/manual validation**
+
+In `admin-examinations-nav.js`, in the existing master-enabled loader sequence, load `exam-password-utils.js` immediately before `admin-exam-wizard.js`.
 
 In `admin-exam-wizard.js`:
 
@@ -174,21 +175,20 @@ const passwordUtils=window.ExamPasswordUtils;
 const randomPassword=()=>passwordUtils.generateSixDigitPassword();
 ```
 
-Before create/update submission, reject invalid manual values inline:
+Before create/update submission:
 
 ```js
 const examPassword=String(document.getElementById('mwPassword')?.value||'');
 if(!passwordUtils.isValidSixDigitPassword(examPassword)){
-  setMessage('Exam Password must be exactly 6 digits.');
+  const msg=document.getElementById('mwMsg');
+  if(msg){msg.classList.remove('ok');msg.textContent='Exam Password must be exactly 6 digits.';}
   return;
 }
 ```
 
-Ensure `exam-password-utils.js` is loaded before `admin-exam-wizard.js` from the master-enabled navigation loader.
+- [ ] **Step 6: Use server policy before hashing**
 
-- [ ] **Step 6: Wire the Edge Function to the server policy**
-
-In `supabase/functions/admin-exam-wizard/index.ts` import:
+In `supabase/functions/admin-exam-wizard/index.ts`:
 
 ```ts
 import { validateExamPassword } from './password-policy.mjs'
@@ -202,20 +202,20 @@ if(!passwordCheck.ok)return json({error:passwordCheck.error},400)
 const passwordHash=await hashPassword(passwordCheck.password)
 ```
 
-For password replacement in `update_master_basics`, apply the same policy before hashing.
+For password replacement in `update_master_basics`, run the same validator before `hashPassword()`.
 
-- [ ] **Step 7: Run password + existing Wizard/notification contracts**
+- [ ] **Step 7: Run password/Wizard/notification contracts**
 
 ```bash
-node --test exam-wizard-password.test.mjs admin-exam-wizard-ui.test.mjs admin-exam-wizard-basic-contract.test.mjs student-exam-notice-integration.test.mjs
+node --test exam-wizard-password.test.mjs admin-exam-wizard-ui.test.mjs admin-exam-wizard-basic-contract.test.mjs student-exam-notice-integration.test.mjs exam-master-publish-contract.test.mjs
 ```
 
-Expected: PASS, with notification tests still proving password is absent.
+Expected: PASS; notification contracts still prove password is not sent.
 
-- [ ] **Step 8: Commit Task 1**
+- [ ] **Step 8: Commit**
 
 ```bash
-git add exam-password-utils.js exam-wizard-password.test.mjs admin-exam-wizard.js supabase/functions/admin-exam-wizard/password-policy.mjs supabase/functions/admin-exam-wizard/index.ts admin-examinations-nav.js
+git add exam-password-utils.js exam-wizard-password.test.mjs admin-examinations-nav.js admin-exam-wizard.js supabase/functions/admin-exam-wizard/password-policy.mjs supabase/functions/admin-exam-wizard/index.ts
 git commit -m "fix: require six digit exam passwords"
 ```
 
@@ -228,18 +228,9 @@ git commit -m "fix: require six digit exam passwords"
 - Modify: `admin-exam-wizard.js`
 - Modify: `admin-exam-wizard-release.js`
 
-**Interfaces:**
-- Consumes: existing `#masterExamWizardModal`, `.master-wizard-card`, `#mwSteps`, `#mwStepHost`, `#mwMsg`, `#mwBack`, `#mwNext`.
-- Produces stable shell classes:
-  - `.master-wizard-card` = fixed viewport-based outer shell
-  - `.mw-head` and `.mw-steps` = non-scrolling
-  - `.mw-body` = flex column with `min-height:0`
-  - `.mw-step-scroll` = only vertical scrolling region containing `#mwStepHost` and message content
-  - `.mw-actions` = non-scrolling footer
+**Interfaces:** Existing IDs `#masterExamWizardModal`, `#mwSteps`, `#mwStepHost`, `#mwMsg`, `#mwBack`, `#mwNext` remain unchanged. New `.mw-step-scroll` is the only outer vertical-scroll region.
 
-- [ ] **Step 1: Write the failing shell contract**
-
-Create `exam-wizard-shell.test.mjs`:
+- [ ] **Step 1: Write failing shell contract**
 
 ```js
 import test from 'node:test';
@@ -248,54 +239,39 @@ import fs from 'node:fs';
 const js=fs.readFileSync('admin-exam-wizard.js','utf8');
 const release=fs.readFileSync('admin-exam-wizard-release.js','utf8');
 
-test('wizard outer shell is stable and only step content scrolls',()=>{
+test('outer Wizard has stable height and only step region scrolls',()=>{
   assert.match(js,/\.master-wizard-card\{[^}]*height:min\(760px,94vh\)/s);
   assert.match(js,/\.master-wizard-card\{[^}]*overflow:hidden/s);
-  assert.match(js,/\.mw-body\{[^}]*display:flex[^}]*flex-direction:column[^}]*min-height:0/s);
-  assert.match(js,/mw-step-scroll/);
+  assert.match(js,/\.mw-body\{[^}]*display:flex[^}]*min-height:0/s);
   assert.match(js,/\.mw-step-scroll\{[^}]*overflow-y:auto/s);
-  assert.match(js,/id="mwStepHost"/);
+  assert.match(js,/class="mw-step-scroll"/);
 });
 
-test('release steps do not override outer wizard height',()=>{
+test('release module does not resize the outer card',()=>{
   assert.doesNotMatch(release,/master-wizard-card[^\n]*(height|max-height|overflow)/);
 });
 ```
 
-- [ ] **Step 2: Run the shell contract and confirm RED**
+- [ ] **Step 2: Verify RED**
 
 ```bash
 node --test exam-wizard-shell.test.mjs
 ```
 
-Expected: FAIL because current `.master-wizard-card` uses `max-height:94vh;overflow:auto` and no `.mw-step-scroll` exists.
+Expected: FAIL because current outer card itself scrolls.
 
-- [ ] **Step 3: Implement stable desktop shell CSS**
-
-In `admin-exam-wizard.js` replace the outer scrolling rule with:
+- [ ] **Step 3: Implement stable shell CSS**
 
 ```css
-#masterExamWizardModal{z-index:90}
 .master-wizard-card{
-  width:min(1120px,97vw);
-  height:min(760px,94vh);
-  max-height:94vh;
-  overflow:hidden;
-  display:flex;
-  flex-direction:column;
-  background:#fff;
-  border-radius:14px;
-  box-shadow:0 24px 70px #04152f55;
+  width:min(1120px,97vw);height:min(760px,94vh);max-height:94vh;
+  overflow:hidden;display:flex;flex-direction:column;
+  background:#fff;border-radius:14px;box-shadow:0 24px 70px #04152f55;
 }
 .mw-head,.mw-steps{flex:0 0 auto}
 .mw-body{padding:0;display:flex;flex:1 1 auto;min-height:0;flex-direction:column}
 .mw-step-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;padding:20px 22px 0}
 .mw-actions{flex:0 0 auto;margin:0;padding:14px 22px 18px;border-top:1px solid #e8edf4;background:#fff}
-```
-
-For compact/mobile viewport:
-
-```css
 @media(max-height:720px),(max-width:700px){
   .master-wizard-card{height:94vh}
   .mw-step-scroll{padding:16px 14px 0}
@@ -303,9 +279,7 @@ For compact/mobile viewport:
 }
 ```
 
-- [ ] **Step 4: Change the modal DOM so only the step region scrolls**
-
-Render:
+- [ ] **Step 4: Move only step host/message into scroll region**
 
 ```html
 <div class="mw-body">
@@ -317,13 +291,13 @@ Render:
 </div>
 ```
 
-Do not move IDs or footer button semantics used by `admin-exam-wizard-release.js`.
+Keep footer IDs/actions unchanged for `admin-exam-wizard-release.js`.
 
 - [ ] **Step 5: Keep Step 5/6 internals bounded**
 
-In `admin-exam-wizard-release.js`, retain `.mw-audience-list{max-height:330px;overflow-y:auto}` and remove/no-op any outer-shell sizing rule. Step 5/6 render only inside `#mwStepHost`.
+Retain `.mw-audience-list{max-height:330px;overflow-y:auto}` and ensure release CSS never targets `.master-wizard-card` sizing.
 
-- [ ] **Step 6: Run focused and full Wizard contracts**
+- [ ] **Step 6: Run all Wizard contracts**
 
 ```bash
 node --test exam-wizard-shell.test.mjs admin-exam-wizard-ui.test.mjs exam-wizard-coverage.test.mjs exam-wizard-questions-integration.test.mjs exam-blueprint-approval.test.mjs exam-wizard-audience.test.mjs exam-master-publish-contract.test.mjs
@@ -331,7 +305,7 @@ node --test exam-wizard-shell.test.mjs admin-exam-wizard-ui.test.mjs exam-wizard
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit Task 2**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add exam-wizard-shell.test.mjs admin-exam-wizard.js admin-exam-wizard-release.js
@@ -346,106 +320,61 @@ git commit -m "fix: stabilize create exam wizard shell"
 - Create: `supabase/functions/admin-question-bank/folder-policy.mjs`
 - Create: `question-bank-folder-api.test.mjs`
 - Modify: `supabase/functions/admin-question-bank/index.ts`
-- Preserve: `QUESTION_BANK_AUTO_MAPPING_MIGRATION.sql`, existing RPC write paths
 
 **Interfaces:**
-- Consumes: canonical syllabus tables and active `question_bank_questions` rows; existing Admin auth guard.
-- Produces action `folder_summary` request `{action:'folder_summary'}` and response:
+- `folder_summary` request `{action:'folder_summary'}` returns `{ok:true,total,subjects}` with no question text.
+- Each subject contains canonical Chapter folders with Unit context and Topic folders/counts.
+- `topic_questions` request `{action:'topic_questions',subject,unitId,chapterId,subtopicId,sort,search,limit,offset}`.
+- Allowed sort values: `newest`, `oldest`, `difficulty`, `question_type`, `source`, `source_year`.
+- Response `{ok:true,questions,total,hasMore}`; each question includes `created_at`.
+- Existing `list`, `bulk_import`, `add_to_exam`, `sync_exam` remain intact.
 
-```ts
-{
-  ok:true,
-  total:number,
-  subjects:Array<{
-    subject:'Physics'|'Chemistry'|'Biology',
-    count:number,
-    chapters:Array<{
-      id:string|number,
-      title:string,
-      unitId:string|number,
-      unitTitle:string,
-      unitNo:number|null,
-      count:number,
-      topics:Array<{id:string|number,title:string,count:number}>
-    }>
-  }>
-}
-```
-
-- Produces action `topic_questions` request:
-
-```ts
-{
-  action:'topic_questions',
-  subject:string,
-  unitId:string|number,
-  chapterId:string|number,
-  subtopicId:string|number,
-  sort:'newest'|'oldest'|'difficulty'|'question_type'|'source'|'source_year',
-  search:string,
-  limit:number,
-  offset:number
-}
-```
-
-- Produces response `{ok:true,questions:Array<QuestionBankQuestion>,total:number,hasMore:boolean}` where each question includes `created_at`.
-- Legacy actions `list`, `bulk_import`, `add_to_exam`, `sync_exam` remain available for compatibility; new UI must use `folder_summary` + `topic_questions`.
-
-- [ ] **Step 1: Write the failing API contract**
-
-Create `question-bank-folder-api.test.mjs`:
+- [ ] **Step 1: Write failing API contract**
 
 ```js
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { normalizeTopicQuestionRequest, buildFolderSummary } from './supabase/functions/admin-question-bank/folder-policy.mjs';
+import { normalizeTopicQuestionRequest,buildFolderSummary } from './supabase/functions/admin-question-bank/folder-policy.mjs';
 
-test('topic question request accepts only approved sort and bounded paging',()=>{
-  assert.deepEqual(normalizeTopicQuestionRequest({subject:'Physics',unitId:1,chapterId:2,subtopicId:3,sort:'newest',limit:50,offset:0}),{
-    ok:true,value:{subject:'Physics',unitId:'1',chapterId:'2',subtopicId:'3',sort:'newest',search:'',limit:50,offset:0}
-  });
-  assert.equal(normalizeTopicQuestionRequest({subject:'Physics',unitId:1,chapterId:2,subtopicId:3,sort:'sql_injection'}).ok,false);
-  assert.equal(normalizeTopicQuestionRequest({subject:'Physics',unitId:1,chapterId:2,subtopicId:3,limit:1000}).ok,false);
+test('topic reads accept only canonical context, approved sort and bounded paging',()=>{
+  assert.equal(normalizeTopicQuestionRequest({subject:'Physics',unitId:1,chapterId:2,subtopicId:3,sort:'newest',limit:50,offset:0}).ok,true);
+  assert.equal(normalizeTopicQuestionRequest({subject:'Physics',unitId:1,chapterId:2,subtopicId:3,sort:'sql'}).ok,false);
+  assert.equal(normalizeTopicQuestionRequest({subject:'Physics',unitId:1,chapterId:2,subtopicId:3,limit:101}).ok,false);
 });
 
-test('folder summary carries counts but never question text',()=>{
-  const tree={units:[{id:1,subject:'Physics',unit_no:1,unit_title:'Physics and Measurement',sort_order:1}],chapters:[{id:11,unit_id:1,topic_title:'Units and Measurements',sort_order:1}],subtopics:[{id:101,chapter_id:11,subtopic_title:'SI Units',status:'approved',sort_order:1}]};
-  const rows=[{subject:'Physics',unit_id:1,chapter_id:11,subtopic_id:101},{subject:'Physics',unit_id:1,chapter_id:11,subtopic_id:101}];
-  const summary=buildFolderSummary(tree,rows);
+test('folder summary counts questions without exposing question text',()=>{
+  const tree={units:[{id:1,subject:'Physics',unit_no:1,unit_title:'Physics and Measurement',sort_order:1}],chapters:[{id:11,unit_id:1,topic_title:'Units',sort_order:1}],subtopics:[{id:101,chapter_id:11,subtopic_title:'SI Units',status:'approved',sort_order:1}]};
+  const summary=buildFolderSummary(tree,[{subject:'Physics',unit_id:1,chapter_id:11,subtopic_id:101},{subject:'Physics',unit_id:1,chapter_id:11,subtopic_id:101}]);
   assert.equal(summary.subjects[0].count,2);
   assert.equal(summary.subjects[0].chapters[0].topics[0].count,2);
   assert.equal(JSON.stringify(summary).includes('question_text'),false);
 });
 
-test('edge exposes folder summary and topic question reads while preserving write actions',()=>{
+test('edge keeps legacy/write actions and adds lazy reads',()=>{
   const edge=fs.readFileSync('supabase/functions/admin-question-bank/index.ts','utf8');
   for(const action of ['folder_summary','topic_questions','list','bulk_import','add_to_exam','sync_exam'])assert.match(edge,new RegExp(`action===['"]${action}['"]`));
   assert.match(edge,/add_bank_questions_to_exam/);
 });
 ```
 
-- [ ] **Step 2: Run the API contract and confirm RED**
+- [ ] **Step 2: Verify RED**
 
 ```bash
 node --test question-bank-folder-api.test.mjs
 ```
 
-Expected: FAIL because `folder-policy.mjs` and the two new actions do not exist.
+Expected: FAIL because policy/new actions are absent.
 
-- [ ] **Step 3: Implement request normalization and summary builder**
-
-Create `supabase/functions/admin-question-bank/folder-policy.mjs` with:
+- [ ] **Step 3: Implement request policy**
 
 ```js
 const SUBJECTS=['Physics','Chemistry','Biology'];
 const SORTS=new Set(['newest','oldest','difficulty','question_type','source','source_year']);
 const text=v=>String(v??'').trim();
-
 export function normalizeTopicQuestionRequest(input={}){
   const subject=text(input.subject),unitId=text(input.unitId),chapterId=text(input.chapterId),subtopicId=text(input.subtopicId);
-  const sort=text(input.sort||'newest');
-  const search=text(input.search).slice(0,160);
+  const sort=text(input.sort||'newest'),search=text(input.search).slice(0,160);
   const limit=Number(input.limit??50),offset=Number(input.offset??0);
   if(!SUBJECTS.includes(subject)||!unitId||!chapterId||!subtopicId)return{ok:false,error:'Complete syllabus folder context is required'};
   if(!SORTS.has(sort))return{ok:false,error:'Invalid question sort'};
@@ -454,36 +383,24 @@ export function normalizeTopicQuestionRequest(input={}){
 }
 ```
 
-Implement `buildFolderSummary(tree,rows)` to emit only the approved three subjects, canonical chapter/topic IDs/titles, Unit context, and counts. Exclude inactive/unapproved topics from navigable output.
+Implement `buildFolderSummary(tree,rows)` for the three approved subjects only, using canonical Unit/Chapter/Topic relationships; omit non-approved topics from navigable output.
 
-- [ ] **Step 4: Add `folder_summary` to the protected Edge Function**
+- [ ] **Step 4: Add metadata-only `folder_summary`**
 
-In `admin-question-bank/index.ts`, after Admin auth:
+Internally page active metadata in batches of 1000:
 
 ```ts
-if(action==='folder_summary'){
-  const tree=await loadTree(admin)
-  const pageSize=1000
-  let from=0, meta:any[]=[]
-  for(;;){
-    const r=await admin.from('question_bank_questions')
-      .select('subject,unit_id,chapter_id,subtopic_id')
-      .eq('is_active',true)
-      .range(from,from+pageSize-1)
-    if(r.error)return json({error:r.error.message},400)
-    meta.push(...(r.data||[]))
-    if((r.data||[]).length<pageSize)break
-    from+=pageSize
-  }
-  return json({ok:true,...buildFolderSummary(tree,meta)})
-}
+admin.from('question_bank_questions')
+  .select('subject,unit_id,chapter_id,subtopic_id')
+  .eq('is_active',true)
+  .range(from,from+999)
 ```
 
-This keeps full question text out of initial load.
+Pass metadata to `buildFolderSummary()` and return no `question_text`.
 
-- [ ] **Step 5: Add `topic_questions` with full canonical context verification**
+- [ ] **Step 5: Add canonical-context `topic_questions`**
 
-Validate that requested topic belongs to requested chapter/unit/subject using the canonical tree before querying. Query only active questions matching all four indexed hierarchy columns:
+Verify from the canonical tree that `subtopic -> chapter -> unit -> subject` exactly matches request context. Query active rows with all four hierarchy columns:
 
 ```ts
 let query=admin.from('question_bank_questions')
@@ -495,30 +412,29 @@ let query=admin.from('question_bank_questions')
   .eq('subtopic_id',v.subtopicId)
 ```
 
-Apply safe search with `.ilike('question_text',`%${v.search.replaceAll('%','\\%').replaceAll('_','\\_')}%`)` when search is non-empty.
+Map sort keys exactly:
 
-For `newest`/`oldest`, use `created_at`; for `source_year`, `source_label`, `question_type`, and `difficulty`, use the named safe column with deterministic `created_at DESC` tie-breaker. Page with `.range(v.offset,v.offset+v.limit-1)` and return `total` and `hasMore`.
-
-- [ ] **Step 6: Confirm existing database indexes are sufficient; do not add migration**
-
-The production read-only audit already returned:
-
-```text
-question_bank_syllabus_idx (subject, unit_id, chapter_id, subtopic_id, is_active)
-question_bank_created_idx (created_at DESC)
+```ts
+const sortColumn={newest:'created_at',oldest:'created_at',difficulty:'difficulty',question_type:'question_type',source:'source_label',source_year:'source_year'}[v.sort]
+const ascending=v.sort==='oldest'||['difficulty','question_type','source'].includes(v.sort)
+query=query.order(sortColumn,{ascending,nullsFirst:false}).order('created_at',{ascending:false})
 ```
 
-Keep the query constrained by the full canonical path so the existing syllabus index remains usable. No SQL file is added in this task.
+Apply escaped `question_text` search only inside selected topic, page with `.range(v.offset,v.offset+v.limit-1)`, return `hasMore=v.offset+(rows?.length||0)<Number(count||0)`.
 
-- [ ] **Step 7: Run focused and existing Question Bank contracts**
+- [ ] **Step 6: Keep existing indexes; add no migration**
+
+The read-only production audit already proved the full-path query has `question_bank_syllabus_idx`, and chronological sort has `question_bank_created_idx`. Do not create SQL in this task.
+
+- [ ] **Step 7: Run Question Bank contracts**
 
 ```bash
 node --test question-bank-folder-api.test.mjs question-bank-blueprint-contract.test.mjs question-bank-import-policy.test.mjs question-bank-import-ui.test.mjs
 ```
 
-Expected: PASS; existing snapshot/import/write safety remains green.
+Expected: PASS.
 
-- [ ] **Step 8: Commit Task 3**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add supabase/functions/admin-question-bank/folder-policy.mjs supabase/functions/admin-question-bank/index.ts question-bank-folder-api.test.mjs
@@ -533,17 +449,11 @@ git commit -m "feat: add lazy question bank folder API"
 - Create: `question-bank-folder-ui.test.mjs`
 - Modify: `admin-question-bank.html`
 - Modify: `admin-question-bank.js`
-- Verify: `question-bank-blueprint-contract.test.mjs`, `question-bank-import-ui.test.mjs`
+- Modify structural assertions in `question-bank-blueprint-contract.test.mjs` only where the old flat filter IDs are obsolete; retain protected API/import/snapshot assertions.
 
-**Interfaces:**
-- Consumes Task 3 `folder_summary` and `topic_questions` responses.
-- Keeps `?exam=<id>` target-exam preselection behavior.
-- Keeps `add_to_exam` request `{action:'add_to_exam',examId,bankIds}` unchanged.
-- Produces browser state `{level:'subjects'|'chapters'|'topics'|'questions',subject,chapter,topic,questions,sort,search,offset,total}`.
+**Interfaces:** Consumes Task 3 actions. Keeps `?exam=<id>` draft preselection and unchanged `add_to_exam` write request. Topic questions load in batches of 50 with `LOAD MORE`, not page-wide pagination.
 
-- [ ] **Step 1: Write the failing UI contract**
-
-Create `question-bank-folder-ui.test.mjs`:
+- [ ] **Step 1: Write failing UI contract**
 
 ```js
 import test from 'node:test';
@@ -552,25 +462,20 @@ import fs from 'node:fs';
 const html=fs.readFileSync('admin-question-bank.html','utf8');
 const js=fs.readFileSync('admin-question-bank.js','utf8');
 
-test('question bank opens to three subject folders with no initial question table',()=>{
-  for(const id of ['qbFolderHost','qbBreadcrumb','qbQuestionHost','qbSort','qbSearch'])assert.match(html,new RegExp(id));
+test('opening view is three subject folders and not a question table',()=>{
+  for(const id of ['qbFolderHost','qbBreadcrumb','qbQuestionHost','qbSort','qbSearch','qbLoadMore'])assert.match(html,new RegExp(id));
   assert.doesNotMatch(html,/id=["']rows["']/);
   assert.match(js,/folder_summary/);
   assert.doesNotMatch(js,/action:['"]list['"]/);
 });
 
-test('folder flow is subject chapter topic then questions',()=>{
-  for(const label of ['Physics','Chemistry','Biology'])assert.match(html,new RegExp(label));
+test('flow is subject then chapter then topic then questions',()=>{
   for(const token of ['renderSubjects','renderChapters','renderTopics','loadTopicQuestions'])assert.match(js,new RegExp(token));
   assert.match(js,/topic_questions/);
 });
 
-test('question view exposes added date time sort and add-to-exam selection',()=>{
-  assert.match(html,/Newest First/);
-  assert.match(html,/Oldest First/);
-  assert.match(html,/Difficulty/);
-  assert.match(html,/Question Type/);
-  assert.match(html,/Source Year/);
+test('question view has added date time and approved sorting',()=>{
+  for(const text of ['Newest First','Oldest First','Difficulty','Question Type','Source','Source Year'])assert.match(html,new RegExp(text));
   assert.match(js,/created_at/);
   assert.match(js,/toLocaleDateString/);
   assert.match(js,/toLocaleTimeString/);
@@ -578,52 +483,39 @@ test('question view exposes added date time sort and add-to-exam selection',()=>
 });
 ```
 
-- [ ] **Step 2: Run the UI contract and confirm RED**
+- [ ] **Step 2: Verify RED**
 
 ```bash
 node --test question-bank-folder-ui.test.mjs
 ```
 
-Expected: FAIL because current page is filter/table-first and calls `list`.
+Expected: FAIL against current flat list.
 
-- [ ] **Step 3: Replace flat table shell with folder hosts**
+- [ ] **Step 3: Replace flat table with folder browser shell**
 
-In `admin-question-bank.html`, keep the Examination shell, format guide, target exam modal, and summary counts. Replace the large filter/table panel with:
+Keep Examination shell, summary counts, format guide, and Add-to-Exam modal. Replace filters/table with:
 
 ```html
 <section class="panel qb-browser">
-  <div class="qb-browser-head">
-    <div id="qbBreadcrumb" class="qb-breadcrumb">Question Bank</div>
-    <button class="btn" id="qbBack" type="button" hidden>BACK</button>
-  </div>
-  <div id="qbFolderHost" class="qb-folder-grid">
-    <button class="qb-subject-folder" data-subject="Physics">...</button>
-    <button class="qb-subject-folder" data-subject="Chemistry">...</button>
-    <button class="qb-subject-folder" data-subject="Biology">...</button>
-  </div>
+  <div class="qb-browser-head"><div id="qbBreadcrumb">Question Bank</div><button id="qbBack" class="btn" hidden>BACK</button></div>
+  <div id="qbFolderHost" class="qb-folder-grid"></div>
   <div id="qbQuestionHost" hidden>
     <div class="qb-question-toolbar">
       <input id="qbSearch" placeholder="Search inside this topic">
       <select id="qbSort">
-        <option value="newest">Newest First</option>
-        <option value="oldest">Oldest First</option>
-        <option value="difficulty">Difficulty</option>
-        <option value="question_type">Question Type</option>
-        <option value="source">Source</option>
-        <option value="source_year">Source Year</option>
+        <option value="newest">Newest First</option><option value="oldest">Oldest First</option>
+        <option value="difficulty">Difficulty</option><option value="question_type">Question Type</option>
+        <option value="source">Source</option><option value="source_year">Source Year</option>
       </select>
     </div>
     <div id="qbQuestionList"></div>
-    <div class="actions"><button id="copySelected" class="btn primary">ADD SELECTED TO EXAM</button><span id="selectedCount"></span></div>
+    <button id="qbLoadMore" class="btn" type="button" hidden>LOAD MORE</button>
+    <div class="actions"><button class="btn primary" id="copySelected">ADD SELECTED TO EXAM</button><span id="selectedCount">0 selected</span></div>
   </div>
 </section>
 ```
 
-Use compact folder cards; show Unit title as subtitle on Chapter cards only.
-
-- [ ] **Step 4: Rewrite controller around folder state, not global question arrays**
-
-In `admin-question-bank.js`, initial load does:
+- [ ] **Step 4: Initial load uses summary only**
 
 ```js
 const [summary,er]=await Promise.all([
@@ -634,11 +526,11 @@ folderSummary=summary;
 renderSubjects();
 ```
 
-Do not keep `questions=bank.questions||[]` or call `list` from page startup.
+Do not store/fetch the bank's full question array.
 
-- [ ] **Step 5: Implement folder drilldown**
+- [ ] **Step 5: Implement drilldown controller**
 
-Create explicit functions:
+Create exact paths:
 
 ```js
 function renderSubjects(){...}
@@ -647,48 +539,41 @@ function renderTopics(chapter){...}
 async function loadTopicQuestions(topic,{reset=true}={}){...}
 ```
 
-`renderChapters` derives chapters only from selected subject. `renderTopics` derives topics only from selected chapter. Breadcrumb shows `Question Bank / Physics / Chapter / Topic`.
+Chapter cards show Chapter title plus small Unit title context; Topics show count. Breadcrumb is `Question Bank / Subject / Chapter / Topic`.
 
-- [ ] **Step 6: Render topic questions with Added Date/Time**
+- [ ] **Step 6: Load and render only selected-topic questions**
 
-For each question:
+On reset use `limit:50,offset:0`; on `LOAD MORE` use current loaded length as offset and append response. Render:
+- checkbox
+- question text
+- difficulty/type/source/year
+- `Added <date> • <time>` derived with `toLocaleDateString('en-IN')` and `toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})`
 
-```js
-const created=q.created_at?new Date(q.created_at):null;
-const date=created&&!Number.isNaN(created.getTime())?created.toLocaleDateString('en-IN'):'—';
-const time=created&&!Number.isNaN(created.getTime())?created.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}):'—';
-```
+Set `qbLoadMore.hidden=!response.hasMore`.
 
-Render checkbox, question, difficulty/type/source/year, and `Added ${date} • ${time}`. Selection is scoped to currently loaded questions and remains intact while sorting/searching the same topic.
+- [ ] **Step 7: Wire sort/search without losing folder context**
 
-- [ ] **Step 7: Wire sort/search to lazy reload**
+Sort change resets current-topic fetch. Debounce search ~250 ms and reset current-topic fetch. Selection Set persists for questions already selected in the current topic while sort/search changes.
 
-On sort change, call `loadTopicQuestions(currentTopic,{reset:true})`. Debounce search at approximately 250 ms and reload current topic only. Never fetch questions before a topic is selected.
+- [ ] **Step 8: Preserve Add to Exam and requested exam preselection**
 
-- [ ] **Step 8: Preserve Add to Exam and requested-exam preselection**
-
-Reuse current copy modal and final call exactly:
+Use unchanged write:
 
 ```js
 await invoke({action:'add_to_exam',examId,bankIds:[...selected]});
-```
-
-On success continue redirecting to:
-
-```js
 location.href='admin-exam-questions.html?exam='+encodeURIComponent(examId);
 ```
 
-- [ ] **Step 9: Run Question Bank UI + regression contracts**
+- [ ] **Step 9: Run UI/regression contracts**
 
 ```bash
 node --test question-bank-folder-ui.test.mjs question-bank-folder-api.test.mjs question-bank-blueprint-contract.test.mjs question-bank-import-ui.test.mjs exam-wizard-questions-integration.test.mjs
 node --check admin-question-bank.js
 ```
 
-Expected: PASS. If an old contract asserts obsolete flat-filter element IDs, update only that structural assertion while retaining protected API, source/year, import, and immutable-snapshot safety assertions.
+Expected: PASS.
 
-- [ ] **Step 10: Commit Task 4**
+- [ ] **Step 10: Commit**
 
 ```bash
 git add admin-question-bank.html admin-question-bank.js question-bank-folder-ui.test.mjs question-bank-blueprint-contract.test.mjs
@@ -706,16 +591,12 @@ git commit -m "feat: browse question bank by syllabus folders"
 - Modify: `admin-results.js`
 
 **Interfaces:**
-- Consumes existing `exam_results` rows enriched with nested exam fields `id,title,subject,total_marks,result_published,exam_type,exam_date`.
-- Produces utility API `window.AdminResultsArchiveUtils` and CommonJS export:
-  - `examTypeCode(type): 'DT'|'WT'|'MT'|'GT'|'OTHER'`
-  - `examMonthKey(examDate): {key:string,label:string}`
-  - `partitionResultRows(rows): {pending:any[],published:any[]}`
-  - `groupPublishedResults(rows): Array<{key,label,types:Array<{code,exams:Array<{examId,title,rows}>}>}>`
+- Query nested exam fields `id,title,subject,total_marks,result_published,exam_type,exam_date`.
+- Utility API: `examTypeCode`, `examMonthKey`, `partitionResultRows`, `groupPublishedResults`.
+- Every month bucket contains exactly four type buckets in order `DT,WT,MT,GT`, including zero-row buckets.
+- `admin-results.html?attempt=<attemptId>` opens existing question-wise detail after load; this is the Full Result destination used by Task 7.
 
-- [ ] **Step 1: Write the failing archive contract**
-
-Create `admin-results-archive.test.mjs`:
+- [ ] **Step 1: Write failing Results contract**
 
 ```js
 import test from 'node:test';
@@ -725,113 +606,104 @@ import { createRequire } from 'node:module';
 const require=createRequire(import.meta.url);
 const u=require('./admin-results-archive-utils.js');
 
-test('pending contains unpublished rows only and archive uses exam date month',()=>{
+test('pending has unpublished only and archive groups by Exam Date',()=>{
   const rows=[
     {attempt_id:'a1',is_published:false,exam_attempts:{exam_id:'e1',exams:{id:'e1',title:'WT 1',exam_type:'weekly',exam_date:'2026-09-08'}}},
     {attempt_id:'a2',is_published:true,exam_attempts:{exam_id:'e1',exams:{id:'e1',title:'WT 1',exam_type:'weekly',exam_date:'2026-09-08'}}},
     {attempt_id:'a3',is_published:true,exam_attempts:{exam_id:'e2',exams:{id:'e2',title:'GT 1',exam_type:'grand',exam_date:'2026-10-02'}}}
   ];
-  const p=u.partitionResultRows(rows);
-  assert.deepEqual(p.pending.map(x=>x.attempt_id),['a1']);
-  const archive=u.groupPublishedResults(p.published);
+  const parts=u.partitionResultRows(rows);
+  assert.deepEqual(parts.pending.map(x=>x.attempt_id),['a1']);
+  const archive=u.groupPublishedResults(parts.published);
   assert.equal(archive[0].key,'2026-10');
-  assert.equal(archive[1].key,'2026-09');
-  assert.equal(archive[1].types[0].code,'WT');
+  assert.deepEqual(archive[1].types.map(x=>x.code),['DT','WT','MT','GT']);
+  assert.equal(archive[1].types.find(x=>x.code==='WT').exams[0].rows[0].attempt_id,'a2');
 });
 
-test('all approved exam types map to archive sections',()=>{
-  assert.equal(u.examTypeCode('daily'),'DT');
-  assert.equal(u.examTypeCode('weekly'),'WT');
-  assert.equal(u.examTypeCode('monthly'),'MT');
-  assert.equal(u.examTypeCode('grand'),'GT');
+test('type mapping is DT WT MT GT',()=>{
+  assert.equal(u.examTypeCode('daily'),'DT');assert.equal(u.examTypeCode('weekly'),'WT');
+  assert.equal(u.examTypeCode('monthly'),'MT');assert.equal(u.examTypeCode('grand'),'GT');
 });
 
-test('results page has Pending and Published Results drilldown hosts',()=>{
-  const html=fs.readFileSync('admin-results.html','utf8');
-  const js=fs.readFileSync('admin-results.js','utf8');
+test('page has pending/archive hosts and attempt deep link support',()=>{
+  const html=fs.readFileSync('admin-results.html','utf8'),js=fs.readFileSync('admin-results.js','utf8');
   for(const id of ['pendingRows','publishedMonths','archiveExamRows'])assert.match(html,new RegExp(id));
-  assert.match(js,/partitionResultRows/);
-  assert.match(js,/groupPublishedResults/);
+  assert.match(js,/URLSearchParams/);assert.match(js,/get\(['"]attempt['"]\)/);
 });
 ```
 
-- [ ] **Step 2: Run the contract and confirm RED**
+- [ ] **Step 2: Verify RED**
 
 ```bash
 node --test admin-results-archive.test.mjs
 ```
 
-Expected: FAIL because helper and new archive hosts do not exist.
+Expected: FAIL because helper/new hosts do not exist.
 
-- [ ] **Step 3: Implement pure archive utility**
+- [ ] **Step 3: Implement pure grouping utility**
 
-Create UMD `admin-results-archive-utils.js`. Use Exam Date string directly for month key to avoid publication/submission timestamp ambiguity:
+`examMonthKey()` uses the `YYYY-MM-DD` Exam Date directly, not graded/submitted/published timestamps. `groupPublishedResults()` starts each month with:
 
 ```js
-function examMonthKey(examDate){
-  const raw=String(examDate||'');
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(raw))return{key:'unknown',label:'Unknown Date'};
-  const [year,month]=raw.split('-');
-  const d=new Date(`${year}-${month}-01T00:00:00+05:30`);
-  return{key:`${year}-${month}`,label:new Intl.DateTimeFormat('en-US',{month:'long',year:'numeric',timeZone:'Asia/Kolkata'}).format(d)};
-}
+const types=['DT','WT','MT','GT'].map(code=>({code,exams:[]}));
 ```
 
-Group only rows with `is_published===true`; sort months newest first and type order `DT,WT,MT,GT`.
+Then group published rows by type and exam. Sort months newest first, exams by Exam Date then title.
 
-- [ ] **Step 4: Change Results data query to include archive keys**
+- [ ] **Step 4: Extend Results query safely**
 
-In `admin-results.js`, extend nested exam select to include:
+Use nested select:
 
 ```text
 exams!inner(id,title,subject,total_marks,result_published,exam_type,exam_date)
 ```
 
-Keep all existing student/attempt/result fields.
+No grading/result mutation changes.
 
-- [ ] **Step 5: Replace flat all/published filter with two purposeful regions**
-
-In `admin-results.html` render:
+- [ ] **Step 5: Replace flat status filter with two regions**
 
 ```html
 <section class="panel results-pending">
-  <div class="head"><div><h3>TO BE PUBLISHED</h3><p class="muted">Only results that still need Admin publication.</p></div></div>
-  <input id="pendingSearch" ...>
-  <table>...<tbody id="pendingRows"></tbody></table>
+  <div class="head"><div><h3>TO BE PUBLISHED</h3><p class="muted">Only results still awaiting Admin publication.</p></div></div>
+  <input id="pendingSearch" placeholder="Search student, ID or exam">
+  <table><tbody id="pendingRows"></tbody></table>
 </section>
 <section class="panel results-archive">
   <div class="head"><div><h3>PUBLISHED RESULTS</h3><p class="muted">Month → DT / WT / MT / GT → Exam → Students</p></div></div>
-  <div id="publishedMonths"></div>
-  <div id="archiveExamRows"></div>
+  <div id="publishedMonths"></div><div id="archiveExamRows"></div>
 </section>
 ```
 
-Remove the old `all/published/unpublished` selector because it contradicts the approved work-queue/archive model.
+- [ ] **Step 6: Render Pending with Publish action only here**
 
-- [ ] **Step 6: Render Pending with Publish action only there**
+Use `partitionResultRows(data).pending`. Keep `VIEW`, `ANALYTICS`, `RE-EXAM`, `RESET`, `PUBLISH`. After `publish_result` succeeds, call `await load()` so the row automatically leaves Pending.
 
-`renderPending()` uses `partitionResultRows(data).pending`. Preserve `VIEW`, `ANALYTICS`, `RE-EXAM`, `RESET`, and `PUBLISH`; after successful publish call `await load()` so the row moves automatically to archive.
+- [ ] **Step 7: Render archive Month → Type → Exam → Students**
 
-- [ ] **Step 7: Render archive drilldown**
+Every selected month shows four type folders with counts. Clicking empty type shows `No published DT/WT/MT/GT results in this month.` Clicking a non-empty type shows exams; clicking exam shows published student rows with `VIEW`, `ANALYTICS`, `RE-EXAM`, `RESET` and no `PUBLISH`.
 
-Render month cards/rows first. Month click reveals four type sections only when that type has published rows. Type click reveals exams. Exam click renders published student rows with `VIEW`, `ANALYTICS`, `RE-EXAM`, `RESET`; do not render `PUBLISH` in archive.
+Partially published exams naturally appear in both regions at different row level.
 
-Partially published exams naturally have unpublished rows in Pending and published rows in archive because grouping occurs per result row.
+- [ ] **Step 8: Add exact attempt deep link and preserve shared actions**
 
-- [ ] **Step 8: Keep question detail panel/action handlers working from both contexts**
+At startup:
 
-Use one event delegation handler on a shared Results container or both pending/archive hosts, mapping the same `data-view`, `data-analytics`, `data-reexam`, and `data-reset` attributes to existing functions.
+```js
+const requestedAttempt=new URLSearchParams(location.search).get('attempt');
+```
 
-- [ ] **Step 9: Run Results contract and regression suite subset**
+After `load()` populates `data`, if `requestedAttempt` matches any row call existing `detail(requestedAttempt)`. Use shared event delegation for both Pending and Archive action buttons.
+
+- [ ] **Step 9: Run Results contracts**
 
 ```bash
 node --test admin-results-archive.test.mjs exam-grading-performance.test.mjs exam-master-publish-contract.test.mjs student-answer-review-intelligence.test.mjs
 node --check admin-results.js
 ```
 
-Expected: PASS; publishing semantics and grading remain untouched.
+Expected: PASS.
 
-- [ ] **Step 10: Commit Task 5**
+- [ ] **Step 10: Commit**
 
 ```bash
 git add admin-results-archive-utils.js admin-results-archive.test.mjs admin-results.html admin-results.js
@@ -846,81 +718,68 @@ git commit -m "feat: organize pending and published exam results"
 - Modify: `supabase/functions/exam-performance/admin-student-performance.mjs`
 - Modify: `supabase/functions/exam-performance/index.ts`
 - Modify: `exam-admin-student-performance.test.mjs`
-- Modify: `exam-performance-contract.test.mjs` only if contract needs the newly exposed safe fields
+- Modify: `exam-performance-contract.test.mjs` only to assert safe metadata exposure/no password hash.
 
-**Interfaces:**
-- Consumes existing `exam_access.exam_code`, `exams.exam_date`, existing subject-attempt grading summary, existing `exam_scope_performance_sequenced` rows.
-- Produces each subject-history row with safe metadata:
-  - `exam_code:string`
-  - `exam_date:string|null`
-- Produces each enriched scope row with:
-  - `exam_code:string|null`
-  - `exam_date:string|null`
-- No password hash or answer-key data is exposed.
+**Interfaces:** Subject history and scope rows gain safe `exam_code` and `exam_date`; no `password_hash` or answer-key data is exposed.
 
-- [ ] **Step 1: Extend the failing performance model test**
+- [ ] **Step 1: Extend failing model/source contract**
 
-In `exam-admin-student-performance.test.mjs`, change the fixture exam to include safe metadata and assert it survives `buildSubjectAttempt`:
+In `exam-admin-student-performance.test.mjs` fixture:
 
 ```js
 const exam={id:'e1',title:'Mixed 01',subject:'Mixed',negative_marking:true,exam_code:'SGA-DT-010809',exam_date:'2026-09-08'};
-...
+```
+
+Assert:
+
+```js
 assert.equal(p.exam_code,'SGA-DT-010809');
 assert.equal(p.exam_date,'2026-09-08');
 ```
 
-Add a source contract asserting `exam-performance/index.ts` queries `exam_access` for `exam_code` and `exams` for `exam_date`, while never selecting `password_hash`.
+In `exam-performance-contract.test.mjs`, assert `index.ts` selects `exam_date` and `exam_access`/`exam_code`, and does not select `password_hash`.
 
-- [ ] **Step 2: Run the focused model test and confirm RED**
+- [ ] **Step 2: Verify RED**
 
 ```bash
 node --test exam-admin-student-performance.test.mjs exam-performance-contract.test.mjs
 ```
 
-Expected: FAIL because the safe metadata is not currently carried through.
+Expected: FAIL because metadata is not carried through.
 
-- [ ] **Step 3: Carry Exam Date and Code into subject attempts**
-
-In `buildSubjectAttempt()` return:
+- [ ] **Step 3: Carry metadata in subject attempt**
 
 ```js
-exam_id:text(exam.id),
-exam_title:exam.title||'',
-exam_code:exam.exam_code||'',
-exam_date:exam.exam_date||null,
-subject:String(subject),
+return{
+  exam_id:text(exam.id),exam_title:exam.title||'',exam_code:exam.exam_code||'',exam_date:exam.exam_date||null,subject:String(subject),
+  ...
+};
 ```
 
-- [ ] **Step 4: Load safe exam metadata in `loadEligibleExams`**
+- [ ] **Step 4: Attach access code to eligible exams**
 
-Extend the `exams` select with `exam_date`. Load access codes separately by eligible exam IDs:
+Add `exam_date` to existing `exams` select in `loadEligibleExams()`. After audience filtering, load:
 
 ```ts
-const access=await admin.from('exam_access').select('exam_id,exam_code').in('exam_id',examIds)
+const ids=eligible.map((e:any)=>e.id)
+const access=ids.length?await admin.from('exam_access').select('exam_id,exam_code').in('exam_id',ids):{data:[],error:null}
 ```
 
-Join `exam_code` into `eligibleWithSubjects`. Never select `password_hash`.
+Map each returned exam to `{...exam,exam_code:codeByExam.get(text(exam.id))||''}`. Never select `password_hash`.
 
 - [ ] **Step 5: Enrich scope rows with the same safe metadata**
 
-In `enrichRows()`:
+In `enrichRows()`, add `exam_date` to `exams` select and load `exam_access(exam_id,exam_code)` as a separate Promise. Add `exam_date` and `exam_code` to returned scope rows.
 
-```ts
-examIds.length ? admin.from('exams').select('id,title,subject,total_marks,exam_date').in('id',examIds) : ...
-examIds.length ? admin.from('exam_access').select('exam_id,exam_code').in('exam_id',examIds) : ...
-```
-
-Return `exam_date` and `exam_code` on each scope row. Match access records by `exam_id`.
-
-- [ ] **Step 6: Run performance model/intelligence contracts**
+- [ ] **Step 6: Run complete Performance backend contracts**
 
 ```bash
 node --test exam-admin-student-performance.test.mjs exam-performance-contract.test.mjs performance-intelligence-policy.test.mjs performance-intelligence-integration.test.mjs exam-performance-visibility.test.mjs
 ```
 
-Expected: PASS; score calculations remain unchanged.
+Expected: PASS; score calculations are unchanged.
 
-- [ ] **Step 7: Commit Task 6**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add supabase/functions/exam-performance/admin-student-performance.mjs supabase/functions/exam-performance/index.ts exam-admin-student-performance.test.mjs exam-performance-contract.test.mjs
@@ -929,7 +788,7 @@ git commit -m "feat: expose safe performance exam metadata"
 
 ---
 
-### Task 7: Compact Performance Hierarchy and E-Chip Dialog
+### Task 7: Compact Performance Hierarchy and Exact-Scope E Dialog
 
 **Files:**
 - Create: `admin-performance-hierarchy.test.mjs`
@@ -940,29 +799,11 @@ git commit -m "feat: expose safe performance exam metadata"
 - Modify: `admin-performance.js`
 
 **Interfaces:**
-- Consumes Task 6 subject-history and scope-row metadata.
-- Extends `ExamPerformanceUIUtils` with:
-  - `eChipLabel(row): string` returning only `E1`, `E2`, ...
-  - `findAttemptForScope(scopeRow, subjectHistory): object|null` matching `exam_id` and nearest/appropriate attempt history row
-  - `performanceDialogModel(scopeRow, attemptRow): object`
-- `performanceDialogModel` output:
+- `eChipLabel(scopeRow) -> 'E1'|'E2'...`.
+- `findAttemptForScope(scopeRow,subjectHistory)` first matches exact `attempt_id`; only falls back to same `exam_id` when older legacy scope rows have no `attempt_id`.
+- `performanceDialogModel(scopeRow,attemptRow)` uses exact scope row for question count/marks/percentage/correct/wrong/unattempted and exact attempt row for attempt label/result publication/full-result ID.
 
-```js
-{
-  examId,examTitle,examCode,examDate,attemptLabel,
-  questionCount,score,maxMarks,percentage,
-  correctCount,wrongCount,unattemptedCount,
-  resultStatus,
-  scopeLabel,
-  scopeLevel,
-  canOpenFullResult,
-  canRebuild
-}
-```
-
-- [ ] **Step 1: Write failing helper/UI contracts**
-
-Create `admin-performance-hierarchy.test.mjs`:
+- [ ] **Step 1: Write failing helper/UI contract**
 
 ```js
 import test from 'node:test';
@@ -972,46 +813,43 @@ import { createRequire } from 'node:module';
 const require=createRequire(import.meta.url);
 const u=require('./exam-performance-ui-utils.js');
 
-test('E chip is compact and dialog model contains approved details',()=>{
-  const scope={exam_id:'e1',exam_sequence:2,exam_title:'DT 02',exam_code:'SGA-DT-010909',exam_date:'2026-09-09',scope_level:'topic',subtopic_title:'Significant Figures',question_count:5,earned_marks:16,max_marks:20,percentage:80,resultPublished:true};
-  const attempt={exam_id:'e1',attempt_id:'a1',attempt_no:1,question_count:12,total_score:38,max_marks:48,percentage:79.17,correct_count:10,wrong_count:2,unattempted_count:0,resultPublished:true};
+test('E dialog uses exact scope metrics and exact attempt',()=>{
+  const scope={attempt_id:'a2',exam_id:'e1',exam_sequence:2,exam_title:'DT 02',exam_code:'SGA-DT-010909',exam_date:'2026-09-09',scope_level:'topic',subtopic_title:'Significant Figures',question_count:5,earned_marks:16,max_marks:20,percentage:80,correct_count:4,wrong_count:1,unattempted_count:0};
+  const history=[{attempt_id:'a1',exam_id:'e1',attempt_no:1,resultPublished:true},{attempt_id:'a2',exam_id:'e1',attempt_no:2,resultPublished:true}];
   assert.equal(u.eChipLabel(scope),'E2');
+  const attempt=u.findAttemptForScope(scope,history);
+  assert.equal(attempt.attempt_id,'a2');
   const model=u.performanceDialogModel(scope,attempt);
-  assert.equal(model.examCode,'SGA-DT-010909');
-  assert.equal(model.examDate,'2026-09-09');
-  assert.equal(model.scopeLabel,'Significant Figures');
-  assert.equal(model.correctCount,10);
+  assert.equal(model.questionCount,5);assert.equal(model.score,16);assert.equal(model.maxMarks,20);assert.equal(model.correctCount,4);
+  assert.equal(model.examCode,'SGA-DT-010909');assert.equal(model.scopeLabel,'Significant Figures');assert.equal(model.attemptLabel,'Attempt 2');
 });
 
-test('admin performance page is hierarchy first and includes one dialog shell',()=>{
-  const html=fs.readFileSync('admin-performance.html','utf8');
-  const js=fs.readFileSync('admin-performance.js','utf8');
+test('performance page is hierarchy first with one E dialog shell',()=>{
+  const html=fs.readFileSync('admin-performance.html','utf8'),js=fs.readFileSync('admin-performance.js','utf8');
   for(const id of ['performanceSubjectTabs','performanceHierarchy','performanceDialog','performanceDialogBody'])assert.match(html,new RegExp(id));
-  assert.doesNotMatch(js,/function subjectCards\(/);
-  assert.doesNotMatch(js,/function renderAttempts\(/);
-  assert.match(js,/eChipLabel/);
-  assert.match(js,/performanceDialogModel/);
+  assert.doesNotMatch(js,/function subjectCards\(/);assert.doesNotMatch(js,/function renderAttempts\(/);
+  assert.match(js,/eChipLabel/);assert.match(js,/performanceDialogModel/);
 });
 ```
 
-- [ ] **Step 2: Run the contract and confirm RED**
+- [ ] **Step 2: Verify RED**
 
 ```bash
 node --test admin-performance-hierarchy.test.mjs exam-performance-ui-utils.test.mjs admin-exam-performance-ui-contract.test.mjs
 ```
 
-Expected: FAIL because compact-chip/dialog helpers and new shell do not exist.
+Expected: FAIL because helpers/new shell do not exist.
 
-- [ ] **Step 3: Add pure compact-chip/dialog helpers**
-
-In `exam-performance-ui-utils.js`:
+- [ ] **Step 3: Implement exact helper functions**
 
 ```js
 function eChipLabel(row={}){return `E${num(row.exam_sequence)||1}`;}
 function findAttemptForScope(scopeRow={},history=[]){
-  const candidates=(history||[]).filter(x=>id(x.exam_id)===id(scopeRow.exam_id));
-  if(!candidates.length)return null;
-  return candidates.slice().sort((a,b)=>new Date(b.submitted_at||0)-new Date(a.submitted_at||0)||num(b.attempt_no)-num(a.attempt_no))[0];
+  const exact=(history||[]).find(x=>id(x.attempt_id)===id(scopeRow.attempt_id));
+  if(exact)return exact;
+  if(scopeRow.attempt_id)return null;
+  const same=(history||[]).filter(x=>id(x.exam_id)===id(scopeRow.exam_id));
+  return same.slice().sort((a,b)=>new Date(b.submitted_at||0)-new Date(a.submitted_at||0)||num(b.attempt_no)-num(a.attempt_no))[0]||null;
 }
 function performanceDialogModel(scopeRow={},attemptRow={}){
   const scopeLabel=scopeRow.scope_level==='unit'?(scopeRow.unit_title||'Unit'):
@@ -1019,65 +857,68 @@ function performanceDialogModel(scopeRow={},attemptRow={}){
   return{
     examId:id(scopeRow.exam_id),examTitle:scopeRow.exam_title||attemptRow.exam_title||'Exam',examCode:scopeRow.exam_code||attemptRow.exam_code||'',examDate:scopeRow.exam_date||attemptRow.exam_date||null,
     attemptLabel:`Attempt ${num(attemptRow.attempt_no)||1}`,
-    questionCount:num(attemptRow.question_count||scopeRow.question_count),score:num(attemptRow.total_score),maxMarks:num(attemptRow.max_marks),percentage:Number(attemptRow.percentage||0),
-    correctCount:num(attemptRow.correct_count),wrongCount:num(attemptRow.wrong_count),unattemptedCount:num(attemptRow.unattempted_count),
+    questionCount:num(scopeRow.question_count),score:num(scopeRow.earned_marks),maxMarks:num(scopeRow.max_marks),percentage:Number(scopeRow.percentage||0),
+    correctCount:num(scopeRow.correct_count),wrongCount:num(scopeRow.wrong_count),unattemptedCount:num(scopeRow.unattempted_count),
     resultStatus:attemptRow.resultPublished?'PUBLISHED':'ADMIN ONLY',scopeLabel,scopeLevel:scopeRow.scope_level||'',
-    canOpenFullResult:Boolean(attemptRow.attempt_id),canRebuild:Boolean(scopeRow.exam_id),attemptId:id(attemptRow.attempt_id)
+    attemptId:id(attemptRow.attempt_id),canOpenFullResult:Boolean(attemptRow.attempt_id),canRebuild:Boolean(scopeRow.exam_id)
   };
 }
 ```
 
-Export all three while preserving current hierarchy functions.
+Preserve/export existing hierarchy/filter helpers.
 
-- [ ] **Step 4: Simplify Performance HTML to Learning-Progress-style structure**
+- [ ] **Step 4: Simplify HTML to subject tabs + hierarchy + one dialog**
 
-Keep left Student list. In right detail area render subject tabs and hierarchy host rather than large metric cards/table. Add one modal outside the detail host:
+Keep the left Student list. Right detail becomes compact Subject tabs and hierarchy. Add:
 
 ```html
 <div class="performance-dialog" id="performanceDialog" aria-hidden="true">
   <div class="performance-dialog-card">
     <div class="dialog-head"><h3 id="performanceDialogTitle">Exam Details</h3><button id="closePerformanceDialog">×</button></div>
-    <div id="performanceDialogBody"></div>
-    <div id="performanceDialogActions"></div>
+    <div id="performanceDialogBody"></div><div id="performanceDialogActions"></div>
   </div>
 </div>
 ```
 
-Use compact Unit cards with expandable Chapters and Topics, matching Learning Progress visual density rather than the old summary dashboard.
+Use Learning Progress-like dense Unit cards, expandable Chapters, then Topic rows.
 
-- [ ] **Step 5: Replace large subject cards/table controller paths**
+- [ ] **Step 5: Replace old large subject cards/table paths**
 
-In `admin-performance.js`, keep student loading and `admin_student_detail`. Replace `subjectCards()`/`renderAttempts()` with:
+Create:
 
 ```js
 function renderSubjectTabs(){...}
 function renderHierarchy(){...}
-function chip(scopeRow){return `<button class="e-chip" data-scope-exam="${esc(scopeRow.exam_id)}" data-scope-seq="${Number(scopeRow.exam_sequence||1)}">${esc(u.eChipLabel(scopeRow))}</button>`;}
+function chip(scopeRow){return `<button class="e-chip" data-attempt="${esc(scopeRow.attempt_id||'')}" data-scope="${esc(u.scopeKey(scopeRow))}" data-seq="${Number(scopeRow.exam_sequence||1)}">${esc(u.eChipLabel(scopeRow))}</button>`;}
 function openPerformanceDialog(scopeRow){...}
 ```
 
-`renderHierarchy()` uses `u.subjectScopeHierarchy(detail.scopeRows,selectedSubject)` and shows chips next to Unit/Chapter/Topic rows only where history exists.
+`renderHierarchy()` uses `u.subjectScopeHierarchy(detail.scopeRows,selectedSubject)` and shows E chips only where exact mapped history exists.
 
-- [ ] **Step 6: Build the dialog from scope row + matching subject history**
+- [ ] **Step 6: Open dialog using exact scope row + exact attempt row**
 
-On E-chip click identify the exact scope row by `exam_id + exam_sequence + scope key`, find the matching attempt via `u.findAttemptForScope(scopeRow,detail.subjectHistory[selectedSubject])`, then render `u.performanceDialogModel()`.
+Resolve clicked row by `scopeKey + exam_sequence + attempt_id`. Then:
 
-Display exactly: exam name/code/date, attempt, questions, score/max, percentage, correct/wrong/unattempted, result status, exact scope. Keep values inside the dialog rather than repeated across the hierarchy.
+```js
+const attempt=u.findAttemptForScope(scopeRow,detail.subjectHistory?.[selectedSubject]||[]);
+const model=u.performanceDialogModel(scopeRow,attempt||{});
+```
+
+Render exam name/code/date, attempt, exact-scope questions/score/max/percentage/correct/wrong/unattempted, status, and exact scope label.
 
 - [ ] **Step 7: Preserve Full Result and Rebuild actions**
 
-If `model.canOpenFullResult`, render a button that routes to the existing result/detail destination using `attemptId` without changing result data. Keep `REBUILD PERFORMANCE` bound to current protected `rebuild_exam` action and refresh `admin_student_detail` after success.
+If `model.canOpenFullResult`, route:
 
-Legacy/unmapped exams remain in a compact notice; do not synthesize E chips.
+```js
+location.href='admin-results.html?attempt='+encodeURIComponent(model.attemptId);
+```
 
-- [ ] **Step 8: Update existing performance UI contract without weakening protected-data assertions**
+If `model.canRebuild`, call existing protected `{action:'rebuild_exam',examId:model.examId}`, reload `admin_student_detail`, and rerender hierarchy. Legacy/unmapped exams remain explicitly labeled with no guessed E chips.
 
-`admin-exam-performance-ui-contract.test.mjs` must continue to assert:
-- student-first left/right hosts exist
-- protected actions `admin_students`, `admin_student_detail`, `rebuild_exam` are used
-- direct `exam_results` browser reads are absent
+- [ ] **Step 8: Update old UI contract without weakening security assertions**
 
-Replace old expectations for always-visible `subjectHistory` table formatting with the new `performanceSubjectTabs`, `performanceHierarchy`, `eChipLabel`, and `performanceDialogModel` paths.
+Keep assertions that page is student-first, uses `admin_students`, `admin_student_detail`, `rebuild_exam`, and does not browser-read `exam_results` directly. Replace old always-visible table/subject-stat expectations with `performanceSubjectTabs`, `performanceHierarchy`, `eChipLabel`, `performanceDialogModel`.
 
 - [ ] **Step 9: Run complete Performance contracts**
 
@@ -1089,7 +930,7 @@ node --check exam-performance-ui-utils.js
 
 Expected: PASS.
 
-- [ ] **Step 10: Commit Task 7**
+- [ ] **Step 10: Commit**
 
 ```bash
 git add admin-performance-hierarchy.test.mjs admin-exam-performance-ui-contract.test.mjs exam-performance-ui-utils.js exam-performance-ui-utils.test.mjs admin-performance.html admin-performance.js
@@ -1101,65 +942,45 @@ git commit -m "feat: simplify exam performance hierarchy"
 ### Task 8: CI Integration, Full Regression, and PR Readiness
 
 **Files:**
-- Modify: `.github/workflows/examination-intelligence.yml`
 - Create: `examinations-ux-consolidation-integration.test.mjs`
-- Verify all files changed by Tasks 1–7
+- Modify: `.github/workflows/examination-intelligence.yml`
 
-**Interfaces:**
-- Consumes all focused contracts from Tasks 1–7.
-- Produces exact-head CI evidence before any merge request.
+**Interfaces:** Explicitly gates all six focused test files plus integration test and parses all three changed Edge Functions.
 
-- [ ] **Step 1: Write the integration contract before workflow edits**
-
-Create `examinations-ux-consolidation-integration.test.mjs`:
+- [ ] **Step 1: Write failing CI contract**
 
 ```js
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 const workflow=fs.readFileSync('.github/workflows/examination-intelligence.yml','utf8');
-
-test('CI explicitly covers all Examinations UX consolidation contracts',()=>{
-  for(const file of [
-    'exam-wizard-password.test.mjs','exam-wizard-shell.test.mjs','question-bank-folder-api.test.mjs','question-bank-folder-ui.test.mjs','admin-results-archive.test.mjs','admin-performance-hierarchy.test.mjs'
-  ])assert.match(workflow,new RegExp(file.replaceAll('.','\\.')));
+test('CI explicitly covers Examinations UX contracts and changed Edge',()=>{
+  for(const file of ['exam-wizard-password.test.mjs','exam-wizard-shell.test.mjs','question-bank-folder-api.test.mjs','question-bank-folder-ui.test.mjs','admin-results-archive.test.mjs','admin-performance-hierarchy.test.mjs','examinations-ux-consolidation-integration.test.mjs'])assert.match(workflow,new RegExp(file.replaceAll('.','\\.')));
   assert.match(workflow,/supabase\/functions\/admin-question-bank\/index\.ts/);
 });
 ```
 
-- [ ] **Step 2: Run integration contract and confirm RED**
+- [ ] **Step 2: Verify RED**
 
 ```bash
 node --test examinations-ux-consolidation-integration.test.mjs
 ```
 
-Expected: FAIL because workflow does not list the new tests or parse `admin-question-bank/index.ts`.
+Expected: FAIL because workflow lacks new entries.
 
-- [ ] **Step 3: Add focused contracts to Examination Intelligence workflow**
+- [ ] **Step 3: Add contracts to workflow**
 
-Append the six new contracts to the explicit `Run intelligence contracts` command:
+Add all seven files above to `Run intelligence contracts`.
 
-```text
-exam-wizard-password.test.mjs
-exam-wizard-shell.test.mjs
-question-bank-folder-api.test.mjs
-question-bank-folder-ui.test.mjs
-admin-results-archive.test.mjs
-admin-performance-hierarchy.test.mjs
-examinations-ux-consolidation-integration.test.mjs
-```
-
-- [ ] **Step 4: Parse the changed Question Bank Edge Function in CI**
-
-Add:
+- [ ] **Step 4: Add Question Bank Edge parse**
 
 ```bash
 npx -y esbuild@0.25.9 supabase/functions/admin-question-bank/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/admin-question-bank.js --external:*
 ```
 
-Keep existing Edge parse lines, including `admin-exam-wizard` and `exam-performance`.
+Keep existing `admin-exam-wizard` and `exam-performance` parses.
 
-- [ ] **Step 5: Run focused integration test locally**
+- [ ] **Step 5: Verify integration test GREEN**
 
 ```bash
 node --test examinations-ux-consolidation-integration.test.mjs
@@ -1167,15 +988,15 @@ node --test examinations-ux-consolidation-integration.test.mjs
 
 Expected: PASS.
 
-- [ ] **Step 6: Run the full root regression suite**
+- [ ] **Step 6: Run full root regression**
 
 ```bash
 node --test *.test.js *.test.mjs *.test.cjs
 ```
 
-Expected: 0 failures. Investigate any failure by root cause; do not weaken unrelated safety contracts to force green.
+Expected: 0 failures. Diagnose root cause for any failure; do not weaken unrelated safety contracts merely to obtain green.
 
-- [ ] **Step 7: Run all root browser JavaScript syntax checks**
+- [ ] **Step 7: Run all root JS syntax checks**
 
 ```bash
 find . -maxdepth 1 -type f -name '*.js' -print0 | xargs -0 -n1 node --check
@@ -1193,14 +1014,14 @@ npx -y esbuild@0.25.9 supabase/functions/exam-performance/index.ts --bundle --pl
 
 Expected: all exit 0.
 
-- [ ] **Step 9: Verify scope against `main`**
+- [ ] **Step 9: Scope audit against `main`**
 
 ```bash
 git diff --stat main...HEAD
 git diff --name-only main...HEAD
 ```
 
-Expected changed implementation scope is limited to approved Examinations UX files, focused tests, the design/plan docs, and the Examination Intelligence workflow. No `student-exam-attempt` grading/timer files or communications implementation files should be modified.
+Expected: only approved Examinations UX implementation/tests/docs/workflow files. No `student-exam-attempt` timer/grading implementation files and no communications implementation files changed.
 
 - [ ] **Step 10: Commit CI integration**
 
@@ -1209,56 +1030,48 @@ git add .github/workflows/examination-intelligence.yml examinations-ux-consolida
 git commit -m "test: verify examinations UX consolidation"
 ```
 
-- [ ] **Step 11: Open a Draft PR and wait for exact-head workflows**
+- [ ] **Step 11: Open Draft PR and wait for exact-head CI**
 
-Create a Draft PR from the implementation branch to `main` with a body stating:
-- five approved changes
-- no grading/attempt/result semantic changes
+Draft PR body must state:
+- five approved UX changes
+- no grading/attempt/result-semantic changes
 - no DB migration
-- changed Edge Functions only: `admin-exam-wizard`, `admin-question-bank`, `exam-performance`
+- changed Edge Functions: `admin-exam-wizard`, `admin-question-bank`, `exam-performance`
 - no production deployment yet
 
-Wait for:
-- Examination Intelligence Verification = success
-- Academy Communications = success
-- any repository workflow triggered by the changed Student/Question Bank scope = success
-
-Do not merge here.
+Required exact-head workflows: Examination Intelligence Verification and Academy Communications, plus any Question Bank-specific workflow triggered by the changed files. Do not merge.
 
 - [ ] **Step 12: Final review gate**
 
-Use `superpowers:requesting-code-review`, inspect the PR diff, and confirm:
-- six-digit password never leaks to notifications
-- Question Bank initial browser payload contains no question text
-- Add to Exam still calls existing immutable snapshot RPC
+Use `superpowers:requesting-code-review` and verify:
+- password remains absent from notifications
+- initial Question Bank browser payload contains no question text
+- Add to Exam still calls immutable snapshot RPC
 - Results Pending excludes published rows
-- archive month uses `exam_date`
-- Performance E chips use exact scope sequence
+- archive uses `exam_date`, and month displays all DT/WT/MT/GT folders
+- Performance chip resolves exact `attempt_id` and exact scope metrics
 - no grading/attempt code changed
 
-Mark PR Ready for Review only after these checks and exact-head CI are green. Stop and ask the user for merge/production-rollout approval.
+Mark PR Ready for Review only after exact-head CI and review are green. Stop and ask the user for merge/production-rollout approval.
 
 ---
 
 ## Post-Merge Production Rollout Gate
 
-This section is intentionally not executed until the user separately approves the reviewed PR merge.
+Execute only after separate user approval of the reviewed PR merge.
 
 1. Verify merged `main` SHA.
-2. Deploy only changed Edge Functions in this order:
-   - `admin-exam-wizard`
-   - `admin-question-bank`
-   - `exam-performance`
-3. Do not apply a DB migration; existing Question Bank indexes were already verified sufficient for the full canonical-path query.
+2. Deploy only changed Edge Functions, in order: `admin-exam-wizard`, `admin-question-bank`, `exam-performance`.
+3. Apply no DB migration; existing Question Bank indexes were already verified sufficient for full canonical-path reads.
 4. Wait for GitHub Pages deployment of the merged SHA.
-5. Run logged-in Admin smoke checks:
-   - Create Exam auto password is six digits, Manual Change rejects non-six-digit input, regenerate stays six digits.
-   - Steps 1–6 keep the same outer modal size; only the middle content scrolls.
-   - Question Bank opens to Physics/Chemistry/Biology only; Subject → Chapter → Topic → Questions works; Added Date/Time and every approved sort work; Add to Exam succeeds for a Draft exam.
-   - Results main work queue contains only unpublished rows; a published row moves to Exam Date Month → DT/WT/MT/GT → Exam; partially published exam behavior is correct.
-   - Performance is Student → Subject → Unit → Chapter → Topic; E1/E2/E3 opens the detail dialog with correct metadata.
-6. Re-check an existing published exam/result to prove no score/publication data changed.
-7. If a live blocker appears, revert the frontend merge or redeploy the prior Edge version rather than rewriting production data.
+5. Logged-in Admin smoke checks:
+   - auto/regenerated password is six digits; Manual Change rejects any non-six-digit value
+   - all six Wizard steps keep one outer modal size; middle content scrolls
+   - Question Bank opens to Physics/Chemistry/Biology only; Subject → Chapter → Topic → Questions works; Added Date/Time, six sort modes, Load More, and Add to Exam work
+   - Results main queue shows unpublished only; published row appears under Exam Date Month → DT/WT/MT/GT → Exam; partial-publication behavior is correct
+   - Performance shows Student → Subject → Unit → Chapter → Topic; E1/E2/E3 opens exact-scope detail dialog
+6. Re-check an existing published exam/result to prove score/publication data did not change.
+7. If a live blocker appears, revert frontend merge or redeploy prior Edge version; never rewrite production result/attempt data as rollback.
 
 ---
 
@@ -1266,14 +1079,15 @@ This section is intentionally not executed until the user separately approves th
 
 - [ ] Password generation/validation is exactly six digits on client and server.
 - [ ] Wizard outer modal does not resize between all six desktop steps.
-- [ ] Question Bank initial page sends no full question list to the browser.
-- [ ] Question Bank folder path is Subject → Chapter → Topic → Questions with canonical Unit mapping retained underneath.
-- [ ] Question view shows Added Date/Time and the six approved sort modes.
-- [ ] Add to Exam keeps immutable snapshot semantics.
+- [ ] Question Bank initial page sends no full question list to browser.
+- [ ] Question Bank path is Subject → Chapter → Topic → Questions with Unit mapping retained underneath.
+- [ ] Topic question view shows Added Date/Time, all six approved sorts, and incremental Load More.
+- [ ] Add to Exam retains immutable snapshot semantics.
 - [ ] Results Pending contains only unpublished rows.
-- [ ] Published Results drills Month → DT/WT/MT/GT → Exam → Student rows based on Exam Date.
-- [ ] Performance main view is compact syllabus hierarchy with E chips, not the old large metrics/table layout.
-- [ ] E-chip dialog contains the approved exam/date/score/count/status/scope details and keeps rebuild/full-result actions where valid.
+- [ ] Published Results drills Month → DT/WT/MT/GT → Exam → Student rows based on Exam Date, with all four type folders present per month.
+- [ ] `admin-results.html?attempt=` opens the existing full question-wise result detail for Performance dialog deep links.
+- [ ] Performance main view is compact syllabus hierarchy with E chips, not old large metrics/table layout.
+- [ ] E dialog uses exact scope performance counts/marks/percentage and exact matching attempt status/number.
 - [ ] Exact-scope E numbering remains unchanged.
-- [ ] Full root regression, root JS syntax, changed Edge parses, Examination Intelligence, and Academy Communications are green on the exact PR head.
+- [ ] Full root regression, root JS syntax, changed Edge parses, Examination Intelligence, and Academy Communications are green on exact PR head.
 - [ ] No production deploy or merge occurs without explicit user approval.
