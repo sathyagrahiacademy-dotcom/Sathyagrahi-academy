@@ -34,9 +34,14 @@
   }
 
   if(current==='admin-exams.html'){
-    loadScript('examControlCenterUi','exam-control-center-ui.js?v=20260908-1',()=>{
-      loadScript('adminExamControlCenter','admin-exam-control-center.js?v=20260908-1');
-    });
+    const masterPhase1Enabled=window.SGA_EXAMINATIONS_MASTER_PHASE1_ENABLED===true;
+    if(masterPhase1Enabled){
+      loadScript('examControlCenterUi','exam-control-center-ui.js?v=20260908-1',()=>{
+        loadScript('adminExamControlCenter','admin-exam-control-center.js?v=20260908-1');
+      });
+    }else{
+      loadScript('adminExamsEnhancements','admin-exams-enhancements.js?v=20260905-1');
+    }
     loadScript('sgaJsPdf','https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',()=>{
       loadScript('sgaJsPdfAutoTable','https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js',()=>{
         loadScript('adminExamBlueprint','admin-exam-blueprint.js?v=20260905-1');
