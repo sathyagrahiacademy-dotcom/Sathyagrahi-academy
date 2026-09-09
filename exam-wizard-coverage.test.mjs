@@ -37,7 +37,7 @@ test('coverage Step 2 renders canonical cascading controls and planned question 
   for(const token of ['mwCoverageRows','mwAddCoverage','Questions Planned','WHOLE CHAPTER','Physics','Chemistry','Biology','Total Planned']){
     assert.match(ui,new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')),`missing ${token}`)
   }
-  assert.match(ui,/state\.bootstrap\.syllabus/)
+  assert.match(ui,/state\.bootstrap\??\.syllabus/)
   assert.doesNotMatch(ui,/mwCoverage[^\n]{0,160}<input[^>]+placeholder=["'][^"']*Topic/i)
 })
 
