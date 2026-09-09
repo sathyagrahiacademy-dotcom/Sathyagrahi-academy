@@ -3,6 +3,7 @@
   const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_wJjvyiQlJlHUGToKxCIN1w_ZkTBYXOn';
 
   const currentFile = (window.location.pathname.split('/').pop() || '').toLowerCase();
+  window.SGA_EXAMINATIONS_MASTER_PHASE1_ENABLED = currentFile === 'admin-exams.html';
   const isAdminArea = currentFile.startsWith('admin-');
   const isStudentArea = currentFile === 'dashboard.html' || currentFile.startsWith('student-');
 
