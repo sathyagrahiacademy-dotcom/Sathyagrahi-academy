@@ -346,10 +346,12 @@
     if(state.step===1)renderStep1();else if(state.step===2)renderStep2();else if(state.step===3)renderStep3();else if(state.step===4)renderStep4();else renderPlaceholder();
   }
 
-  async function callEndpoint(functionName,payload){
+  const WIZARD_ENDPOINT=`${window.SGA_SUPABASE_URL}/functions/v1/admin-exam-wizard`;
+  const ADMIN_EXAMS_ENDPOINT=`${window.SGA_SUPABASE_URL}/functions/v1/admin-exams`;
+  async function callEndpoint(endpoint,payload){
     const {data:{session}}=await c.auth.getSession();
     if(!session?.access_token)throw new Error('Admin session expired. Please sign in again.');
-    const res=await fetch(`${window.SGA_SUPABASE_URL}/functions/v1/${functionName}`,{
+    const res=await fetch(endpoint,{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':`Bearer ${session.access_token}`,'apikey':window.SGA_SUPABASE_PUBLISHABLE_KEY},
       body:JSON.stringify(payload)
@@ -358,8 +360,8 @@
     if(!res.ok){const error=new Error(data.error||'Exam request failed');error.validation=data.validation||null;throw error}
     return data;
   }
-  const callWizard=payload=>callEndpoint('admin-exam-wizard',payload);
-  const callAdminExams=payload=>callEndpoint('admin-exams',payload);
+  const callWizard=payload=>callEndpoint(WIZARD_ENDPOINT,payload);
+  const callAdminExams=payload=>callEndpoint(ADMIN_EXAMS_ENDPOINT,payload);
 
   function releaseValue(){
     if(document.getElementById('mwResultPublishMode')?.value!=='scheduled')return null;
