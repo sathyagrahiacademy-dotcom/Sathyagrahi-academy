@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'jsr:@supabase/supabase-js@2/cors'
 import { buildSyllabusLookup, validateImportQuestions } from './import-policy.mjs'
+import { buildFolderSummary, normalizeTopicQuestionRequest } from './folder-policy.mjs'
 
 function json(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
@@ -14,6 +15,32 @@ async function loadTree(admin:any){
   ])
   if(u.error) throw new Error(u.error.message); if(c.error) throw new Error(c.error.message); if(s.error) throw new Error(s.error.message)
   return {units:u.data||[],chapters:c.data||[],subtopics:s.data||[]}
+}
+function canonicalContextExists(tree:any,value:any){
+  const unit=(tree.units||[]).find((row:any)=>String(row.id)===String(value.unitId))
+  const chapter=(tree.chapters||[]).find((row:any)=>String(row.id)===String(value.chapterId))
+  const topic=(tree.subtopics||[]).find((row:any)=>String(row.id)===String(value.subtopicId))
+  return unit?.subject===value.subject&&String(chapter?.unit_id)===String(value.unitId)&&String(topic?.chapter_id)===String(value.chapterId)&&(!topic?.status||topic.status==='approved')
+}
+async function loadActiveFolderRows(admin:any){
+  const rows:any[]=[]; const pageSize=1000
+  for(let offset=0;;offset+=pageSize){
+    const {data,error}=await admin.from('question_bank_questions')
+      .select('subject,unit_id,chapter_id,subtopic_id')
+      .eq('is_active',true).range(offset,offset+pageSize-1)
+    if(error)throw new Error(error.message)
+    const page=data||[]; rows.push(...page)
+    if(page.length<pageSize)break
+  }
+  return rows
+}
+function applyTopicSort(query:any,sort:string){
+  if(sort==='oldest')return query.order('created_at',{ascending:true}).order('id',{ascending:true})
+  if(sort==='difficulty')return query.order('difficulty',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false})
+  if(sort==='question_type')return query.order('question_type',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false})
+  if(sort==='source')return query.order('source_label',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false})
+  if(sort==='source_year')return query.order('source_year',{ascending:false,nullsFirst:false}).order('created_at',{ascending:false})
+  return query.order('created_at',{ascending:false}).order('id',{ascending:false})
 }
 
 Deno.serve(async (req: Request) => {
@@ -32,6 +59,32 @@ Deno.serve(async (req: Request) => {
     if(!profile||profile.role!=='admin'||!profile.is_active) return json({error:'Admin access required'},403)
     const admin=createClient(url,sec,{auth:{persistSession:false}})
     const body=await req.json(); const action=text(body.action)
+
+    if(action==='folder_summary'){
+      const [tree,rows]=await Promise.all([loadTree(admin),loadActiveFolderRows(admin)])
+      return json({ok:true,...buildFolderSummary(tree,rows)})
+    }
+
+    if(action==='topic_questions'){
+      const normalized=normalizeTopicQuestionRequest(body)
+      if(!normalized.ok)return json({error:normalized.error},400)
+      const value=normalized.value
+      const tree=await loadTree(admin)
+      if(!canonicalContextExists(tree,value))return json({error:'Selected Subject, Chapter and Topic do not match the canonical syllabus'},400)
+      let query=admin.from('question_bank_questions')
+        .select('id,subject,unit_id,chapter_id,subtopic_id,question_text,default_marks,default_negative_marks,difficulty,question_type,source_label,source_year,created_at',{count:'exact'})
+        .eq('is_active',true)
+        .eq('subject',value.subject)
+        .eq('unit_id',value.unitId)
+        .eq('chapter_id',value.chapterId)
+        .eq('subtopic_id',value.subtopicId)
+      if(value.search)query=query.ilike('question_text',`%${value.search}%`)
+      query=applyTopicSort(query,value.sort).range(value.offset,value.offset+value.limit-1)
+      const {data,error,count}=await query
+      if(error)return json({error:error.message},400)
+      const questions=data||[],total=Number(count||0)
+      return json({ok:true,questions,total,hasMore:value.offset+questions.length<total})
+    }
 
     if(action==='list'){
       const {data:rows,error}=await admin.from('question_bank_questions')
