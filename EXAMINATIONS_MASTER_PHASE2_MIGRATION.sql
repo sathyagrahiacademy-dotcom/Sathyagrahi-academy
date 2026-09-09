@@ -136,4 +136,65 @@ $$;
 revoke all on function public.replace_exam_scope_items_v3(uuid,jsonb,uuid) from public, anon, authenticated;
 grant execute on function public.replace_exam_scope_items_v3(uuid,jsonb,uuid) to service_role;
 
+-- Blueprint approval represents the exact current setup. Any later mutation of
+-- scope, questions, answer keys, or syllabus mapping invalidates that approval.
+-- This DB-level guard covers every writer, including legacy/manual question tools.
+create or replace function public.invalidate_exam_blueprint_approval()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_exam_id uuid;
+  v_question_id uuid;
+begin
+  if tg_table_name = 'exam_scope_items' then
+    v_exam_id := case when tg_op = 'DELETE' then old.exam_id else new.exam_id end;
+  elsif tg_table_name = 'exam_questions' then
+    v_exam_id := case when tg_op = 'DELETE' then old.exam_id else new.exam_id end;
+  elsif tg_table_name = 'exam_question_syllabus_map' then
+    v_exam_id := case when tg_op = 'DELETE' then old.exam_id else new.exam_id end;
+  elsif tg_table_name = 'exam_answer_keys' then
+    v_question_id := case when tg_op = 'DELETE' then old.question_id else new.question_id end;
+    select q.exam_id into v_exam_id
+    from public.exam_questions q
+    where q.id = v_question_id;
+  end if;
+
+  if v_exam_id is not null then
+    update public.exams
+    set blueprint_approved_at = null
+    where id = v_exam_id
+      and is_published = false
+      and blueprint_approved_at is not null;
+  end if;
+
+  if tg_op = 'DELETE' then return old; end if;
+  return new;
+end;
+$$;
+
+revoke all on function public.invalidate_exam_blueprint_approval() from public, anon, authenticated;
+
+drop trigger if exists trg_invalidate_blueprint_scope on public.exam_scope_items;
+create trigger trg_invalidate_blueprint_scope
+after insert or update or delete on public.exam_scope_items
+for each row execute function public.invalidate_exam_blueprint_approval();
+
+drop trigger if exists trg_invalidate_blueprint_questions on public.exam_questions;
+create trigger trg_invalidate_blueprint_questions
+after insert or update or delete on public.exam_questions
+for each row execute function public.invalidate_exam_blueprint_approval();
+
+drop trigger if exists trg_invalidate_blueprint_answer_keys on public.exam_answer_keys;
+create trigger trg_invalidate_blueprint_answer_keys
+after insert or update or delete on public.exam_answer_keys
+for each row execute function public.invalidate_exam_blueprint_approval();
+
+drop trigger if exists trg_invalidate_blueprint_mapping on public.exam_question_syllabus_map;
+create trigger trg_invalidate_blueprint_mapping
+after insert or update or delete on public.exam_question_syllabus_map
+for each row execute function public.invalidate_exam_blueprint_approval();
+
 commit;
