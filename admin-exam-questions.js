@@ -37,6 +37,15 @@
     return data;
   }
 
+  async function invokeMapping(body){
+    const { data:{ session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("Admin login required.");
+    const { data, error } = await supabase.functions.invoke("admin-exam-mapping", { body });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    return data;
+  }
+
   let bulkQuestions = [];
   const requiredHeaders = ["Question No","Subject","Unit","Chapter","Topic","Question","Option A","Option B","Option C","Option D","Correct Answer","Marks","Negative Marks","Explanation","Difficulty","Question Type","Source","Source Year"];
   const approvedQuestionTypes = Object.freeze({
@@ -160,17 +169,92 @@
     finally{ btn.textContent="IMPORT ALL QUESTIONS"; btn.disabled=true; }
   });
 
+  function mappingLookup(tree){
+    const topicById=new Map();
+    for(const unit of tree?.syllabus||[]){
+      for(const chapter of unit.chapters||[]){
+        for(const topic of chapter.subtopics||[]){
+          topicById.set(String(topic.id),{subject:unit.subject,topic:topic.subtopic_title||'',chapter:chapter.topic_title||''});
+        }
+      }
+    }
+    const mappingRows=tree?.mappingRows||[];
+    const byQuestion=new Map();
+    for(const row of mappingRows){
+      const fact=topicById.get(String(row.subtopic_id));
+      if(fact)byQuestion.set(String(row.question_id),fact);
+    }
+    return {mappingRows,byQuestion};
+  }
+
+  function issueSets(validation={}){
+    return {
+      invalidNo:new Set([...(validation.invalidQuestionNos||[]),...(validation.invalidSubtopicQuestionNos||[])].map(Number)),
+      duplicateId:new Set((validation.duplicateQuestionIds||[]).map(String)),
+      missingKeyNo:new Set((validation.answerKeyMissingQuestionNos||[]).map(Number))
+    };
+  }
+
+  function questionStatus(question,fact,keyed,issues){
+    if(issues.duplicateId.has(String(question.id))||issues.invalidNo.has(Number(question.question_no)))return {label:"ISSUE",cls:"issue"};
+    if(!fact)return {label:"NEEDS MAPPING",cls:"issue"};
+    if(!keyed.has(String(question.id))||issues.missingKeyNo.has(Number(question.question_no)))return {label:"KEY MISSING",cls:"issue"};
+    return {label:"READY",cls:"ready"};
+  }
+
+  async function loadExpectedQuestions(){
+    const meta=await supabase.from("exams").select("expected_questions").eq("id",examId).maybeSingle();
+    return meta.error?0:Number(meta.data?.expected_questions||0);
+  }
+
+  async function loadQuestions(){
+    let result=await supabase.from("exam_questions").select("id,question_no,question_text,marks,bank_question_id,difficulty,question_type,source_label,source_year").eq("exam_id",examId).order("question_no");
+    if(!result.error)return result;
+    return supabase.from("exam_questions").select("id,question_no,question_text,marks").eq("exam_id",examId).order("question_no");
+  }
+
   async function load(){
     if(!examId){ msg("Exam ID missing."); return; }
     supabase = await getClient();
     const {data:exam,error:e1}=await supabase.from("exams").select("id,title,subject,syllabus,is_published").eq("id",examId).single();
     if(e1) throw e1;
     $("examName").textContent=`${exam.title} • ${exam.subject}${exam.syllabus ? " • "+exam.syllabus : ""}${exam.is_published ? " • PUBLISHED" : " • DRAFT"}`;
-    const {data:q,error:e2}=await supabase.from("exam_questions").select("id,question_no,question_text,marks").eq("exam_id",examId).order("question_no");
-    if(e2) throw e2;
+
+    const [questionResult,expected,tree]=await Promise.all([
+      loadQuestions(),
+      loadExpectedQuestions(),
+      invokeMapping({action:"tree",examId})
+    ]);
+    if(questionResult.error)throw questionResult.error;
+    const q=questionResult.data||[];
+    const {mappingRows,byQuestion}=mappingLookup(tree);
+    const answerKeys=tree?.answerKeys||[];
+    const keyed=new Set(answerKeys.map(row=>String(row.question_id)));
+    const issues=issueSets(tree?.validation||{});
+    const subjectCounts={Physics:0,Chemistry:0,Biology:0};
+    for(const question of q){
+      const subject=byQuestion.get(String(question.id))?.subject;
+      if(subjectCounts[subject]!=null)subjectCounts[subject]++;
+    }
+
+    $("expectedCount").textContent=String(expected||0);
+    $("addedCount").textContent=String(q.length);
+    $("physicsCount").textContent=String(subjectCounts.Physics);
+    $("chemistryCount").textContent=String(subjectCounts.Chemistry);
+    $("biologyCount").textContent=String(subjectCounts.Biology);
+    $("mappedCount").textContent=String(Number(tree?.validation?.mappedQuestions||mappingRows.length||0));
+    $("answerKeyCount").textContent=String(answerKeys.length);
     $("count").textContent=`${q.length} question(s)`;
     $("questionNo").value=(q.length?Math.max(...q.map(x=>x.question_no))+1:1);
-    $("questionsBody").innerHTML=q.length?q.map(x=>`<tr><td>${x.question_no}</td><td>${esc(x.question_text)}</td><td>${x.marks}</td><td><button class="secondary" data-edit="${x.id}">EDIT</button> <button class="danger" data-del="${x.id}">DELETE</button></td></tr>`).join(""):`<tr><td colspan="4">No questions added yet.</td></tr>`;
+
+    $("questionsBody").innerHTML=q.length?q.map(question=>{
+      const fact=byQuestion.get(String(question.id));
+      const status=questionStatus(question,fact,keyed,issues);
+      const source=[question.source_label,question.source_year].filter(v=>v!==null&&v!==undefined&&v!=="").join(" • ")||"—";
+      const topic=fact?.topic||"—";
+      const subject=fact?.subject||"—";
+      return `<tr><td><b>Q${question.question_no}</b><br><small title="${esc(question.question_text)}">${esc(String(question.question_text||"").slice(0,56))}${String(question.question_text||"").length>56?"…":""}</small></td><td>${esc(subject)}</td><td class="q-topic">${esc(topic)}</td><td>${esc(question.difficulty||"—")}</td><td>${esc(question.question_type||"—")}</td><td class="q-source">${esc(source)}</td><td><span class="q-status ${status.cls}">${status.label}</span></td><td><button class="secondary" data-edit="${question.id}">EDIT</button> <button class="danger" data-del="${question.id}">DELETE</button></td></tr>`;
+    }).join(""):`<tr><td colspan="8">No questions added yet.</td></tr>`;
   }
 
   $("questionForm").addEventListener("submit", async e=>{
@@ -201,7 +285,7 @@
         $("explanation").value=q.explanation||"";
         $("saveQuestionBtn").textContent="UPDATE QUESTION";
         $("cancelEditQuestion").style.display="inline-block";
-        window.scrollTo({top:0,behavior:"smooth"});
+        $("manualQuestionSection")?.scrollIntoView({behavior:"smooth",block:"start"});
         msg("Editing Question No. "+q.question_no,true);
       }catch(err){msg(err.message||"Could not load question.");}
       return;
@@ -212,6 +296,13 @@
   });
 
   $("cancelEditQuestion").addEventListener("click",()=>{editingQuestionId=null;$("questionForm").reset();$("marks").value=4;$("negativeMarks").value=1;$("saveQuestionBtn").textContent="SAVE QUESTION";$("cancelEditQuestion").style.display="none";load();msg("Edit cancelled.",true);});
+
+  $("fromQuestionBank").href=`admin-question-bank.html?exam=${encodeURIComponent(examId||"")}`;
+  $("excelImportMethod").addEventListener("click",()=>{$("bulkUploadSection")?.scrollIntoView({behavior:"smooth",block:"start"});$("bulkFile")?.focus();});
+  $("manualQuestionMethod").addEventListener("click",()=>{$("manualQuestionSection")?.scrollIntoView({behavior:"smooth",block:"start"});$("questionNo")?.focus();});
+  $("backToExamSetup").addEventListener("click",event=>{
+    if(window.opener&&!window.opener.closed){event.preventDefault();window.opener.focus();window.close();}
+  });
 
   load().catch(e=>msg(e.message||"Could not load questions."));
 })();
