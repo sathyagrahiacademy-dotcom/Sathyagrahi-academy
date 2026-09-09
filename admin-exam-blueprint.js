@@ -5,6 +5,7 @@
   if(!tbody)return;
   const escFile=v=>String(v||'Exam').replace(/[^a-z0-9_-]+/gi,'_').replace(/^_+|_+$/g,'');
   const ist=v=>{if(!v)return 'Not conducted';try{return new Intl.DateTimeFormat('en-IN',{timeZone:'Asia/Kolkata',dateStyle:'medium',timeStyle:'short'}).format(new Date(v))}catch(_){return String(v)}};
+  const dateOnly=v=>{if(!v)return '—';try{return new Intl.DateTimeFormat('en-IN',{timeZone:'Asia/Kolkata',dateStyle:'medium'}).format(new Date(`${String(v).slice(0,10)}T00:00:00+05:30`))}catch(_){return String(v)}};
   async function invoke(examId){
     const {data,error}=await c.functions.invoke('admin-exam-blueprint',{body:{examId}});
     if(error){let d=null;try{d=await error.context?.json?.()}catch(_){}throw new Error(d?.error||error.message||'Could not load blueprint data.');}
@@ -44,10 +45,22 @@
         y=doc.lastAutoTable.finalY+7;if(y>265){doc.addPage();y=18;}
       };
       section('1. Exam Identity',['Field','Details'],[
-        ['Exam Code',exam.exam_code||'—'],['Exam Type',exam.subject||'—'],['Duration',`${Number(exam.duration_minutes||0)} minutes`],['Total Marks',String(exam.total_marks??'—')],['Negative Marking',exam.negative_marking?'Enabled':'Disabled'],['Status',String(exam.status||'draft').toUpperCase()],['Publish Status',exam.is_published?'Published':'Not Published']
+        ['Exam Code',exam.exam_code||'—'],
+        ['Exam Type',String(exam.exam_type||exam.subject||'—').toUpperCase()],
+        ['Batch',exam.batch_no!=null?`Batch ${String(exam.batch_no).padStart(2,'0')}`:'—'],
+        ['Exam Date',dateOnly(exam.exam_date)],
+        ['Expected Questions',String(exam.expected_questions??validation.totalQuestions??'—')],
+        ['Duration',`${Number(exam.duration_minutes||0)} minutes`],
+        ['Total Marks',String(exam.total_marks??'—')],
+        ['Negative Marking',exam.negative_marking?'Enabled':'Disabled'],
+        ['Result Publish Mode',String(exam.result_publish_mode||'manual').toUpperCase()],
+        ['Scheduled Result Release',exam.result_publish_mode==='scheduled'?ist(exam.result_publish_at):'Manual'],
+        ['Blueprint Approval',exam.blueprint_approved_at?`APPROVED • ${ist(exam.blueprint_approved_at)}`:'NOT APPROVED'],
+        ['Status',String(exam.status||'draft').toUpperCase()],
+        ['Publish Status',exam.is_published?'Published':'Not Published']
       ]);
-      const coverage=(data.coverage||[]).map(s=>[s.subject||'—',s.unitTitle||'—',s.chapterTitle||'—',s.scopeType==='topic'?(s.topicTitle||'Specific Topic'):'Whole Chapter']);
-      section('2. Syllabus Coverage',['Subject','Unit','Chapter','Scope'],coverage.length?coverage:[['—','—','—','No structured coverage']]);
+      const coverage=(data.coverage||[]).map(s=>[s.subject||'—',s.unitTitle||'—',s.chapterTitle||'—',s.scopeType==='topic'?(s.topicTitle||'Specific Topic'):'Whole Chapter',String(s.plannedQuestions||'—')]);
+      section('2. Syllabus Coverage',['Subject','Unit','Chapter','Scope','Planned Questions'],coverage.length?coverage:[['—','—','—','No structured coverage','—']]);
       const distRows=(rows,label)=>rows.map(r=>[label,r.label,String(r.questions),String(Number(r.marks||0))]);
       section('3. Question Distribution',['Level','Syllabus Area','Questions','Marks'],[
         ...distRows(model.subjects,'Subject'),...distRows(model.units,'Unit'),...distRows(model.chapters,'Chapter'),...distRows(model.topics,'Topic')
