@@ -39,7 +39,9 @@
       loadScript('examControlCenterUi','exam-control-center-ui.js?v=20260908-1',()=>{
         loadScript('adminExamControlCenter','admin-exam-control-center.js?v=20260908-1');
       });
-      loadScript('adminExamWizard','admin-exam-wizard.js?v=20260909-1');
+      loadScript('adminExamWizard','admin-exam-wizard.js?v=20260909-1',()=>{
+        loadScript('adminExamWizardRelease','admin-exam-wizard-release.js?v=20260909-1');
+      });
     }else{
       loadScript('adminExamsEnhancements','admin-exams-enhancements.js?v=20260905-1');
     }
