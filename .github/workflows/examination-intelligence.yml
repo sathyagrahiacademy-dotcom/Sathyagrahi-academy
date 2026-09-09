@@ -51,6 +51,7 @@ jobs:
           node --check admin-exams.js
           node --check exam-control-center-ui.js
           node --check admin-exam-control-center.js
+          node --check admin-exam-wizard.js
           node --check admin-exam-questions.js
           node --check student-notifications.js
           node --check student-exam-attempt.js
@@ -64,6 +65,7 @@ jobs:
       - name: Parse Edge Function TypeScript
         run: |
           npx -y esbuild@0.25.9 supabase/functions/admin-exams/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/admin-exams.js --external:*
+          npx -y esbuild@0.25.9 supabase/functions/admin-exam-wizard/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/admin-exam-wizard.js --external:*
           npx -y esbuild@0.25.9 supabase/functions/student-exam-access/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/student-exam-access.js --external:*
           npx -y esbuild@0.25.9 supabase/functions/student-exam-attempt/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/student-exam-attempt.js --external:*
           npx -y esbuild@0.25.9 supabase/functions/student-result-review/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/student-result-review.js --external:*
