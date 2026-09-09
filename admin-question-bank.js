@@ -1,7 +1,7 @@
 (async()=>{
 const c=window.sgaSupabase,$=id=>document.getElementById(id);
 const params=new URLSearchParams(location.search),requestedExam=params.get('exam');
-const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[ch]));
+const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
 let summary={total:0,subjects:[]},exams=[],subject=null,chapter=null,topic=null,questions=[],total=0,hasMore=false,loading=false,searchTimer=null,modalIds=[];
 const selected=new Set(),questionCache=new Map();
 const {data:{session}}=await c.auth.getSession();
@@ -11,7 +11,7 @@ if(!me||me.role!=='admin'||!me.is_active)return location.replace('admin-login.ht
 async function invoke(body){const {data,error}=await c.functions.invoke('admin-question-bank',{body});if(error){let d=null;try{d=await error.context?.json?.()}catch(_){}throw new Error(d?.error||error.message||'Question Bank operation failed.')}if(data?.error)throw new Error(data.error);return data}
 function setStats(){
  $('sTotal').textContent=summary.total||0;
- for(const [id,name] of [['sPhysics','Physics'],['sChemistry','Chemistry'],['sBiology','Biology']])$(''+id).textContent=summary.subjects.find(x=>x.subject===name)?.count||0;
+ for(const [id,name] of [['sPhysics','Physics'],['sChemistry','Chemistry'],['sBiology','Biology']])$(id).textContent=summary.subjects.find(x=>x.subject===name)?.count||0;
 }
 function folderButton(title,meta,icon,attrs=''){return `<button class="folder-card" type="button" ${attrs}><span class="folder-icon">${esc(icon)}</span><span class="folder-title">${esc(title)}</span><span class="folder-meta">${esc(meta)}</span></button>`}
 function showFolders(){
@@ -34,12 +34,12 @@ function renderSubjects(){
 function renderChapters(item=subject){
  subject=item;chapter=topic=null;questions=[];total=0;hasMore=false;showFolders();renderBreadcrumb();
  const rows=item?.chapters||[];
- $('qbFolderHost').innerHTML=rows.length?rows.map((row,index)=>folderButton(row.title,`${row.unitTitle}${row.unitNo!=null?` • Unit ${row.unitNo}`:''} • ${row.count} question(s)`,String(index+1),`data-chapter="${row.id}"`)).join(''):'<div class="empty">No chapters are available in this subject.</div>';
+ $('qbFolderHost').innerHTML=rows.length?rows.map((row,index)=>{const unitTitle=row.unitTitle,chapterTitle=row.title;return folderButton(chapterTitle,`${unitTitle}${row.unitNo!=null?` • Unit ${row.unitNo}`:''} • ${row.count} question(s)`,String(index+1),`data-chapter="${row.id}"`)}).join(''):'<div class="empty">No chapters are available in this subject.</div>';
 }
 function renderTopics(item=chapter){
  chapter=item;topic=null;questions=[];total=0;hasMore=false;showFolders();renderBreadcrumb();
  const rows=item?.topics||[];
- $('qbFolderHost').innerHTML=rows.length?rows.map((row,index)=>folderButton(row.title,`${row.count} question(s)`,String(index+1),`data-topic="${row.id}"`)).join(''):'<div class="empty">No approved topics are available in this chapter.</div>';
+ $('qbFolderHost').innerHTML=rows.length?rows.map((row,index)=>{const topicTitle=row.title;return folderButton(topicTitle,`${row.count} question(s)`,String(index+1),`data-topic="${row.id}"`)}).join(''):'<div class="empty">No approved topics are available in this chapter.</div>';
 }
 function dateParts(value){
  if(!value)return['—','—'];const d=new Date(value);if(Number.isNaN(d.getTime()))return['—','—'];
