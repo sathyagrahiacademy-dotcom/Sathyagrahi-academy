@@ -126,7 +126,7 @@
       const data=await call({action:'control_center'});today=data.today||'';exams=Array.isArray(data.exams)?data.exams:[];
       ensureShell();renderSummary(data.summary||{});renderPriority();renderAttention();renderTabs();renderFilters();renderTable();
     }catch(err){countLine.textContent=`Control Center unavailable: ${err.message||'Request failed'}`}
-    finally{loading=false}
+    finally{document.querySelector('.content')?.classList.remove('exam-master-pending');loading=false}
   }
 
   function wire(){
@@ -154,8 +154,7 @@
   }
 
   function waitForLegacy(){
-    const legacyReady=countLine.textContent.trim()!=='Loading exams...' || rows.textContent.includes('Unable to load exams.');
-    if(typeof rows.onclick!=='function'||!legacyReady){setTimeout(waitForLegacy,25);return}
+    if(typeof rows.onclick!=='function'){setTimeout(waitForLegacy,25);return}
     ensureShell();wire();loadControlCenter();
   }
   waitForLegacy();
