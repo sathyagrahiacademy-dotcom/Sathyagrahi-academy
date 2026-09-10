@@ -6,8 +6,8 @@ const control=fs.readFileSync('admin-exam-control-center.js','utf8')
 const config=fs.readFileSync('supabase-config.js','utf8')
 
 test('Master Control Center waits for the legacy exam table to finish its initial Loading state',()=>{
-  assert.match(control,/countLine\.textContent\.trim\(\)===['"]Loading exams\.\.\.['"]/,'Control Center must treat the legacy Loading exams state as not ready')
-  assert.match(control,/typeof rows\.onclick!==['"]function['"][^\n]*legacyReady/,'Control Center must require both the legacy row controller and finished initial render before starting')
+  assert.match(control,/countLine\.textContent\.trim\(\)!==['"]Loading exams\.\.\.['"]/,'Control Center must keep the legacy Loading exams state marked as not ready')
+  assert.match(control,/typeof rows\.onclick!==['"]function['"][^\n]*!legacyReady/,'Control Center must require both the legacy row controller and finished initial render before starting')
 })
 
 test('portal navigation is applied immediately when the sidebar is already parsed',()=>{
