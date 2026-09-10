@@ -55,7 +55,15 @@
     ensureStudentSyllabusNav();
   }
 
-  if (document.readyState === 'loading') {
+  const portalNavPresent = Boolean(
+    document.querySelector('.shell aside nav') ||
+    document.querySelector('.sidebar nav') ||
+    document.querySelector('aside nav')
+  );
+
+  if (portalNavPresent) {
+    ensurePortalNavigation();
+  } else if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', ensurePortalNavigation, { once: true });
   } else {
     ensurePortalNavigation();
