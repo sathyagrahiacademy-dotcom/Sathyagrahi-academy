@@ -14,7 +14,7 @@ test('every admin portal sidebar that shows Notifications also contains Communic
   assert.deepEqual(missing,[],`Communications must be static in every admin sidebar; missing in: ${missing.join(', ')}`);
 });
 
-test('Examinations page cache-busts the top-level navigation loader after the render-race fix',()=>{
+test('Examinations page cache-busts the top-level navigation loader after the single-renderer fix',()=>{
   const html=fs.readFileSync('admin-exams.html','utf8');
-  assert.match(html,/admin-examinations-nav\.js\?v=20260910-4/,'admin-exams.html must request the post-flicker navigation loader version');
+  assert.match(html,/admin-examinations-nav\.js\?v=20260910-5/,'admin-exams.html must request the single-renderer navigation loader version');
 });
