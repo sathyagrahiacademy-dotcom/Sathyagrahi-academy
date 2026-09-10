@@ -12,11 +12,11 @@ test('V2 syllabus controller has the active topic helper it calls',()=>{
 });
 
 test('Exams page keeps syllabus scripts and contains the gated Control Center path',()=>{
-  assert.match(html,/admin-examinations-nav\.js\?v=20260910-4/);
+  assert.match(html,/admin-examinations-nav\.js\?v=20260910-5/);
   assert.match(html,/exam-scope-ui-utils\.js\?v=20260905-1/);
   assert.match(nav,/SGA_EXAMINATIONS_MASTER_PHASE1_ENABLED/);
   assert.match(nav,/exam-control-center-ui\.js\?v=20260908-1/);
-  assert.match(nav,/admin-exam-control-center\.js\?v=20260910-3/);
+  assert.match(nav,/admin-exam-control-center\.js\?v=20260910-5/);
 });
 
 test('legacy archive overlay remains the default production path while master gate is off',()=>{
