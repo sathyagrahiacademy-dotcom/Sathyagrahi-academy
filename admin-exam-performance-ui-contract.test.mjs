@@ -21,14 +21,17 @@ test('old generic academy analytics are removed',()=>{
 test('controller uses protected student-first performance actions only',()=>{
   assert.match(js,/admin_students/);
   assert.match(js,/admin_student_detail/);
-  assert.match(js,/detail\.subjects/);
+  assert.match(js,/detail\?\.subjects/);
   assert.match(js,/rebuild_exam/);
   assert.doesNotMatch(js,/\.from\(['"]exam_results['"]\)/);
 });
 
-test('subject attempts and exact E history have dedicated render paths',()=>{
+test('exact E history has dedicated hierarchy and dialog render paths',()=>{
   assert.match(js,/subjectHistory/);
   assert.match(js,/subjectScopeHierarchy/);
-  assert.match(js,/attemptLabel/);
+  assert.match(js,/eChipLabel/);
+  assert.match(js,/eDialogModel/);
   assert.match(js,/formatEHistoryRow/);
+  assert.match(js,/data-e-scope/);
+  assert.match(js,/FULL RESULT/);
 });

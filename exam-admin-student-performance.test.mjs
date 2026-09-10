@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildQuestionSubjectMap, subjectsForExam, buildSubjectAttempt, buildStudentExamMonitor } from './supabase/functions/exam-performance/admin-student-performance.mjs';
 
-const exam={id:'e1',title:'Mixed 01',subject:'Mixed',negative_marking:true};
+const exam={id:'e1',title:'Mixed 01',subject:'Mixed',negative_marking:true,exam_code:'SGA-DT-010809',exam_date:'2026-09-08'};
 const questions=[
  {id:'p1',marks:4,negative_marks:1},{id:'p2',marks:4,negative_marks:1},
  {id:'c1',marks:4,negative_marks:1},{id:'c2',marks:4,negative_marks:1},
@@ -37,6 +37,16 @@ test('subject attempt grades only that subject question subset',()=>{
  assert.equal(c.max_marks,8); assert.equal(c.total_score,8); assert.equal(c.percentage,100);
  assert.equal(b.max_marks,8); assert.equal(b.total_score,-1); assert.equal(b.percentage,-12.5);
  assert.notEqual(p.max_marks,24);
+});
+
+test('subject attempt exposes only safe exam identity metadata needed by E dialog',()=>{
+ const attempt={id:'a-meta',exam_id:'e1',attempt_no:1,submitted_at:'2026-09-08T10:00:00Z'};
+ const row=buildSubjectAttempt({exam,attempt,questions,answerKeys,responses:[],subjectByQuestion,subject:'Physics'});
+ assert.equal(row.exam_code,'SGA-DT-010809');
+ assert.equal(row.exam_date,'2026-09-08');
+ assert.equal(row.exam_title,'Mixed 01');
+ assert.equal('password_hash' in row,false);
+ assert.equal('correct_option' in row,false);
 });
 
 test('latest valid attempt drives average while best may come from older attempt',()=>{

@@ -53,6 +53,13 @@ jobs:
           student-answer-review-intelligence.test.mjs
           performance-intelligence-policy.test.mjs
           performance-intelligence-integration.test.mjs
+          exam-wizard-password.test.mjs
+          exam-wizard-shell.test.mjs
+          question-bank-folder-api.test.mjs
+          question-bank-folder-ui.test.mjs
+          admin-results-archive.test.mjs
+          admin-performance-hierarchy-dialog.test.mjs
+          examinations-ux-consolidation-integration.test.mjs
 
       - name: Run full root regression suite
         run: node --test *.test.js *.test.mjs *.test.cjs
@@ -62,11 +69,17 @@ jobs:
           node --check admin-exams.js
           node --check exam-control-center-ui.js
           node --check admin-exam-control-center.js
+          node --check exam-password-utils.js
           node --check admin-exam-wizard.js
           node --check admin-exam-wizard-release.js
           node --check admin-exam-workspace.js
           node --check admin-exam-workspace-route.js
           node --check admin-exam-questions.js
+          node --check admin-question-bank.js
+          node --check admin-results.js
+          node --check admin-results-archive-utils.js
+          node --check admin-performance.js
+          node --check exam-performance-ui-utils.js
           node --check student-notifications.js
           node --check student-exam-notice-utils.js
           node --check student-exam-attempt.js
@@ -81,6 +94,7 @@ jobs:
         run: |
           npx -y esbuild@0.25.9 supabase/functions/admin-exams/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/admin-exams.js --external:*
           npx -y esbuild@0.25.9 supabase/functions/admin-exam-wizard/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/admin-exam-wizard.js --external:*
+          npx -y esbuild@0.25.9 supabase/functions/admin-question-bank/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/admin-question-bank.js --external:*
           npx -y esbuild@0.25.9 supabase/functions/student-exam-access/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/student-exam-access.js --external:*
           npx -y esbuild@0.25.9 supabase/functions/student-exam-attempt/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/student-exam-attempt.js --external:*
           npx -y esbuild@0.25.9 supabase/functions/student-result-review/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/student-result-review.js --external:*

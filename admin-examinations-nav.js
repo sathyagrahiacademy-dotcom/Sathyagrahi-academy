@@ -41,8 +41,10 @@
           loadScript('adminExamWorkspaceRoute','admin-exam-workspace-route.js?v=20260909-1');
         });
       });
-      loadScript('adminExamWizard','admin-exam-wizard.js?v=20260909-1',()=>{
-        loadScript('adminExamWizardRelease','admin-exam-wizard-release.js?v=20260909-1');
+      loadScript('examPasswordUtils','exam-password-utils.js?v=20260910-1',()=>{
+        loadScript('adminExamWizard','admin-exam-wizard.js?v=20260910-1',()=>{
+          loadScript('adminExamWizardRelease','admin-exam-wizard-release.js?v=20260909-1');
+        });
       });
     }else{
       loadScript('adminExamsEnhancements','admin-exams-enhancements.js?v=20260905-1');
