@@ -1,0 +1,74 @@
+name: Temporary Admin Static Nav Fix
+on:
+  push:
+    branches:
+      - fix/admin-static-sidebar-and-exam-loader-cache
+permissions:
+  contents: write
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/admin-static-sidebar-and-exam-loader-cache
+      - name: Apply exact bounded HTML changes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          pages = [
+              'admin-attendance.html',
+              'admin-enrollments.html',
+              'admin-help-feedback.html',
+              'admin-my-account.html',
+              'admin-notifications.html',
+              'admin-preparation.html',
+              'admin-student-performance.html',
+              'admin-students.html',
+              'admin-study-material.html',
+          ]
+          pattern = re.compile(r'(<a(?: class="active")? href="admin-notifications\.html">Notifications</a>)(<a(?: class="active")? href="admin-help-feedback\.html">Help & Feedback</a>)')
+          for name in pages:
+              path = Path(name)
+              text = path.read_text()
+              if 'admin-communications.html' in text:
+                  raise SystemExit(f'{name}: Communications already present; refusing unexpected state')
+              text, count = pattern.subn(r'\1<a href="admin-communications.html">Communications</a>\2', text, count=1)
+              if count != 1:
+                  raise SystemExit(f'{name}: expected exactly one Notifications→Help nav boundary, got {count}')
+              path.write_text(text)
+
+          exam = Path('admin-exams.html')
+          text = exam.read_text()
+          old = 'admin-examinations-nav.js?v=20260905-1'
+          new = 'admin-examinations-nav.js?v=20260910-4'
+          if text.count(old) != 1:
+              raise SystemExit(f'admin-exams.html: expected exactly one old loader key, got {text.count(old)}')
+          exam.write_text(text.replace(old, new, 1))
+
+          contract = Path('exam-scope-month-folders.test.mjs')
+          text = contract.read_text()
+          old_test = r'admin-examinations-nav\.js\?v=20260905-1'
+          new_test = r'admin-examinations-nav\.js\?v=20260910-4'
+          if text.count(old_test) != 1:
+              raise SystemExit(f'exam-scope-month-folders.test.mjs: expected exactly one old version assertion, got {text.count(old_test)}')
+          contract.write_text(text.replace(old_test, new_test, 1))
+          PY
+      - name: Verify intended diff only
+        shell: bash
+        run: |
+          git diff --check
+          git diff --name-only
+          test "$(git diff --name-only | wc -l)" -eq 11
+      - name: Commit bounded fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add admin-attendance.html admin-enrollments.html admin-help-feedback.html admin-my-account.html admin-notifications.html admin-preparation.html admin-student-performance.html admin-students.html admin-study-material.html admin-exams.html exam-scope-month-folders.test.mjs
+          git commit -m "fix: render admin nav statically and bust exam loader cache"
+          git push origin HEAD:fix/admin-static-sidebar-and-exam-loader-cache
