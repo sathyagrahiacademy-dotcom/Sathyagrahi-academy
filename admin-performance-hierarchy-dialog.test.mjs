@@ -7,7 +7,7 @@ const u=require('./exam-performance-ui-utils.js');
 
 const scope={
   attempt_id:'a2',exam_id:'e1',exam_sequence:2,scope_level:'topic',coverage:'partial',
-  unit_id:1,unit_title:'Physics and Measurement',chapter_id:11,chapter_title:'Units and systems of units',subtopic_id:101,subtopic_title:'International System of Units',
+  unit_id:1,unit_no:1,unit_title:'Physics and Measurement',chapter_id:11,chapter_title:'Units and systems of units',subtopic_id:101,subtopic_title:'International System of Units',
   question_count:4,earned_marks:12,max_marks:16,percentage:75,correct_count:3,wrong_count:1,unattempted_count:0
 };
 const history=[
@@ -33,6 +33,13 @@ test('E chip is compact and exact scope dialog joins by attempt id',()=>{
   assert.equal(m.scopePath,'Physics and Measurement → Units and systems of units → International System of Units');
 });
 
+test('hierarchy preserves canonical unit number instead of displayed-list index',()=>{
+  const unit3={...scope,unit_id:3,unit_no:3,unit_title:'Laws of Motion'};
+  const hierarchy=u.buildStudentHierarchy([unit3]);
+  assert.equal(hierarchy[0].units.length,1);
+  assert.equal(hierarchy[0].units[0].unitNo,3);
+});
+
 test('performance page uses clean subject tabs hierarchy and a single E dialog',()=>{
   const html=fs.readFileSync('admin-performance.html','utf8');
   assert.match(html,/id="performanceSubjectTabs"/);
@@ -49,4 +56,5 @@ test('controller opens clickable E scope and Full Result deep links exact attemp
   assert.match(js,/openEDialog/);
   assert.match(js,/admin-results\.html\?attempt=/);
   assert.match(js,/data-dialog-close/);
+  assert.match(js,/unit\.unitNo/);
 });
