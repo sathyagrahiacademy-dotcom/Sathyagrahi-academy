@@ -140,10 +140,7 @@
     e.preventDefault();e.stopPropagation();
     const exam=exams.find(x=>String(x.id)===String(del.dataset.id));
     if(!exam||exam.state!=='draft')return;
-    const confirmCode=window.prompt(`DELETE DRAFT EXAM
-
-Type the exact Exam Code to confirm:
-${exam.examCode||''}`,'');
+    const confirmCode=window.prompt(`DELETE DRAFT EXAM\n\nType the exact Exam Code to confirm:\n${exam.examCode||''}`,'');
     if(confirmCode==null)return;
     del.disabled=true;
     try{await call({action:'delete',examId:exam.id,confirmCode});await loadControlCenter()}
@@ -157,7 +154,8 @@ ${exam.examCode||''}`,'');
   }
 
   function waitForLegacy(){
-    if(typeof rows.onclick!=='function'){setTimeout(waitForLegacy,25);return}
+    const legacyReady=countLine.textContent.trim()!=='Loading exams...' || rows.textContent.includes('Unable to load exams.');
+    if(typeof rows.onclick!=='function'||!legacyReady){setTimeout(waitForLegacy,25);return}
     ensureShell();wire();loadControlCenter();
   }
   waitForLegacy();
