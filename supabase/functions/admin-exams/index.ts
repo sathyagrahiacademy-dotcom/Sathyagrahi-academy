@@ -558,13 +558,30 @@ Deno.serve(async (req: Request) => {
       await admin.from('exams').update({result_published:false}).eq('id',examId); return json({ok:true})
     }
     if (action === 'delete') {
-      const examId=String(body.examId||''),confirmCode=String(body.confirmCode||'').trim().toUpperCase()
-      const {data:access}=await admin.from('exam_access').select('exam_code').eq('exam_id',examId).maybeSingle()
-      if (!access) return json({error:'Exam access record not found'},404)
-      if (!confirmCode||confirmCode!==String(access.exam_code).toUpperCase()) return json({error:'Type the exact Exam Code to delete this exam'},409)
-      const {error}=await admin.from('exams').delete().eq('id',examId)
-      if (error) return json({error:error.message},400); return json({ok:true})
-    }
+  const examId=String(body.examId||''),confirmCode=String(body.confirmCode||'').trim()
+  if (!examId) return json({error:'Exam ID is required'},400)
+  const {data:exam,error:examError}=await admin.from('exams').select('id,status,is_published,result_published,exam_access(exam_code)').eq('id',examId).maybeSingle()
+  if (examError) return json({error:examError.message},400)
+  if (!exam) return json({error:'Exam not found'},404)
+  const access=Array.isArray(exam.exam_access)?exam.exam_access[0]:exam.exam_access
+  if (!access) return json({error:'Exam access record not found'},404)
+  if (!confirmCode||confirmCode!==String(access.exam_code||'')) return json({error:'Type the exact Exam Code to delete this exam'},409)
+  if (exam.is_published||exam.result_published) return json({error:'Published exams cannot be deleted'},409)
+  if (String(exam.status||'').toLowerCase()!=='draft') return json({error:'Only draft exams can be deleted'},409)
+  const {data:attemptRows,error:attemptError}=await admin.from('exam_attempts').select('id').eq('exam_id',examId)
+  if (attemptError) return json({error:attemptError.message},400)
+  const attemptIds=(attemptRows||[]).map((row:any)=>row.id)
+  if (attemptIds.length) {
+    const {count:resultCount,error:resultError}=await admin.from('exam_results').select('attempt_id',{count:'exact',head:true}).in('attempt_id',attemptIds)
+    if (resultError) return json({error:resultError.message},400)
+    if (Number(resultCount||0)>0) return json({error:'Draft exam cannot be deleted after a result exists'},409)
+    return json({error:'Draft exam cannot be deleted after an attempt exists'},409)
+  }
+  const {data:deleted,error}=await admin.from('exams').delete().eq('id',examId).eq('status','draft').eq('is_published',false).eq('result_published',false).select('id').maybeSingle()
+  if (error) return json({error:error.message},400)
+  if (!deleted) return json({error:'Only draft exams can be deleted'},409)
+  return json({ok:true,examId})
+}
     return json({error:'Unknown action'},400)
   } catch (e) {
     return json({ error: e instanceof Error ? e.message : 'Exam operation failed. Please try again.' }, 400)
