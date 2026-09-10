@@ -37,8 +37,8 @@
     const masterPhase1Enabled=window.SGA_EXAMINATIONS_MASTER_PHASE1_ENABLED===true;
     if(masterPhase1Enabled){
       loadScript('examControlCenterUi','exam-control-center-ui.js?v=20260908-1',()=>{
-        loadScript('adminExamControlCenter','admin-exam-control-center.js?v=20260910-3',()=>{
-          loadScript('adminExamWorkspaceRoute','admin-exam-workspace-route.js?v=20260909-1');
+        loadScript('adminExamControlCenter','admin-exam-control-center.js?v=20260910-5',()=>{
+          loadScript('adminExamWorkspaceRoute','admin-exam-workspace-route.js?v=20260910-2');
         });
       });
       loadScript('examPasswordUtils','exam-password-utils.js?v=20260910-1',()=>{
@@ -47,6 +47,7 @@
         });
       });
     }else{
+      document.querySelector('.content')?.classList.remove('exam-master-pending');
       loadScript('adminExamsEnhancements','admin-exams-enhancements.js?v=20260905-1');
     }
     loadScript('sgaJsPdf','https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',()=>{
