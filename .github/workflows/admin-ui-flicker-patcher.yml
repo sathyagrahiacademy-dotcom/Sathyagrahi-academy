@@ -1,0 +1,108 @@
+name: Admin UI Flicker Patcher
+
+on:
+  push:
+    branches:
+      - fix/admin-ui-render-flicker
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.head_commit.message != 'fix: stabilize admin first paint and exam master render'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/admin-ui-render-flicker
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply bounded patch
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+
+          function read(path){return fs.readFileSync(path,'utf8')}
+          function write(path,text){fs.writeFileSync(path,text)}
+          function replaceOnce(path,re,replacement,label){
+            const before=read(path);
+            const matches=before.match(new RegExp(re.source,re.flags.includes('g')?re.flags:re.flags+'g'))||[];
+            if(matches.length!==1)throw new Error(`${label}: expected exactly 1 match in ${path}, got ${matches.length}`);
+            const after=before.replace(re,replacement);
+            if(after===before)throw new Error(`${label}: replacement made no change in ${path}`);
+            write(path,after);
+          }
+
+          replaceOnce(
+            'admin-exams.js',
+            /await loadScopeTreeOnce\(\);resetExamForm\(\);await load\(\);/,
+            'await loadScopeTreeOnce();resetExamForm();await load();window.SGA_ADMIN_EXAMS_LEGACY_READY=true;',
+            'legacy readiness'
+          );
+
+          replaceOnce(
+            'admin-exam-control-center.js',
+            /if\(typeof rows\.onclick!==['"]function['"]\)\{setTimeout\(waitForLegacy,25\);return\}/,
+            "if(typeof rows.onclick!=='function'||window.SGA_ADMIN_EXAMS_LEGACY_READY!==true){setTimeout(waitForLegacy,25);return}",
+            'master readiness gate'
+          );
+
+          replaceOnce(
+            'admin-exams.html',
+            /admin-exams\.js\?v=20260905-3/,
+            'admin-exams.js?v=20260910-1',
+            'legacy cache version'
+          );
+
+          replaceOnce(
+            'admin-examinations-nav.js',
+            /admin-exam-control-center\.js\?v=\d{8}-\d+/,
+            'admin-exam-control-center.js?v=20260910-2',
+            'control-center cache version'
+          );
+
+          const pages=[
+            'admin-attendance.html',
+            'admin-enrollments.html',
+            'admin-help-feedback.html',
+            'admin-my-account.html',
+            'admin-notifications.html',
+            'admin-preparation.html',
+            'admin-student-performance.html',
+            'admin-students.html',
+            'admin-study-material.html'
+          ];
+
+          for(const path of pages){
+            let html=read(path);
+            if(html.includes('href="admin-communications.html"'))continue;
+            const notifications=html.indexOf('href="admin-notifications.html"');
+            const help=html.indexOf('href="admin-help-feedback.html"');
+            if(notifications<0||help<0||notifications>=help)throw new Error(`sidebar anchors not canonical in ${path}`);
+            const anchorStart=html.lastIndexOf('<a',help);
+            const lineStart=html.lastIndexOf('\n',anchorStart)+1;
+            if(anchorStart<0||lineStart<0)throw new Error(`cannot locate help anchor line in ${path}`);
+            const indent=html.slice(lineStart,anchorStart);
+            if(!/^\s*$/.test(indent))throw new Error(`unexpected help anchor indentation in ${path}`);
+            html=html.slice(0,lineStart)+`${indent}<a href="admin-communications.html">Communications</a>\n`+html.slice(lineStart);
+            write(path,html);
+          }
+          NODE
+      - name: Run focused regression
+        run: node --test admin-ui-render-stability.test.mjs admin-exam-control-center-contract.test.mjs admin-communications-nav.test.mjs
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add admin-exams.js admin-exam-control-center.js admin-exams.html admin-examinations-nav.js admin-*.html
+          if git diff --cached --quiet; then
+            echo "No patch changes to commit"
+            exit 0
+          fi
+          git commit -m "fix: stabilize admin first paint and exam master render"
+          git push origin HEAD:fix/admin-ui-render-flicker
