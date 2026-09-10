@@ -37,6 +37,7 @@
   document.addEventListener('click',event=>{
     const button=event.target?.closest?.('button[data-id]');
     if(!button)return;
+    if(button.matches('[data-delete-draft], .delete-draft, .del'))return;
     const id=String(button.dataset.id||'');
     const row=button.closest('tr[data-master-workspace="1"]');
     const attention=button.classList.contains('control-fix')&&masterIds.has(id);
