@@ -37,7 +37,7 @@
     const masterPhase1Enabled=window.SGA_EXAMINATIONS_MASTER_PHASE1_ENABLED===true;
     if(masterPhase1Enabled){
       loadScript('examControlCenterUi','exam-control-center-ui.js?v=20260908-1',()=>{
-        loadScript('adminExamControlCenter','admin-exam-control-center.js?v=20260908-1',()=>{
+        loadScript('adminExamControlCenter','admin-exam-control-center.js?v=20260910-3',()=>{
           loadScript('adminExamWorkspaceRoute','admin-exam-workspace-route.js?v=20260909-1');
         });
       });
