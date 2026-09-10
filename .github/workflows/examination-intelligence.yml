@@ -58,7 +58,7 @@ jobs:
           question-bank-folder-api.test.mjs
           question-bank-folder-ui.test.mjs
           admin-results-archive.test.mjs
-          admin-performance-hierarchy.test.mjs
+          admin-performance-hierarchy-dialog.test.mjs
           examinations-ux-consolidation-integration.test.mjs
 
       - name: Run full root regression suite
