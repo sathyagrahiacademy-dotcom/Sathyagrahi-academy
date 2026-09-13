@@ -7,7 +7,7 @@
   const countLine=document.getElementById('countLine');
   if(!c||!ui||!rows||!search||!toolbar||!countLine)return;
 
-  const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[ch]));
+  const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
   const typeLabel=t=>({daily:'DT',weekly:'WT',monthly:'MT',grand:'GT',unit:'LEGACY UNIT'}[String(t||'').toLowerCase()]||String(t||'LEGACY').toUpperCase());
   const dateLabel=v=>{if(!v)return '—';const d=new Date(`${v}T00:00:00`);return Number.isNaN(d.getTime())?String(v):d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})};
   const style=document.createElement('style');
