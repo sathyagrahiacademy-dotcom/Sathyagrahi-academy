@@ -54,6 +54,11 @@ jobs:
           performance-intelligence-policy.test.mjs
           performance-intelligence-integration.test.mjs
           exam-wizard-password.test.mjs
+          exam-credential-vault-schema.test.mjs
+          exam-credential-crypto.test.mjs
+          admin-exam-credentials-security.test.mjs
+          exam-credential-integration.test.mjs
+          admin-exam-credentials-ui.test.mjs
           exam-wizard-shell.test.mjs
           question-bank-folder-api.test.mjs
           question-bank-folder-ui.test.mjs
@@ -69,6 +74,7 @@ jobs:
           node --check admin-exams.js
           node --check exam-control-center-ui.js
           node --check admin-exam-control-center.js
+          node --check admin-exam-credentials-ui.js
           node --check exam-password-utils.js
           node --check admin-exam-wizard.js
           node --check admin-exam-wizard-release.js
@@ -94,6 +100,7 @@ jobs:
         run: |
           npx -y esbuild@0.25.9 supabase/functions/admin-exams/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/admin-exams.js --external:*
           npx -y esbuild@0.25.9 supabase/functions/admin-exam-wizard/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/admin-exam-wizard.js --external:*
+          npx -y esbuild@0.25.9 supabase/functions/admin-exam-credentials/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/admin-exam-credentials.js --external:*
           npx -y esbuild@0.25.9 supabase/functions/admin-question-bank/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/admin-question-bank.js --external:*
           npx -y esbuild@0.25.9 supabase/functions/student-exam-access/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/student-exam-access.js --external:*
           npx -y esbuild@0.25.9 supabase/functions/student-exam-attempt/index.ts --bundle --platform=neutral --loader:.ts=ts --format=esm --outfile=/tmp/student-exam-attempt.js --external:*

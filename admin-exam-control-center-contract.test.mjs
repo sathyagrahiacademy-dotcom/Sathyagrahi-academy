@@ -35,10 +35,11 @@ test('control center derives India date and reuses publish validation',()=>{
   assert.match(src,/loadPublishValidation/)
 })
 
-test('control center response exposes summary and exams without academic answer data',()=>{
+test('control center response exposes summary and exams without academic or credential secrets',()=>{
   assert.match(src,/return json\(\{ok:true,today,summary,exams:items\}\)/)
   const start=src.indexOf("action === 'control_center'")
   const end=src.indexOf("action === 'scope_tree'",start)
   const block=src.slice(start,end>start?end:start+12000)
-  assert.doesNotMatch(block,/question_text|option_a|option_b|selected_option|correct_option|password_hash/)
+  assert.doesNotMatch(block,/question_text|option_a|option_b|selected_option|correct_option|password_hash|ciphertext|key_version/)
+  assert.doesNotMatch(block,/\bpassword\b/i)
 })

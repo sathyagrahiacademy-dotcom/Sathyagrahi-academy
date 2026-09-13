@@ -29,3 +29,10 @@ test('wizard and edge both use shared six digit policies',()=>{
   assert.match(edge,/validateExamPassword/);
   assert.doesNotMatch(edge,/4 to 64 characters/);
 });
+
+test('master wizard password persistence uses the shared encrypted credential helper',()=>{
+  const edge=fs.readFileSync('supabase/functions/admin-exam-wizard/index.ts','utf8');
+  assert.match(edge,/exam-credential-crypto\.mjs/);
+  assert.match(edge,/encryptExamCredential/);
+  assert.match(edge,/upsert_exam_credential_v1/);
+});

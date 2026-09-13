@@ -1,6 +1,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { corsHeaders } from 'jsr:@supabase/supabase-js@2/cors'
 import { MASTER_EXAM_TYPES } from '../_shared/exam-master-policy.mjs'
+import { EXAM_CREDENTIAL_KEY_VERSION, credentialSecretName, encryptExamCredential, sha256Hex } from '../_shared/exam-credential-crypto.mjs'
 import { normaliseWizardBasics, validateResultRelease } from '../admin-exams/wizard-policy.mjs'
 import { normaliseAudience } from '../admin-exams/audience-policy.mjs'
 import { validateExamPassword } from './password-policy.mjs'
@@ -9,10 +10,15 @@ function json(body:Record<string,unknown>,status=200){
   return new Response(JSON.stringify(body),{status,headers:{...corsHeaders,'Content-Type':'application/json'}})
 }
 
-async function hashPassword(password:string){
-  const bytes=new TextEncoder().encode(password)
-  const digest=await crypto.subtle.digest('SHA-256',bytes)
-  return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('')
+function credentialKeyBase64(version=EXAM_CREDENTIAL_KEY_VERSION){
+  const value=Deno.env.get(credentialSecretName(version))||''
+  if(!value)throw new Error('Exam credential service is not configured')
+  return value
+}
+
+function relationExamCode(value:any){
+  const access=Array.isArray(value)?value[0]:value
+  return String(access?.exam_code||'').trim().toUpperCase()
 }
 
 async function loadCanonicalSyllabus(admin:any){
@@ -152,9 +158,25 @@ Deno.serve(async(req:Request)=>{
       const codeRes=await admin.rpc('allocate_exam_code_v2',{p_exam_type:v.examType,p_batch_no:v.batchNo,p_exam_date:v.examDate})
       if(codeRes.error||!codeRes.data){await removePartialExam(admin,exam.id);return json({error:codeRes.error?.message||'Could not generate Exam Code'},400)}
       const examCode=String(codeRes.data)
-      const passwordHash=await hashPassword(passwordCheck.password)
-      const {error:accessError}=await admin.from('exam_access').insert({exam_id:exam.id,exam_code:examCode,password_hash:passwordHash})
-      if(accessError){await removePartialExam(admin,exam.id);return json({error:accessError.message||'Exam access setup failed'},400)}
+      try{
+        const keyVersion=EXAM_CREDENTIAL_KEY_VERSION
+        const keyBase64=credentialKeyBase64(keyVersion)
+        const passwordHash=await sha256Hex(passwordCheck.password)
+        const encrypted=await encryptExamCredential({password:passwordCheck.password,examId:String(exam.id),examCode,keyBase64})
+        const {error:accessError}=await admin.rpc('upsert_exam_credential_v1',{
+          p_exam_id:exam.id,
+          p_exam_code:examCode,
+          p_password_hash:passwordHash,
+          p_ciphertext:encrypted.ciphertext,
+          p_iv:encrypted.iv,
+          p_key_version:encrypted.keyVersion,
+          p_updated_by:user.id
+        })
+        if(accessError)throw new Error('Exam access setup failed')
+      }catch(_error){
+        await removePartialExam(admin,exam.id)
+        return json({error:'Exam access setup failed'},500)
+      }
       return json({ok:true,examId:exam.id,examCode,totalMarks:v.totalMarks})
     }
 
@@ -168,6 +190,24 @@ Deno.serve(async(req:Request)=>{
       if(body.examType!=null&&String(body.examType)!==String(exam.exam_type)) return json({error:'Exam Type cannot be changed'},409)
       if(body.batchNo!=null&&Number(body.batchNo)!==Number(exam.batch_no)) return json({error:'Batch cannot be changed'},409)
       if(body.examDate!=null&&String(body.examDate)!==String(exam.exam_date)) return json({error:'Exam Date cannot be changed'},409)
+
+      const examPassword=body.examPassword==null?'':String(body.examPassword)
+      let preparedCredential:any=null
+      if(examPassword){
+        const passwordCheck=validateExamPassword(examPassword)
+        if(!passwordCheck.ok) return json({error:passwordCheck.error},400)
+        const examCode=relationExamCode(exam.exam_access)
+        if(!examCode)return json({error:'Exam Code not found'},409)
+        try{
+          const keyVersion=EXAM_CREDENTIAL_KEY_VERSION
+          const keyBase64=credentialKeyBase64(keyVersion)
+          const passwordHash=await sha256Hex(passwordCheck.password)
+          const encrypted=await encryptExamCredential({password:passwordCheck.password,examId,examCode,keyBase64})
+          preparedCredential={examCode,passwordHash,encrypted}
+        }catch(_error){
+          return json({error:'Exam access setup failed'},500)
+        }
+      }
 
       const basic=normaliseWizardBasics({...body,examType:exam.exam_type,batchNo:exam.batch_no,examDate:exam.exam_date})
       if(!basic.ok) return json({error:basic.error||'Invalid exam details'},400)
@@ -184,13 +224,18 @@ Deno.serve(async(req:Request)=>{
       }).eq('id',examId)
       if(updateError) return json({error:updateError.message},400)
 
-      const examPassword=body.examPassword==null?'':String(body.examPassword)
       if(examPassword){
-        const passwordCheck=validateExamPassword(examPassword)
-        if(!passwordCheck.ok) return json({error:passwordCheck.error},400)
-        const passwordHash=await hashPassword(passwordCheck.password)
-        const {error:accessError}=await admin.from('exam_access').update({password_hash:passwordHash}).eq('exam_id',examId)
-        if(accessError) return json({error:accessError.message},400)
+        const {examCode,passwordHash,encrypted}=preparedCredential
+        const {error:accessError}=await admin.rpc('upsert_exam_credential_v1',{
+          p_exam_id:examId,
+          p_exam_code:examCode,
+          p_password_hash:passwordHash,
+          p_ciphertext:encrypted.ciphertext,
+          p_iv:encrypted.iv,
+          p_key_version:encrypted.keyVersion,
+          p_updated_by:user.id
+        })
+        if(accessError) return json({error:'Exam access setup failed'},500)
       }
       return json({ok:true,examId,totalMarks:v.totalMarks})
     }
