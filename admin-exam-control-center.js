@@ -7,7 +7,7 @@
   const countLine=document.getElementById('countLine');
   if(!c||!ui||!rows||!search||!toolbar||!countLine)return;
 
-  const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
+  const esc=v=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[ch]));
   const typeLabel=t=>({daily:'DT',weekly:'WT',monthly:'MT',grand:'GT',unit:'LEGACY UNIT'}[String(t||'').toLowerCase()]||String(t||'LEGACY').toUpperCase());
   const dateLabel=v=>{if(!v)return '—';const d=new Date(`${v}T00:00:00`);return Number.isNaN(d.getTime())?String(v):d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})};
   const style=document.createElement('style');
@@ -98,10 +98,11 @@
 
   function filtered(){return ui.filterControlCenterExams(exams,{tab:activeTab,search:search.value,type:document.getElementById('examTypeFilter')?.value,batch:document.getElementById('examBatchFilter')?.value,month:document.getElementById('examMonthFilter')?.value})}
   function rowHtml(x){
-  const issue=(x.issues||[]).length?'<span style="color:#b42318">●</span> ':'';
-  const draftDelete=x.state==='draft'?` <button class="small-btn delete-draft" data-id="${esc(x.id)}" data-delete-draft="1">DELETE DRAFT EXAM</button>`:'';
-  return `<tr data-control-row="1"><td><strong>${issue}${esc(x.title)}</strong></td><td><span class="type-badge">${esc(typeLabel(x.examType))}</span></td><td>${x.batchNo==null?'—':esc(String(x.batchNo).padStart(2,'0'))}</td><td>${esc(dateLabel(x.examDate))}</td><td><strong>${esc(x.examCode||'—')}</strong></td><td>${x.questionCount}/${x.expectedQuestions??x.questionCount}</td><td>${x.assignedCount}</td><td><span class="exam-status ${esc(x.state)}">${esc(ui.statusLabel(x.state))}</span></td><td class="exam-next" data-id="${esc(x.id)}">${actionButton(x)} <button class="small-btn questions" data-id="${esc(x.id)}">QUESTIONS</button>${draftDelete}</td></tr>`;
-}
+    const issue=(x.issues||[]).length?'<span style="color:#b42318">●</span> ':'';
+    const draftDelete=x.state==='draft'?` <button class="small-btn delete-draft" data-id="${esc(x.id)}" data-delete-draft="1">DELETE DRAFT EXAM</button>`:'';
+    const access=`<button type="button" class="small-btn exam-access-btn" data-exam-access="1" data-exam-id="${esc(x.id)}" data-exam-code="${esc(x.examCode||'')}" data-exam-title="${esc(x.title)}" data-exam-state="${esc(x.state)}">ACCESS</button>`;
+    return `<tr data-control-row="1"><td><strong>${issue}${esc(x.title)}</strong></td><td><span class="type-badge">${esc(typeLabel(x.examType))}</span></td><td>${x.batchNo==null?'—':esc(String(x.batchNo).padStart(2,'0'))}</td><td>${esc(dateLabel(x.examDate))}</td><td><strong>${esc(x.examCode||'—')}</strong><br>${access}</td><td>${x.questionCount}/${x.expectedQuestions??x.questionCount}</td><td>${x.assignedCount}</td><td><span class="exam-status ${esc(x.state)}">${esc(ui.statusLabel(x.state))}</span></td><td class="exam-next" data-id="${esc(x.id)}">${actionButton(x)} <button class="small-btn questions" data-id="${esc(x.id)}">QUESTIONS</button>${draftDelete}</td></tr>`;
+  }
 
   function renderTable(){
     const list=filtered();
@@ -135,21 +136,21 @@
     document.getElementById('examControlFilters').onchange=renderTable;
     document.getElementById('needsAttention').onclick=e=>{const b=e.target.closest('.control-fix');if(!b)return;const target=b.dataset.target;if(target==='QUESTIONS')route(b.dataset.id,'questions');else{activeTab='all';renderTabs();renderTable();document.querySelector(`#rows [data-id="${CSS.escape(b.dataset.id)}"]`)?.scrollIntoView({behavior:'smooth',block:'center'})}};
     rows.addEventListener('click',async e=>{
-  const del=e.target.closest('[data-delete-draft]');
-  if(del){
-    e.preventDefault();e.stopPropagation();
-    const exam=exams.find(x=>String(x.id)===String(del.dataset.id));
-    if(!exam||exam.state!=='draft')return;
-    const confirmCode=window.prompt(`DELETE DRAFT EXAM\n\nType the exact Exam Code to confirm:\n${exam.examCode||''}`,'');
-    if(confirmCode==null)return;
-    del.disabled=true;
-    try{await call({action:'delete',examId:exam.id,confirmCode});await loadControlCenter()}
-    catch(err){window.alert(err?.message||'Could not delete draft exam')}
-    finally{del.disabled=false}
-    return;
-  }
-  const b=e.target.closest('.control-next');if(b){e.preventDefault();e.stopPropagation();route(b.dataset.id,b.dataset.route)}
-});
+      const del=e.target.closest('[data-delete-draft]');
+      if(del){
+        e.preventDefault();e.stopPropagation();
+        const exam=exams.find(x=>String(x.id)===String(del.dataset.id));
+        if(!exam||exam.state!=='draft')return;
+        const confirmCode=window.prompt(`DELETE DRAFT EXAM\n\nType the exact Exam Code to confirm:\n${exam.examCode||''}`,'');
+        if(confirmCode==null)return;
+        del.disabled=true;
+        try{await call({action:'delete',examId:exam.id,confirmCode});await loadControlCenter()}
+        catch(err){window.alert(err?.message||'Could not delete draft exam')}
+        finally{del.disabled=false}
+        return;
+      }
+      const b=e.target.closest('.control-next');if(b){e.preventDefault();e.stopPropagation();route(b.dataset.id,b.dataset.route)}
+    });
     observer=new MutationObserver(()=>{if(rows.querySelector('[data-control-row]'))return;setTimeout(loadControlCenter,0)});observer.observe(rows,{childList:true});
   }
 
