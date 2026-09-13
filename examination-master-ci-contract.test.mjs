@@ -25,12 +25,24 @@ test('fast contracts include all Phase 1 master policies and UI contracts',()=>{
   ]) assert.match(yml,new RegExp(file.replaceAll('.','\\.')))
 })
 
-test('browser syntax gate includes new Control Center JavaScript',()=>{
+test('credential vault security contracts are mandatory fast CI gates',()=>{
+  for(const file of [
+    'exam-credential-vault-schema.test.mjs',
+    'exam-credential-crypto.test.mjs',
+    'admin-exam-credentials-security.test.mjs',
+    'exam-credential-integration.test.mjs',
+    'admin-exam-credentials-ui.test.mjs'
+  ]) assert.match(yml,new RegExp(file.replaceAll('.','\\.')),`missing CI gate ${file}`)
+})
+
+test('browser syntax gate includes Control Center and credential UI JavaScript',()=>{
   assert.match(yml,/node --check exam-control-center-ui\.js/)
   assert.match(yml,/node --check admin-exam-control-center\.js/)
+  assert.match(yml,/node --check admin-exam-credentials-ui\.js/)
 })
 
 test('full root regression and Edge TypeScript parsing remain mandatory',()=>{
   assert.match(yml,/node --test \*\.test\.js \*\.test\.mjs \*\.test\.cjs/)
   assert.match(yml,/esbuild@0\.25\.9 supabase\/functions\/admin-exams\/index\.ts/)
+  assert.match(yml,/esbuild@0\.25\.9 supabase\/functions\/admin-exam-credentials\/index\.ts/)
 })
