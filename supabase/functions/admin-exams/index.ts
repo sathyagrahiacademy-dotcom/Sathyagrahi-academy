@@ -4,15 +4,44 @@ import { normaliseAudience, nextMaxAttempts } from './audience-policy.mjs'
 import { normaliseExamScopeDraftV2, canSaveExamScope, buildExamScopeSummary } from './exam-scope-logic.mjs'
 import { validateExamMapping } from '../_shared/exam-mapping-logic.mjs'
 import { normaliseExamType, templateForExamType } from '../_shared/exam-intelligence-policy.mjs'
+import { EXAM_CREDENTIAL_KEY_VERSION, credentialSecretName, encryptExamCredential, sha256Hex } from '../_shared/exam-credential-crypto.mjs'
+import { validateExamPassword } from '../admin-exam-wizard/password-policy.mjs'
 import { canPublishExam, validateMasterBlueprint } from './publish-validation.mjs'
 import { buildExamControlItem, buildControlCenterSummary } from './control-center-policy.mjs'
 
 function json(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 }
-function hashPassword(password: string) {
-  const enc = new TextEncoder().encode(password)
-  return crypto.subtle.digest('SHA-256', enc).then(buf => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join(''))
+function credentialKeyBase64(version=EXAM_CREDENTIAL_KEY_VERSION) {
+  const value=Deno.env.get(credentialSecretName(version))||''
+  if(!value)throw new Error('Exam credential service is not configured')
+  return value
+}
+function relationExamCode(value:any) {
+  const access=Array.isArray(value)?value[0]:value
+  return String(access?.exam_code||'').trim().toUpperCase()
+}
+async function prepareExamCredential(examId:string,examCode:string,password:string) {
+  const checked=validateExamPassword(password)
+  if(!checked.ok)throw new Error(checked.error)
+  const keyVersion=EXAM_CREDENTIAL_KEY_VERSION
+  const keyBase64=credentialKeyBase64(keyVersion)
+  const passwordHash=await sha256Hex(checked.password)
+  const encrypted=await encryptExamCredential({password:checked.password,examId,examCode,keyBase64})
+  return {passwordHash,encrypted}
+}
+async function persistExamCredential(admin:any,userId:string,examId:string,examCode:string,password:string) {
+  const prepared=await prepareExamCredential(examId,examCode,password)
+  const {error}=await admin.rpc('upsert_exam_credential_v1',{
+    p_exam_id:examId,
+    p_exam_code:examCode,
+    p_password_hash:prepared.passwordHash,
+    p_ciphertext:prepared.encrypted.ciphertext,
+    p_iv:prepared.encrypted.iv,
+    p_key_version:prepared.encrypted.keyVersion,
+    p_updated_by:userId
+  })
+  if(error)throw new Error('Exam access setup failed')
 }
 function normaliseIsoExamDate(value: unknown) {
   const text=String(value??'').trim()
@@ -350,13 +379,19 @@ Deno.serve(async (req: Request) => {
       const examPassword=String(body.examPassword||'')
       if (title.length<3) return json({error:'Enter exam title'},400)
       if (!['Physics','Chemistry','Biology','NEET','Mixed'].includes(subject)) return json({error:'Invalid subject'},400)
-      if (action==='create'&&examPassword.length<4) return json({error:'Exam password must be at least 4 characters'},400)
-      if (action==='update'&&examPassword&&examPassword.length<4) return json({error:'New password must be at least 4 characters'},400)
+      if (action==='create') {
+        const passwordCheck=validateExamPassword(examPassword)
+        if(!passwordCheck.ok)return json({error:passwordCheck.error},400)
+      }
+      if (action==='update'&&examPassword) {
+        const passwordCheck=validateExamPassword(examPassword)
+        if(!passwordCheck.ok)return json({error:passwordCheck.error},400)
+      }
 
       let existing:any=null,hadStructuredScope=false
       if (action==='update') {
         if (!examId) return json({error:'Exam ID is required'},400)
-        const existingRes=await admin.from('exams').select('id,is_published,status,syllabus,exam_type,exam_date,expected_questions,duration_minutes,total_marks,negative_marking').eq('id',examId).maybeSingle()
+        const existingRes=await admin.from('exams').select('id,is_published,status,syllabus,exam_type,exam_date,expected_questions,duration_minutes,total_marks,negative_marking,exam_access(exam_code)').eq('id',examId).maybeSingle()
         if (existingRes.error) return json({error:existingRes.error.message},400)
         existing=existingRes.data
         if (!existing) return json({error:'Exam not found'},404)
@@ -392,6 +427,19 @@ Deno.serve(async (req: Request) => {
         if (!/^[A-Z0-9-]{4,20}$/.test(legacyExamCode)) return json({error:'Legacy Exam Code must be 4-20 letters/numbers'},400)
       }
 
+      const currentExamCode=action==='update'?relationExamCode(existing?.exam_access):''
+      if(action==='update'&&!currentExamCode)return json({error:'Exam Code not found'},409)
+      if(isLegacyUpdate&&legacyExamCode!==currentExamCode&&!examPassword){
+        return json({error:'Enter a new six-digit Exam Password when changing the Legacy Exam Code'},400)
+      }
+
+      let preparedUpdateCredential:any=null
+      if(action==='update'&&examPassword){
+        const targetExamCode=isLegacyUpdate?legacyExamCode:currentExamCode
+        try{preparedUpdateCredential=await prepareExamCredential(examId,targetExamCode,examPassword)}
+        catch(error){return json({error:error instanceof Error?error.message:'Exam access setup failed'},400)}
+      }
+
       const {lookup}=await loadScopeTree(admin)
       const hydrated=hydrateLegacyScopeInput(body.scopeItems||[],lookup)
       const scopeNorm=normaliseExamScopeDraftV2(hydrated)
@@ -405,9 +453,8 @@ Deno.serve(async (req: Request) => {
         if (isLegacyCreate) {
           const {data:exam,error:examError}=await admin.from('exams').insert({title,subject,syllabus:null,scheduled_start:null,scheduled_end:null,duration_minutes:legacyDurationMinutes,total_marks:legacyTotalMarks,negative_marking:legacyNegativeMarking,instructions:instructions||null,status:'draft',is_published:false,result_published:false,audience_mode:'all',created_by:user.id}).select('id').single()
           if (examError||!exam) return json({error:examError?.message||'Could not create legacy exam'},400)
-          const passwordHash=await hashPassword(examPassword)
-          const {error:accessError}=await admin.from('exam_access').insert({exam_id:exam.id,exam_code:legacyExamCode,password_hash:passwordHash})
-          if (accessError) {await admin.from('exams').delete().eq('id',exam.id);return json({error:accessError.message||'Exam access setup failed'},400)}
+          try{await persistExamCredential(admin,user.id,String(exam.id),legacyExamCode,examPassword)}
+          catch(_error){await admin.from('exams').delete().eq('id',exam.id);return json({error:'Exam access setup failed'},500)}
           const {data:scopeData,error:scopeError}=await admin.rpc('replace_exam_scope_items_v2',{p_exam_id:exam.id,p_items:scopeNorm.items,p_created_by:user.id})
           if (scopeError) {await admin.from('exams').delete().eq('id',exam.id);return json({error:scopeError.message||'Exam syllabus scope setup failed'},400)}
           const {lookup:resolvedLookup}=await loadScopeTree(admin)
@@ -424,9 +471,8 @@ Deno.serve(async (req: Request) => {
         const codeRes=await admin.rpc('allocate_exam_code',{p_exam_type:examType,p_exam_date:examDate})
         if (codeRes.error||!codeRes.data) {await admin.from('exams').delete().eq('id',exam.id);return json({error:codeRes.error?.message||'Could not generate Exam Code'},400)}
         const examCode=String(codeRes.data)
-        const passwordHash=await hashPassword(examPassword)
-        const {error:accessError}=await admin.from('exam_access').insert({exam_id:exam.id,exam_code:examCode,password_hash:passwordHash})
-        if (accessError) {await admin.from('exams').delete().eq('id',exam.id);return json({error:accessError.message||'Exam access setup failed'},400)}
+        try{await persistExamCredential(admin,user.id,String(exam.id),examCode,examPassword)}
+        catch(_error){await admin.from('exams').delete().eq('id',exam.id);return json({error:'Exam access setup failed'},500)}
         const {data:scopeData,error:scopeError}=await admin.rpc('replace_exam_scope_items_v2',{p_exam_id:exam.id,p_items:scopeNorm.items,p_created_by:user.id})
         if (scopeError) {await admin.from('exams').delete().eq('id',exam.id);return json({error:scopeError.message||'Exam syllabus scope setup failed'},400)}
         const {lookup:resolvedLookup}=await loadScopeTree(admin)
@@ -444,12 +490,18 @@ Deno.serve(async (req: Request) => {
         : {title,subject,scheduled_start:null,scheduled_end:null,duration_minutes:legacyDurationMinutes,total_marks:legacyTotalMarks,negative_marking:legacyNegativeMarking,instructions:instructions||null,status:nextStatus}
       const {error:examError}=await admin.from('exams').update(examUpdate).eq('id',examId)
       if (examError) return json({error:examError.message},400)
-      const accessUpdate:any={}
-      if (isLegacyUpdate) accessUpdate.exam_code=legacyExamCode
-      if (examPassword) accessUpdate.password_hash=await hashPassword(examPassword)
-      if (Object.keys(accessUpdate).length) {
-        const {error:accessError}=await admin.from('exam_access').update(accessUpdate).eq('exam_id',examId)
-        if (accessError) return json({error:accessError.message},400)
+      if (examPassword) {
+        const targetExamCode=isLegacyUpdate?legacyExamCode:currentExamCode
+        const {error:accessError}=await admin.rpc('upsert_exam_credential_v1',{
+          p_exam_id:examId,
+          p_exam_code:targetExamCode,
+          p_password_hash:preparedUpdateCredential.passwordHash,
+          p_ciphertext:preparedUpdateCredential.encrypted.ciphertext,
+          p_iv:preparedUpdateCredential.encrypted.iv,
+          p_key_version:preparedUpdateCredential.encrypted.keyVersion,
+          p_updated_by:user.id
+        })
+        if(accessError)return json({error:'Exam access setup failed'},500)
       }
       if (hadStructuredScope||scopeNorm.items.length) {
         const {data:scopeData,error:scopeError}=await admin.rpc('replace_exam_scope_items_v2',{p_exam_id:examId,p_items:scopeNorm.items,p_created_by:user.id})
