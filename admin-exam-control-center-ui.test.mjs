@@ -35,6 +35,17 @@ test('Control Center renders approved exam list columns and preserves data-id ho
   assert.match(controller,/data-control-row/)
 })
 
+test('CODE cell exposes a separate ACCESS action without workspace routing data-id',()=>{
+  assert.match(controller,/data-exam-access/)
+  assert.match(controller,/data-exam-id/)
+  assert.match(controller,/data-exam-code/)
+  assert.match(controller,/data-exam-title/)
+  assert.match(controller,/data-exam-state/)
+  const access=controller.match(/<button[^>]*data-exam-access[^>]*>ACCESS<\/button>/)
+  assert.ok(access,'ACCESS action missing')
+  assert.doesNotMatch(access[0],/\bdata-id=/)
+})
+
 test('state actions route to existing safe exam operations and result/performance pages',()=>{
   assert.match(controller,/admin-results\.html\?exam=/)
   assert.match(controller,/admin-performance\.html\?exam=/)
