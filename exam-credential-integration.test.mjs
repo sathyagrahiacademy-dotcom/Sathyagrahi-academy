@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const wizard=fs.readFileSync('supabase/functions/admin-exam-wizard/index.ts','utf8');
+const legacyAdmin=fs.readFileSync('supabase/functions/admin-exams/index.ts','utf8');
 const student=fs.readFileSync('supabase/functions/student-exam-access/index.ts','utf8');
 
 function blockBetween(source,startMarker,endMarker){
@@ -37,6 +38,17 @@ test('master password edit reuses the existing Exam Code and the same atomic cre
   assert.match(update,/encryptExamCredential\(/);
   assert.match(update,/upsert_exam_credential_v1/);
   assert.doesNotMatch(update,/\.from\(['\"]exam_access['\"]\)\.update\(\{password_hash/);
+});
+
+test('legacy admin create and password-edit paths also use the paired credential RPC',()=>{
+  assert.match(legacyAdmin,/exam-credential-crypto\.mjs/);
+  assert.match(legacyAdmin,/encryptExamCredential/);
+  assert.match(legacyAdmin,/sha256Hex/);
+  const createUpdate=blockBetween(legacyAdmin,"action === 'create' || action === 'update'","action === 'students'");
+  assert.match(createUpdate,/upsert_exam_credential_v1/);
+  assert.doesNotMatch(createUpdate,/\.from\(['\"]exam_access['\"]\)\.insert/);
+  assert.doesNotMatch(createUpdate,/\.from\(['\"]exam_access['\"]\)\.update\(accessUpdate/);
+  assert.doesNotMatch(createUpdate,/hashPassword\(/);
 });
 
 test('student verification remains hash-only and never reads the reversible vault',()=>{
