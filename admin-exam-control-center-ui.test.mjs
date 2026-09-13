@@ -46,6 +46,11 @@ test('CODE cell exposes a separate ACCESS action without workspace routing data-
   assert.doesNotMatch(access[0],/\bdata-id=/)
 })
 
+test('Control Center HTML escaping uses a complete double-quote entity',()=>{
+  assert.match(controller,/['\"]?:'&quot;'/)
+  assert.doesNotMatch(controller,/['\"]?:'&quot'(?!;)/)
+})
+
 test('state actions route to existing safe exam operations and result/performance pages',()=>{
   assert.match(controller,/admin-results\.html\?exam=/)
   assert.match(controller,/admin-performance\.html\?exam=/)
