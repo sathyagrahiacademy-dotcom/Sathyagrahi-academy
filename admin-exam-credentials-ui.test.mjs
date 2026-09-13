@@ -14,10 +14,9 @@ test('Control Center CODE cell exposes ACCESS metadata without workspace data-id
   assert.match(controller,/data-exam-code/);
   assert.match(controller,/data-exam-title/);
   assert.match(controller,/data-exam-state/);
-  const match=controller.match(/<button[^>]*data-exam-access[^>]*>/);
+  const match=controller.match(/<button[^>]*data-exam-access[^>]*>ACCESS<\/button>/);
   assert.ok(match,'ACCESS button markup missing');
   assert.doesNotMatch(match[0],/\bdata-id=/,'ACCESS button must not use data-id because workspace routing captures it');
-  assert.match(match[0],/>ACCESS</);
 });
 
 test('credential UI controller exists and is loaded after Control Center',()=>{
