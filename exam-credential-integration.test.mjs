@@ -22,7 +22,7 @@ test('master wizard imports shared credential crypto instead of owning a second 
 });
 
 test('credential key resolution rejects an unusable env key and master update passes the admin client',()=>{
-  const resolver=blockBetween(wizard,'async function credentialKeyBase64','function relationExamCode');
+  const resolver=blockBetween(wizard,'function isUsableCredentialKey','function relationExamCode');
   assert.match(resolver,/isUsableCredentialKey\(value\)/,'non-empty env keys must be validated before use');
   assert.match(resolver,/admin\.rpc\(['"]get_exam_credential_encryption_key_v1['"]\)/,'invalid or missing env key must fall back to the protected DB key');
   const update=blockBetween(wizard,"action === 'update_master_basics'","action === 'get_master_scope'");
