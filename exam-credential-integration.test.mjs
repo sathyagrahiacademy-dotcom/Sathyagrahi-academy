@@ -21,6 +21,14 @@ test('master wizard imports shared credential crypto instead of owning a second 
   assert.doesNotMatch(wizard,/async function hashPassword\(/);
 });
 
+test('credential key resolution rejects an unusable env key and master update passes the admin client',()=>{
+  const resolver=blockBetween(wizard,'function isUsableCredentialKey','function relationExamCode');
+  assert.match(resolver,/isUsableCredentialKey\(value\)/,'non-empty env keys must be validated before use');
+  assert.match(resolver,/admin\.rpc\(['"]get_exam_credential_encryption_key_v1['"]\)/,'invalid or missing env key must fall back to the protected DB key');
+  const update=blockBetween(wizard,"action === 'update_master_basics'","action === 'get_master_scope'");
+  assert.match(update,/await credentialKeyBase64\(admin,keyVersion\)/,'password edits must resolve the key with the admin client');
+});
+
 test('master create stores verification hash and encrypted credential atomically',()=>{
   const create=blockBetween(wizard,"action === 'create_master_exam'","action === 'update_master_basics'");
   assert.match(create,/sha256Hex\(passwordCheck\.password\)/);
