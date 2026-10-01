@@ -160,7 +160,7 @@ Deno.serve(async(req:Request)=>{
       const examCode=String(codeRes.data)
       try{
         const keyVersion=EXAM_CREDENTIAL_KEY_VERSION
-        const keyBase64=credentialKeyBase64(keyVersion)
+        const keyBase64=await credentialKeyBase64(admin,keyVersion)
         const passwordHash=await sha256Hex(passwordCheck.password)
         const encrypted=await encryptExamCredential({password:passwordCheck.password,examId:String(exam.id),examCode,keyBase64})
         const {error:accessError}=await admin.rpc('upsert_exam_credential_v1',{
