@@ -10,10 +10,25 @@ function json(body:Record<string,unknown>,status=200){
   return new Response(JSON.stringify(body),{status,headers:{...corsHeaders,'Content-Type':'application/json'}})
 }
 
-function credentialKeyBase64(version=EXAM_CREDENTIAL_KEY_VERSION){
-  const value=Deno.env.get(credentialSecretName(version))||''
-  if(!value)throw new Error('Exam credential service is not configured')
-  return value
+function isUsableCredentialKey(value:string){
+  const text=String(value||'').trim()
+  if(!text||text.length%4!==0||!/^[A-Za-z0-9+/]+={0,2}$/.test(text))return false
+  try{
+    return atob(text).length===32
+  }catch{
+    return false
+  }
+}
+
+async function credentialKeyBase64(admin:any,version=EXAM_CREDENTIAL_KEY_VERSION){
+  const value=(Deno.env.get(credentialSecretName(version))||'').trim()
+  if(isUsableCredentialKey(value))return value
+  if(Number(version)===1){
+    const {data,error}=await admin.rpc('get_exam_credential_encryption_key_v1')
+    const fallback=String(data||'').trim()
+    if(!error&&isUsableCredentialKey(fallback))return fallback
+  }
+  throw new Error('Exam credential service is not configured')
 }
 
 function relationExamCode(value:any){
@@ -200,7 +215,7 @@ Deno.serve(async(req:Request)=>{
         if(!examCode)return json({error:'Exam Code not found'},409)
         try{
           const keyVersion=EXAM_CREDENTIAL_KEY_VERSION
-          const keyBase64=credentialKeyBase64(keyVersion)
+          const keyBase64=await credentialKeyBase64(admin,keyVersion)
           const passwordHash=await sha256Hex(passwordCheck.password)
           const encrypted=await encryptExamCredential({password:passwordCheck.password,examId,examCode,keyBase64})
           preparedCredential={examCode,passwordHash,encrypted}
