@@ -43,11 +43,9 @@
     </div>
 
     <section class="card" id="questionMethods">
-      <div class="top" style="margin-bottom:12px"><div><h2 style="margin:0">Step 3 — Questions</h2><div style="color:#667085;margin-top:5px">Use the existing approved question engines. No parallel import or manual-entry system is created here.</div></div></div>
-      <div class="method-grid">
-        <a id="fromQuestionBank" class="method-btn" href="admin-question-bank.html">FROM QUESTION BANK</a>
-        <button id="excelImportMethod" class="method-btn" type="button">EXCEL IMPORT</button>
-        <button id="manualQuestionMethod" class="method-btn" type="button">MANUAL QUESTION</button>
+      <div class="top" style="margin-bottom:12px"><div><h2 style="margin:0">Questions — Excel Upload</h2><div style="color:#667085;margin-top:5px">Upload one complete Excel file for this exam. No Question Bank and no manual question entry.</div></div></div>
+      <div class="method-grid" style="grid-template-columns:1fr">
+        <button id="excelImportMethod" class="method-btn" type="button">EXCEL UPLOAD</button>
       </div>
       <div class="setup-summary">
         <div class="setup-metric"><small>EXPECTED</small><strong id="expectedCount">0</strong></div>
@@ -60,7 +58,7 @@
       </div>
     </section>
 
-    <section class="card" id="manualQuestionSection" style="margin-top:18px">
+    <section class="card" id="manualQuestionSection" style="display:none">
       <h2 style="margin-top:0">Add Question</h2>
       <form id="questionForm" class="grid">
         <div><label>Question No.</label><input id="questionNo" type="number" min="1" required></div>
@@ -84,9 +82,9 @@
         <button id="downloadTemplate" class="secondary" type="button">DOWNLOAD TEMPLATE</button>
       </div>
       <div id="officialFormatGuide" class="format-guide">
-        <b>Official Question Bank Rules</b>
+        <b>Official Exam Excel Rules</b>
         <span>Marking: +4 / −1 / 0 (correct / wrong / unattempted).</span>
-        <span>Question Type must match the approved format for its Subject. The server re-checks Subject → Unit → Chapter → Topic, Question Type and marking before any write.</span>
+        <span>Question Type must match the approved format for its Subject. The server re-checks Subject → Unit → Chapter → Topic, Question Type, subject split and +4/−1 marking before any exam write.</span>
       </div>
       <input id="bulkFile" type="file" accept=".xlsx,.xls,.csv">
       <div id="bulkSummary" class="msg">No file selected.</div>
@@ -100,7 +98,7 @@
       <div style="overflow:auto"><table><thead><tr><th>QNO</th><th>SUBJECT</th><th>TOPIC</th><th>DIFFICULTY</th><th>TYPE</th><th>SOURCE</th><th>STATUS</th><th>ACTION</th></tr></thead><tbody id="questionsBody"></tbody></table></div>
     </section>
 
-    <section class="card" style="margin-top:18px" id="syllabusMappingCard">
+    <section class="card" style="display:none" id="syllabusMappingCard">
       <div class="mapping-head">
         <div><h2>Syllabus Range Mapping</h2><div class="mapping-note">Map every exam question to one approved syllabus Topic/Subtopic. Mixed ranges such as Q1-Q10, Q17, Q22-Q28 are supported.</div></div>
         <div id="mappingLocked" class="mapping-locked">Published exams are read-only. Unpublish before changing mapping.</div>

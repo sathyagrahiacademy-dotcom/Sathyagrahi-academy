@@ -18,10 +18,9 @@
 
   const items=[
     ['admin-exams.html','01','Exams','Create & Manage Exams'],
-    ['admin-question-bank.html','02','Question Bank','Questions & Mapping'],
-    ['admin-results.html','03','Results','Publish & Review Results'],
-    ['admin-performance.html','04','Performance','Student Exam Analysis'],
-    ['admin-manual-exams.html','05','Manual Exams','Offline / Manual Records']
+    ['admin-results.html','02','Results','Publish & Review Results'],
+    ['admin-performance.html','03','Performance','Student Exam Analysis'],
+    ['admin-manual-exams.html','04','Manual Exams','Offline / Manual Records']
   ];
   const current=(location.pathname.split('/').pop()||'admin-exams.html').toLowerCase();
   host.className='examination-branch-shell';

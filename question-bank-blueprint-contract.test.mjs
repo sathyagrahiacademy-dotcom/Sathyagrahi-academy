@@ -4,67 +4,47 @@ import fs from 'node:fs';
 
 const read = path => fs.existsSync(path) ? fs.readFileSync(path, 'utf8') : '';
 
-test('migration defines permanent central question bank and exam snapshot link', () => {
-  const sql = read('QUESTION_BANK_AUTO_MAPPING_MIGRATION.sql');
-  assert.match(sql, /create table if not exists public\.question_bank_questions/i);
-  assert.match(sql, /bank_question_id[\s\S]*references public\.question_bank_questions/i);
-  assert.match(sql, /on delete set null/i);
-  assert.match(sql, /enable row level security/i);
-  assert.match(sql, /revoke all on public\.question_bank_questions from anon, authenticated/i);
-  assert.match(sql, /import_exam_questions_to_bank/i);
-  assert.match(sql, /add_bank_questions_to_exam/i);
+test('legacy Question Bank data is preserved but not used for new exam imports', () => {
+  const legacy = read('QUESTION_BANK_AUTO_MAPPING_MIGRATION.sql');
+  const retire = read('QUESTION_BANK_RETIREMENT_MIGRATION.sql');
+  assert.match(legacy,/create table if not exists public\.question_bank_questions/i);
+  assert.match(retire,/Legacy Question Bank retained for historical compatibility/i);
+  assert.doesNotMatch(retire,/drop table|truncate|delete from/i);
 });
 
-test('bank import and reuse preserve historical performance and require explicit marks', () => {
-  const sql = read('QUESTION_BANK_AUTO_MAPPING_MIGRATION.sql');
-  const performanceGuards = sql.match(/exam_scope_performance/gi) || [];
-  assert.ok(performanceGuards.length >= 2, 'import and bank reuse must both block exams with generated syllabus performance');
-  assert.doesNotMatch(sql, /v_marks\s*:=\s*coalesce\(nullif\(v_item->>'marks'/i);
-  assert.doesNotMatch(sql, /v_negative\s*:=\s*coalesce\(nullif\(v_item->>'negativeMarks'/i);
+test('Question Bank auto-sync trigger is retired for future exams',()=>{
+  const sql=read('QUESTION_BANK_RETIREMENT_MIGRATION.sql');
+  assert.match(sql,/drop trigger if exists exam_question_map_sync_bank on public\.exam_question_syllabus_map/i);
 });
 
-test('manual canonical mappings automatically sync mapped questions to permanent bank', () => {
-  const sql=read('QUESTION_BANK_MAPPING_SYNC_TRIGGER_MIGRATION.sql');
-  assert.match(sql,/create trigger exam_question_map_sync_bank/i);
-  assert.match(sql,/after insert or update of subtopic_id on public\.exam_question_syllabus_map/i);
-  assert.match(sql,/question_bank_questions/i);
-  assert.match(sql,/bank_question_id/i);
-});
-
-test('exam Excel template is syllabus-aware for automatic mapping', () => {
+test('exam Excel template remains syllabus-aware for automatic mapping', () => {
   const js = read('admin-exam-questions.js');
   for (const header of ['Subject','Unit','Chapter','Topic','Difficulty','Question Type','Source','Source Year']) {
-    assert.ok(js.includes(`"${header}"`) || js.includes(`'${header}'`), `missing ${header} header`);
+    assert.ok(js.includes('"'+header+'"') || js.includes("'"+header+"'"), 'missing '+header+' header');
   }
-  assert.match(js, /admin-question-bank/);
-  assert.match(js, /action:["']bulk_import["']/);
-  assert.match(js, /automatic mapping/i);
+  assert.match(js,/action:["']bulk_import["']/);
+  assert.match(js,/auto-map|AUTO MAPPED/i);
 });
 
-test('protected central Question Bank API owns list import reuse and sync actions', () => {
+test('protected import API allows Excel bulk import and retires Question Bank actions', () => {
   const edge=read('supabase/functions/admin-question-bank/index.ts');
-  assert.match(edge,/profile\.role!==['"]admin['"]/);
-  assert.match(edge,/action===['"]list['"]/);
-  assert.match(edge,/action===['"]bulk_import['"]/);
-  assert.match(edge,/action===['"]add_to_exam['"]/);
-  assert.match(edge,/import_exam_questions_to_bank/);
-  assert.match(edge,/add_bank_questions_to_exam/);
+  assert.match(edge,/profile\.role!==["']admin["']/);
+  assert.match(edge,/action!==["']bulk_import["']/);
+  assert.match(edge,/Question Bank is retired/);
+  assert.match(edge,/import_exam_questions_direct/);
+  const bulk=edge.slice(edge.indexOf("action==='bulk_import'"),edge.indexOf("action==='add_to_exam'"));
+  assert.doesNotMatch(bulk,/import_exam_questions_to_bank/);
 });
 
-test('question bank reads protected central-bank API instead of exam_questions directly', () => {
-  const js = read('admin-question-bank.js');
-  assert.match(js, /functions\.invoke\(['"]admin-question-bank['"]/);
-  assert.doesNotMatch(js, /from\(['"]exam_questions['"]\)/);
-  assert.match(js,/unitTitle/);assert.match(js,/chapterTitle/);assert.match(js,/topicTitle/);
-});
-
-test('question bank sorting includes source and source year', () => {
-  const html=read('admin-question-bank.html'),js=read('admin-question-bank.js');
-  assert.match(html,/id=["']qbSort["']/i);
-  assert.match(html,/<option value=["']source["']>Source<\/option>/i);
-  assert.match(html,/<option value=["']source_year["']>Source Year<\/option>/i);
-  assert.match(js,/source_label/);
-  assert.match(js,/source_year/);
+test('direct Excel import writes exam snapshot key and mapping without bank storage',()=>{
+  const sql=read('EXAM_EXCEL_DIRECT_IMPORT_MIGRATION.sql');
+  assert.match(sql,/insert into public\.exam_questions/i);
+  assert.match(sql,/insert into public\.exam_answer_keys/i);
+  assert.match(sql,/insert into public\.exam_question_syllabus_map/i);
+  assert.doesNotMatch(sql,/insert into public\.question_bank_questions/i);
+  assert.match(sql,/physics_question_count/);
+  assert.match(sql,/chemistry_question_count/);
+  assert.match(sql,/biology_question_count/);
 });
 
 test('exam page loads downloadable Blueprint PDF action and protected data API', () => {
@@ -79,7 +59,7 @@ test('exam page loads downloadable Blueprint PDF action and protected data API',
 test('Blueprint reuses canonical mapping validation without exposing answer keys', () => {
   const edge=read('supabase/functions/admin-exam-blueprint/index.ts');
   assert.match(edge,/validateExamMapping/);
-  assert.match(edge,/\.in\(['"]question_id['"],\s*questionIds\)/);
+  assert.match(edge,/\.in\(["']question_id["'],\s*questionIds\)/);
   assert.match(edge,/publishReady:\s*coreValidation\.ok/);
   assert.doesNotMatch(edge,/correct_option[^\n]*return json/i);
 });

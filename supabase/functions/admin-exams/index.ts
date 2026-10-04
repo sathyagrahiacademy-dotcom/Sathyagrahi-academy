@@ -200,7 +200,7 @@ async function loadPublishValidation(admin: any, examId: string) {
 
 async function loadMasterBlueprintValidation(admin:any,examId:string){
   const [examRes,scopeRes,mapRes]=await Promise.all([
-    admin.from('exams').select('id,is_published,exam_type,expected_questions,total_marks,blueprint_approved_at').eq('id',examId).maybeSingle(),
+    admin.from('exams').select('id,is_published,exam_type,expected_questions,total_marks,physics_question_count,chemistry_question_count,biology_question_count,blueprint_approved_at').eq('id',examId).maybeSingle(),
     admin.from('exam_scope_items').select('unit_id,chapter_id,subtopic_id,planned_questions').eq('exam_id',examId).order('sort_order').order('id'),
     admin.from('exam_question_syllabus_map').select('question_id,subtopic_id').eq('exam_id',examId)
   ])
@@ -210,23 +210,30 @@ async function loadMasterBlueprintValidation(admin:any,examId:string){
   if(!examRes.data)throw new Error('Exam not found')
   const mappingValidation=await loadPublishValidation(admin,examId)
   const {lookup}=await loadScopeTree(admin)
-  const plannedSubjectCounts:{[key:string]:number}={Physics:0,Chemistry:0,Biology:0}
+  const plannedSubjectCounts:{[key:string]:number}={
+    Physics:Number(examRes.data.physics_question_count||0),
+    Chemistry:Number(examRes.data.chemistry_question_count||0),
+    Biology:Number(examRes.data.biology_question_count||0)
+  }
+  const hasStoredSubjectPlan=Object.values(plannedSubjectCounts).reduce((sum,value)=>sum+Number(value||0),0)>0
   const scopeIssues:any[]=[]
-  const seen=new Set<string>(),whole=new Set<string>(),specific=new Set<string>()
-  for(const row of scopeRes.data||[]){
-    const unit=lookup.units.get(row.unit_id)||lookup.units.get(String(row.unit_id))
-    const subject=String(unit?.subject||'')
-    if(subject in plannedSubjectCounts)plannedSubjectCounts[subject]+=Number(row.planned_questions||0)
-    const chapterKey=`${row.unit_id}:${row.chapter_id}`
-    const exactKey=`${chapterKey}:${row.subtopic_id==null?'WHOLE':row.subtopic_id}`
-    if(seen.has(exactKey))scopeIssues.push({message:'Duplicate syllabus coverage row remains unresolved.'})
-    seen.add(exactKey)
-    if(row.subtopic_id==null){
-      if(specific.has(chapterKey))scopeIssues.push({message:'Whole Chapter overlaps a Specific Topic in the same Chapter.'})
-      whole.add(chapterKey)
-    }else{
-      if(whole.has(chapterKey))scopeIssues.push({message:'Whole Chapter overlaps a Specific Topic in the same Chapter.'})
-      specific.add(chapterKey)
+  if(!hasStoredSubjectPlan){
+    const seen=new Set<string>(),whole=new Set<string>(),specific=new Set<string>()
+    for(const row of scopeRes.data||[]){
+      const unit=lookup.units.get(row.unit_id)||lookup.units.get(String(row.unit_id))
+      const subject=String(unit?.subject||'')
+      if(subject in plannedSubjectCounts)plannedSubjectCounts[subject]+=Number(row.planned_questions||0)
+      const chapterKey=`${row.unit_id}:${row.chapter_id}`
+      const exactKey=`${chapterKey}:${row.subtopic_id==null?'WHOLE':row.subtopic_id}`
+      if(seen.has(exactKey))scopeIssues.push({message:'Duplicate syllabus coverage row remains unresolved.'})
+      seen.add(exactKey)
+      if(row.subtopic_id==null){
+        if(specific.has(chapterKey))scopeIssues.push({message:'Whole Chapter overlaps a Specific Topic in the same Chapter.'})
+        whole.add(chapterKey)
+      }else{
+        if(whole.has(chapterKey))scopeIssues.push({message:'Whole Chapter overlaps a Specific Topic in the same Chapter.'})
+        specific.add(chapterKey)
+      }
     }
   }
   const actualSubjectCounts:{[key:string]:number}={Physics:0,Chemistry:0,Biology:0}

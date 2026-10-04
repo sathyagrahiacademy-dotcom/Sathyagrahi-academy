@@ -10,10 +10,25 @@ function json(body:Record<string,unknown>,status=200){
   return new Response(JSON.stringify(body),{status,headers:{...corsHeaders,'Content-Type':'application/json'}})
 }
 
-function credentialKeyBase64(version=EXAM_CREDENTIAL_KEY_VERSION){
-  const value=Deno.env.get(credentialSecretName(version))||''
-  if(!value)throw new Error('Exam credential service is not configured')
-  return value
+function isUsableCredentialKey(value:string){
+  const text=String(value||'').trim()
+  if(!text||text.length%4!==0||!/^[A-Za-z0-9+/]+={0,2}$/.test(text))return false
+  try{
+    return atob(text).length===32
+  }catch{
+    return false
+  }
+}
+
+async function credentialKeyBase64(admin:any,version=EXAM_CREDENTIAL_KEY_VERSION){
+  const value=(Deno.env.get(credentialSecretName(version))||'').trim()
+  if(isUsableCredentialKey(value))return value
+  if(Number(version)===1){
+    const {data,error}=await admin.rpc('get_exam_credential_encryption_key_v1')
+    const fallback=String(data||'').trim()
+    if(!error&&isUsableCredentialKey(fallback))return fallback
+  }
+  throw new Error('Exam credential service is not configured')
 }
 
 function relationExamCode(value:any){
@@ -138,6 +153,9 @@ Deno.serve(async(req:Request)=>{
         exam_date:v.examDate,
         batch_no:v.batchNo,
         expected_questions:v.expectedQuestions,
+        physics_question_count:v.physicsQuestionCount,
+        chemistry_question_count:v.chemistryQuestionCount,
+        biology_question_count:v.biologyQuestionCount,
         scheduled_start:null,
         scheduled_end:null,
         duration_minutes:v.durationMinutes,
@@ -160,7 +178,7 @@ Deno.serve(async(req:Request)=>{
       const examCode=String(codeRes.data)
       try{
         const keyVersion=EXAM_CREDENTIAL_KEY_VERSION
-        const keyBase64=credentialKeyBase64(keyVersion)
+        const keyBase64=await credentialKeyBase64(admin,keyVersion)
         const passwordHash=await sha256Hex(passwordCheck.password)
         const encrypted=await encryptExamCredential({password:passwordCheck.password,examId:String(exam.id),examCode,keyBase64})
         const {error:accessError}=await admin.rpc('upsert_exam_credential_v1',{
@@ -183,7 +201,7 @@ Deno.serve(async(req:Request)=>{
     if(action === 'update_master_basics'){
       const examId=String(body.examId||'')
       if(!examId) return json({error:'Exam ID is required'},400)
-      const {data:exam,error:examError}=await admin.from('exams').select('id,is_published,exam_type,exam_date,batch_no,exam_access(exam_code)').eq('id',examId).maybeSingle()
+      const {data:exam,error:examError}=await admin.from('exams').select('id,is_published,exam_type,exam_date,batch_no,physics_question_count,chemistry_question_count,biology_question_count,exam_access(exam_code)').eq('id',examId).maybeSingle()
       if(examError) return json({error:examError.message},400)
       if(!exam) return json({error:'Exam not found'},404)
       if(exam.is_published) return json({error:'Published master exam basics cannot be changed here'},409)
@@ -200,7 +218,7 @@ Deno.serve(async(req:Request)=>{
         if(!examCode)return json({error:'Exam Code not found'},409)
         try{
           const keyVersion=EXAM_CREDENTIAL_KEY_VERSION
-          const keyBase64=credentialKeyBase64(keyVersion)
+          const keyBase64=await credentialKeyBase64(admin,keyVersion)
           const passwordHash=await sha256Hex(passwordCheck.password)
           const encrypted=await encryptExamCredential({password:passwordCheck.password,examId,examCode,keyBase64})
           preparedCredential={examCode,passwordHash,encrypted}
@@ -215,6 +233,9 @@ Deno.serve(async(req:Request)=>{
       const {error:updateError}=await admin.from('exams').update({
         title:v.title,
         expected_questions:v.expectedQuestions,
+        physics_question_count:v.physicsQuestionCount,
+        chemistry_question_count:v.chemistryQuestionCount,
+        biology_question_count:v.biologyQuestionCount,
         duration_minutes:v.durationMinutes,
         total_marks:v.totalMarks,
         instructions:v.instructions||null,
@@ -275,7 +296,7 @@ Deno.serve(async(req:Request)=>{
     if(action === 'master_students'){
       const examId=String(body.examId||'')
       if(!examId)return json({error:'Exam ID is required'},400)
-      const {data:exam,error:examError}=await admin.from('exams').select('id,title,exam_type,exam_date,batch_no,duration_minutes,total_marks,is_published,audience_mode,result_publish_mode,result_publish_at,blueprint_approved_at').eq('id',examId).maybeSingle()
+      const {data:exam,error:examError}=await admin.from('exams').select('id,title,exam_type,exam_date,batch_no,duration_minutes,total_marks,expected_questions,physics_question_count,chemistry_question_count,biology_question_count,is_published,audience_mode,result_publish_mode,result_publish_at,blueprint_approved_at').eq('id',examId).maybeSingle()
       if(examError)return json({error:examError.message},400)
       if(!exam)return json({error:'Exam not found'},404)
       if(!isMasterType(exam.exam_type))return json({error:'Master audience is available only for DT/WT/MT/GT exams'},409)
@@ -287,7 +308,7 @@ Deno.serve(async(req:Request)=>{
         assigned:Boolean(assignments.get(String(student.id))?.is_assigned)
       }))
       const assignedCount=rows.filter((row:any)=>row.assigned).length
-      return json({ok:true,exam:{id:exam.id,title:exam.title,examType:exam.exam_type,examDate:exam.exam_date,batchNo:exam.batch_no,durationMinutes:exam.duration_minutes,totalMarks:exam.total_marks,isPublished:Boolean(exam.is_published),audienceMode:exam.audience_mode||'all',resultPublishMode:exam.result_publish_mode||'manual',resultPublishAt:exam.result_publish_at||null,blueprintApprovedAt:exam.blueprint_approved_at||null},students:rows,assignedCount})
+      return json({ok:true,exam:{id:exam.id,title:exam.title,examType:exam.exam_type,examDate:exam.exam_date,batchNo:exam.batch_no,durationMinutes:exam.duration_minutes,totalMarks:exam.total_marks,expectedQuestions:exam.expected_questions,physicsQuestionCount:exam.physics_question_count||0,chemistryQuestionCount:exam.chemistry_question_count||0,biologyQuestionCount:exam.biology_question_count||0,isPublished:Boolean(exam.is_published),audienceMode:exam.audience_mode||'all',resultPublishMode:exam.result_publish_mode||'manual',resultPublishAt:exam.result_publish_at||null,blueprintApprovedAt:exam.blueprint_approved_at||null},students:rows,assignedCount})
     }
 
     if(action === 'save_master_audience'){

@@ -25,17 +25,28 @@ const syllabusLookup={
   ])
 }
 
-test('wizard basics accept final master types and derive total marks',()=>{
-  const r=normaliseWizardBasics({
-    examType:'weekly',batchNo:1,examDate:'2026-09-09',title:'Weekly Test',
-    expectedQuestions:50,durationMinutes:60,resultPublishMode:'manual'
+test('wizard basics enforce fixed SGA exam plans and derive total marks',()=>{
+  const dt=normaliseWizardBasics({
+    examType:'daily',batchNo:1,examDate:'2026-09-09',title:'Daily Test',
+    expectedQuestions:45,physicsQuestions:15,chemistryQuestions:15,biologyQuestions:15,durationMinutes:45,resultPublishMode:'manual'
   })
-  assert.equal(r.ok,true)
-  assert.equal(r.value.examType,'weekly')
-  assert.equal(r.value.batchNo,1)
-  assert.equal(r.value.expectedQuestions,50)
-  assert.equal(r.value.durationMinutes,60)
-  assert.equal(r.value.totalMarks,200)
+  assert.equal(dt.ok,true)
+  assert.equal(dt.value.expectedQuestions,45)
+  assert.equal(dt.value.totalMarks,180)
+
+  const wt=normaliseWizardBasics({
+    examType:'weekly',batchNo:1,examDate:'2026-09-09',title:'Weekly Test',
+    expectedQuestions:180,physicsQuestions:45,chemistryQuestions:45,biologyQuestions:90,durationMinutes:180,resultPublishMode:'manual'
+  })
+  assert.equal(wt.ok,true)
+  assert.equal(wt.value.expectedQuestions,180)
+  assert.equal(wt.value.totalMarks,720)
+  assert.equal(wt.value.biologyQuestionCount,90)
+
+  assert.equal(normaliseWizardBasics({
+    examType:'weekly',batchNo:1,examDate:'2026-09-09',title:'Bad Weekly',
+    expectedQuestions:45,physicsQuestions:15,chemistryQuestions:15,biologyQuestions:15,durationMinutes:45,resultPublishMode:'manual'
+  }).ok,false)
 })
 
 test('wizard basics reject legacy type invalid batch date count and duration',()=>{

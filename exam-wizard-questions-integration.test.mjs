@@ -4,65 +4,42 @@ import fs from 'node:fs'
 
 const html=fs.readFileSync('admin-exam-questions.html','utf8')
 const js=fs.readFileSync('admin-exam-questions.js','utf8')
-const bank=fs.readFileSync('admin-question-bank.js','utf8')
 const wizard=fs.readFileSync('admin-exam-wizard.js','utf8')
+const edge=fs.readFileSync('supabase/functions/admin-question-bank/index.ts','utf8')
+const direct=fs.readFileSync('EXAM_EXCEL_DIRECT_IMPORT_MIGRATION.sql','utf8')
 
-test('Step 3 exposes the three approved question methods',()=>{
-  for(const label of ['FROM QUESTION BANK','EXCEL IMPORT','MANUAL QUESTION']){
-    assert.match(html,new RegExp(label))
-  }
-  for(const id of ['fromQuestionBank','excelImportMethod','manualQuestionMethod']){
-    assert.match(html,new RegExp(`id=["']${id}["']`))
-  }
+test('Questions setup exposes Excel upload only',()=>{
+  assert.match(html,/EXCEL UPLOAD/)
+  assert.match(html,/id=["']excelImportMethod["']/)
+  assert.doesNotMatch(html,/FROM QUESTION BANK|MANUAL QUESTION/)
+  assert.match(html,/No Question Bank and no manual question entry/i)
 })
 
 test('question setup summary exposes expected added PCB mapped and answer-key counts',()=>{
-  for(const label of ['EXPECTED','ADDED','PHYSICS','CHEMISTRY','BIOLOGY','MAPPED','ANSWER KEYS']){
-    assert.match(html,new RegExp(label,'i'))
-  }
-  for(const id of ['expectedCount','addedCount','physicsCount','chemistryCount','biologyCount','mappedCount','answerKeyCount']){
-    assert.match(html,new RegExp(`id=["']${id}["']`))
-  }
+  for(const label of ['EXPECTED','ADDED','PHYSICS','CHEMISTRY','BIOLOGY','MAPPED','ANSWER KEYS']) assert.match(html,new RegExp(label,'i'))
 })
 
-test('question table presents the approved operator metadata columns',()=>{
-  for(const label of ['QNO','SUBJECT','TOPIC','DIFFICULTY','TYPE','SOURCE','STATUS']){
-    assert.match(html,new RegExp(`>${label}<`,'i'))
-  }
+test('Excel controller validates official metadata and invokes one atomic import action',()=>{
+  for(const field of ['Subject','Unit','Chapter','Topic','Difficulty','Question Type','Source','Source Year']) assert.ok(js.includes(field),field)
+  assert.match(js,/action:["']bulk_import["']/)
+  assert.match(js,/Marks must be 4/)
+  assert.match(js,/Negative Marks must be 1/)
 })
 
-test('question controller loads expected total and immutable exam snapshot metadata',()=>{
-  assert.match(js,/expected_questions/)
-  for(const field of ['bank_question_id','difficulty','question_type','source_label','source_year']){
-    assert.match(js,new RegExp(field))
-  }
+test('bulk import writes directly to exam and never writes the permanent Question Bank',()=>{
+  assert.match(edge,/import_exam_questions_direct/)
+  const start=edge.indexOf("action==='bulk_import'")
+  const end=edge.indexOf("action==='add_to_exam'",start)
+  const block=edge.slice(start,end)
+  assert.doesNotMatch(block,/import_exam_questions_to_bank/)
+  assert.match(direct,/insert into public\.exam_questions/i)
+  assert.match(direct,/insert into public\.exam_answer_keys/i)
+  assert.match(direct,/insert into public\.exam_question_syllabus_map/i)
+  assert.doesNotMatch(direct,/insert into public\.question_bank_questions/i)
 })
 
-test('question controller reuses protected mapping tree for subject topic mapped and answer-key facts',()=>{
-  assert.match(js,/admin-exam-mapping/)
-  assert.match(js,/action:["']tree["']/)
-  assert.match(js,/mappingRows/)
-  assert.match(js,/answerKeys/)
-  for(const subject of ['Physics','Chemistry','Biology']) assert.match(js,new RegExp(subject))
-})
-
-test('question methods reuse existing bank Excel and manual flows instead of creating parallel engines',()=>{
-  assert.match(js,/admin-question-bank\.html\?exam=/)
-  assert.match(js,/bulkFile/)
-  assert.match(js,/questionForm/)
-  assert.match(js,/scrollIntoView|focus\(/)
-  assert.doesNotMatch(js,/functions\.invoke\(["']admin-exam-wizard["'][\s\S]{0,500}(?:bulk_import|add_to_exam)/)
-})
-
-test('Question Bank can receive and preselect the current draft exam from Step 3',()=>{
-  assert.match(bank,/URLSearchParams\(location\.search\)/)
-  assert.match(bank,/get\(["']exam["']\)/)
-  assert.match(bank,/targetExam/)
-})
-
-test('wizard Step 3 points Admin into the existing question setup flow',()=>{
-  assert.match(wizard,/FROM QUESTION BANK/)
-  assert.match(wizard,/EXCEL IMPORT/)
-  assert.match(wizard,/MANUAL QUESTION/)
+test('wizard Questions step opens only the Excel upload flow',()=>{
+  assert.match(wizard,/EXCEL UPLOAD/)
   assert.match(wizard,/admin-exam-questions\.html\?exam=/)
+  assert.doesNotMatch(wizard,/FROM QUESTION BANK|MANUAL QUESTION|admin-question-bank\.html/)
 })

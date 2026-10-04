@@ -12,8 +12,33 @@ function positiveInt(value){
   return Number.isInteger(n)&&n>0?n:null
 }
 
+function nonNegativeInt(value){
+  const n=Number(value)
+  return Number.isInteger(n)&&n>=0?n:null
+}
+
 function mapGet(map,key){
   return map?.get?.(key) ?? map?.get?.(String(key))
+}
+
+export function normaliseSubjectQuestionCounts(input={}){
+  const examType=normaliseMasterExamType(input.examType)
+  if(!examType)return null
+  const plan=examType==='daily'
+    ? {physics:15,chemistry:15,biology:15,expectedQuestions:45}
+    : {physics:45,chemistry:45,biology:90,expectedQuestions:180}
+  const supplied=['physicsQuestions','chemistryQuestions','biologyQuestions','expectedQuestions'].some(key=>input[key]!=null)
+  if(supplied){
+    const physics=input.physicsQuestions==null?plan.physics:nonNegativeInt(input.physicsQuestions)
+    const chemistry=input.chemistryQuestions==null?plan.chemistry:nonNegativeInt(input.chemistryQuestions)
+    const biology=input.biologyQuestions==null?plan.biology:nonNegativeInt(input.biologyQuestions)
+    const expected=input.expectedQuestions==null?plan.expectedQuestions:positiveInt(input.expectedQuestions)
+    if(physics==null||chemistry==null||biology==null||expected==null)return {ok:false,error:'Invalid subject question counts'}
+    if(physics!==plan.physics||chemistry!==plan.chemistry||biology!==plan.biology||expected!==plan.expectedQuestions){
+      return {ok:false,error:examType==='daily'?'Daily Test must use Physics 15, Chemistry 15, Biology 15 (45 total)':'Weekly, Monthly and Grand Tests must use Physics 45, Chemistry 45, Biology 90 (180 total)'}
+    }
+  }
+  return {ok:true,physics:plan.physics,chemistry:plan.chemistry,biology:plan.biology,expectedQuestions:plan.expectedQuestions}
 }
 
 export function validateResultRelease({mode,publishAt,now=new Date().toISOString()}={}){
@@ -37,7 +62,9 @@ export function normaliseWizardBasics(input={}){
   if(!isRealIsoDate(examDate)) return {ok:false,error:'Enter valid Exam Date'}
   const title=String(input.title??'').trim()
   if(!title) return {ok:false,error:'Exam Title is required'}
-  const expectedQuestions=positiveInt(input.expectedQuestions)
+  const subjectCounts=normaliseSubjectQuestionCounts(input)
+  if(subjectCounts?.ok===false)return subjectCounts
+  const expectedQuestions=subjectCounts?.expectedQuestions ?? positiveInt(input.expectedQuestions)
   if(expectedQuestions==null) return {ok:false,error:'Expected Questions must be a positive integer'}
   const durationMinutes=positiveInt(input.durationMinutes)
   if(durationMinutes==null) return {ok:false,error:'Duration must be a positive number of minutes'}
@@ -51,6 +78,9 @@ export function normaliseWizardBasics(input={}){
       examDate,
       title,
       expectedQuestions,
+      physicsQuestionCount:subjectCounts?.physics ?? 0,
+      chemistryQuestionCount:subjectCounts?.chemistry ?? 0,
+      biologyQuestionCount:subjectCounts?.biology ?? 0,
       durationMinutes,
       totalMarks:expectedQuestions*4,
       negativeMarks:1,

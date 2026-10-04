@@ -60,6 +60,11 @@ Deno.serve(async (req: Request) => {
     const admin=createClient(url,sec,{auth:{persistSession:false}})
     const body=await req.json(); const action=text(body.action)
 
+    if(action!=='bulk_import'){
+      return json({error:'Question Bank is retired. Use the Excel upload inside Create Exam.'},410)
+    }
+
+
     if(action==='folder_summary'){
       const [tree,rows]=await Promise.all([loadTree(admin),loadActiveFolderRows(admin)])
       return json({ok:true,...buildFolderSummary(tree,rows)})
@@ -113,7 +118,7 @@ Deno.serve(async (req: Request) => {
       const tree=await loadTree(admin), lookup=buildSyllabusLookup(tree)
       const validation=validateImportQuestions(lookup,raw)
       if(!validation.ok) return json({error:'Import needs review before anything is saved.',errors:validation.errors.slice(0,100)},400)
-      const {data,error}=await admin.rpc('import_exam_questions_to_bank',{p_exam_id:examId,p_items:validation.items,p_created_by:user.id})
+      const {data,error}=await admin.rpc('import_exam_questions_direct',{p_exam_id:examId,p_items:validation.items,p_created_by:user.id})
       if(error) return json({error:error.message},400)
       return json({ok:true,...(data||{})})
     }
