@@ -53,11 +53,22 @@ async function loadVaultRow(admin:any,examId:string){
   return firstRpcRow(data)
 }
 
-function readKey(version:number){
+function isUsableCredentialKey(value:string){
+  const text=String(value||'').trim()
+  if(!text||text.length%4!==0||!/^[A-Za-z0-9+/]+={0,2}$/.test(text))return false
+  try{return atob(text).length===32}catch{return false}
+}
+
+async function readKey(admin:any,version:number){
   const name=credentialSecretName(version)
-  const keyBase64=Deno.env.get(name)||''
-  if(!keyBase64)throw new Error('Exam credential service is not configured')
-  return keyBase64
+  const keyBase64=(Deno.env.get(name)||'').trim()
+  if(isUsableCredentialKey(keyBase64))return keyBase64
+  if(Number(version)===1){
+    const {data,error}=await admin.rpc('get_exam_credential_encryption_key_v1')
+    const fallback=String(data||'').trim()
+    if(!error&&isUsableCredentialKey(fallback))return fallback
+  }
+  throw new Error('Exam credential service is not configured')
 }
 
 Deno.serve(async(req:Request)=>{
@@ -105,7 +116,7 @@ Deno.serve(async(req:Request)=>{
       const vault=await loadVaultRow(admin,examId)
       if(!vault)return revealJson({error:'Password not stored',code:'RESET_REQUIRED',examCode:exam.examCode},409)
       const keyVersion=Number(vault.key_version)
-      const keyBase64=readKey(keyVersion)
+      const keyBase64=await readKey(admin,keyVersion)
       const password=await decryptExamCredential({
         ciphertext:String(vault.ciphertext||''),
         iv:String(vault.iv||''),
@@ -130,7 +141,7 @@ Deno.serve(async(req:Request)=>{
       }
 
       const keyVersion=EXAM_CREDENTIAL_KEY_VERSION
-      const keyBase64=readKey(keyVersion)
+      const keyBase64=await readKey(admin,keyVersion)
       const passwordHash=await sha256Hex(passwordCheck.password)
       const encrypted=await encryptExamCredential({
         password:passwordCheck.password,
