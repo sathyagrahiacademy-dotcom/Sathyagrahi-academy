@@ -12,6 +12,23 @@ function positiveInt(value){
   return Number.isInteger(n)&&n>0?n:null
 }
 
+function nonNegativeInt(value){
+  const n=Number(value)
+  return Number.isInteger(n)&&n>=0?n:null
+}
+
+export function normaliseSubjectQuestionCounts(input={}){
+  const supplied=['physicsQuestions','chemistryQuestions','biologyQuestions'].some(key=>input[key]!=null)
+  if(!supplied)return null
+  const physics=nonNegativeInt(input.physicsQuestions)
+  const chemistry=nonNegativeInt(input.chemistryQuestions)
+  const biology=nonNegativeInt(input.biologyQuestions)
+  if(physics==null||chemistry==null||biology==null)return {ok:false,error:'Subject question counts must be whole numbers 0 or greater'}
+  const expectedQuestions=physics+chemistry+biology
+  if(expectedQuestions<=0)return {ok:false,error:'Add at least one question across Physics, Chemistry or Biology'}
+  return {ok:true,physics,chemistry,biology,expectedQuestions}
+}
+
 function mapGet(map,key){
   return map?.get?.(key) ?? map?.get?.(String(key))
 }
@@ -37,7 +54,9 @@ export function normaliseWizardBasics(input={}){
   if(!isRealIsoDate(examDate)) return {ok:false,error:'Enter valid Exam Date'}
   const title=String(input.title??'').trim()
   if(!title) return {ok:false,error:'Exam Title is required'}
-  const expectedQuestions=positiveInt(input.expectedQuestions)
+  const subjectCounts=normaliseSubjectQuestionCounts(input)
+  if(subjectCounts?.ok===false)return subjectCounts
+  const expectedQuestions=subjectCounts?.expectedQuestions ?? positiveInt(input.expectedQuestions)
   if(expectedQuestions==null) return {ok:false,error:'Expected Questions must be a positive integer'}
   const durationMinutes=positiveInt(input.durationMinutes)
   if(durationMinutes==null) return {ok:false,error:'Duration must be a positive number of minutes'}
@@ -51,6 +70,9 @@ export function normaliseWizardBasics(input={}){
       examDate,
       title,
       expectedQuestions,
+      physicsQuestionCount:subjectCounts?.physics ?? 0,
+      chemistryQuestionCount:subjectCounts?.chemistry ?? 0,
+      biologyQuestionCount:subjectCounts?.biology ?? 0,
       durationMinutes,
       totalMarks:expectedQuestions*4,
       negativeMarks:1,
