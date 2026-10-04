@@ -1,4 +1,4 @@
-import { validateQuestionType, validateOfficialQuestionMarking } from '../_shared/exam-intelligence-policy.mjs';
+import { validateOfficialQuestionMarking } from '../_shared/exam-intelligence-policy.mjs';
 
 export function normalizeLabel(value){
   return String(value??'').trim().replace(/\s+/g,' ').toLowerCase();
@@ -89,16 +89,9 @@ export function validateImportQuestions(lookup,rawQuestions=[]){
       if(!officialMarking.ok)add(officialMarking.error+'.');
     }
 
-    const difficultyRaw=text(q?.difficulty),difficulty=difficultyRaw?difficultyRaw[0].toUpperCase()+difficultyRaw.slice(1).toLowerCase():'';
-    if(difficulty&&!['Easy','Medium','Hard'].includes(difficulty))add('Difficulty must be Easy, Medium or Hard.');
+    const difficulty=text(q?.difficulty);
     const questionType=text(q?.questionType);
-    if(syllabus.ok){
-      const typeValidation=validateQuestionType(syllabus.subject,questionType);
-      if(!typeValidation.ok)add(typeValidation.error+'.');
-    }
-    const sourceYearRaw=text(q?.sourceYear);
-    const sourceYear=sourceYearRaw?Number(sourceYearRaw):null;
-    if(sourceYearRaw&&(!/^\d{4}$/.test(sourceYearRaw)||!Number.isInteger(sourceYear)||sourceYear<1900||sourceYear>2200))add('invalid Source Year.');
+    const sourceYear=text(q?.sourceYear);
 
     errors.push(...rowErrors);
     if(!rowErrors.length&&syllabus.ok){

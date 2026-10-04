@@ -11,10 +11,11 @@ test('download template uses an approved Physics question type example',()=>{
   assert.doesNotMatch(examQuestionsJs,/"Question Type":"Concept"/);
 });
 
-test('client pre-validation mirrors official subject question formats',()=>{
-  assert.match(examQuestionsJs,/approvedQuestionTypes/);
-  for(const value of ['Circuit Based','Reaction / Product','NCERT Direct']) assert.ok(examQuestionsJs.includes(value),value);
-  assert.match(examQuestionsJs,/Question Type.*approved/i);
+test('client pre-validation does not restrict metadata labels',()=>{
+  assert.doesNotMatch(examQuestionsJs,/approvedQuestionTypes/);
+  assert.doesNotMatch(examQuestionsJs,/Question Type.*approved/i);
+  assert.doesNotMatch(examQuestionsJs,/invalid Source Year/i);
+  assert.doesNotMatch(examQuestionsJs,/Difficulty must be Easy, Medium or Hard/i);
 });
 
 test('client pre-validation requires official plus four minus one marking',()=>{
