@@ -18,19 +18,23 @@ function nonNegativeInt(value){
 }
 
 export function normaliseSubjectQuestionCounts(input={}){
-  const supplied=['physicsQuestions','chemistryQuestions','biologyQuestions'].some(key=>input[key]!=null)
-  if(!supplied)return null
-  const physics=nonNegativeInt(input.physicsQuestions)
-  const chemistry=nonNegativeInt(input.chemistryQuestions)
-  const biology=nonNegativeInt(input.biologyQuestions)
-  if(physics==null||chemistry==null||biology==null)return {ok:false,error:'Subject question counts must be whole numbers 0 or greater'}
-  const expectedQuestions=physics+chemistry+biology
-  if(expectedQuestions<=0)return {ok:false,error:'Add at least one question across Physics, Chemistry or Biology'}
-  return {ok:true,physics,chemistry,biology,expectedQuestions}
-}
-
-function mapGet(map,key){
-  return map?.get?.(key) ?? map?.get?.(String(key))
+  const examType=normaliseMasterExamType(input.examType)
+  if(!examType)return null
+  const plan=examType==='daily'
+    ? {physics:15,chemistry:15,biology:15,expectedQuestions:45}
+    : {physics:45,chemistry:45,biology:90,expectedQuestions:180}
+  const supplied=['physicsQuestions','chemistryQuestions','biologyQuestions','expectedQuestions'].some(key=>input[key]!=null)
+  if(supplied){
+    const physics=input.physicsQuestions==null?plan.physics:nonNegativeInt(input.physicsQuestions)
+    const chemistry=input.chemistryQuestions==null?plan.chemistry:nonNegativeInt(input.chemistryQuestions)
+    const biology=input.biologyQuestions==null?plan.biology:nonNegativeInt(input.biologyQuestions)
+    const expected=input.expectedQuestions==null?plan.expectedQuestions:positiveInt(input.expectedQuestions)
+    if(physics==null||chemistry==null||biology==null||expected==null)return {ok:false,error:'Invalid subject question counts'}
+    if(physics!==plan.physics||chemistry!==plan.chemistry||biology!==plan.biology||expected!==plan.expectedQuestions){
+      return {ok:false,error:examType==='daily'?'Daily Test must use Physics 15, Chemistry 15, Biology 15 (45 total)':'Weekly, Monthly and Grand Tests must use Physics 45, Chemistry 45, Biology 90 (180 total)'}
+    }
+  }
+  return {ok:true,physics:plan.physics,chemistry:plan.chemistry,biology:plan.biology,expectedQuestions:plan.expectedQuestions}
 }
 
 export function validateResultRelease({mode,publishAt,now=new Date().toISOString()}={}){
