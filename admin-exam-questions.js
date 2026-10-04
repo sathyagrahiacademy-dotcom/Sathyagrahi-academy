@@ -126,7 +126,7 @@
         $("bulkErrors").innerHTML=errors.slice(0,25).map(esc).join("<br>");
         return;
       }
-      $("bulkSummary").textContent=`Ready: ${bulkQuestions.length} question(s). Official syllabus, subject split and +4/−1 marking will be server-verified. Question Type, Difficulty, Source and Source Year are kept exactly as entered in Excel.`;
+      $("bulkSummary").textContent=`Ready: ${bulkQuestions.length} question(s). Subject split and +4/−1 marking will be verified. Unit, Chapter, Topic, Question Type, Difficulty, Source and Source Year are kept exactly as entered in Excel.`;
       $("bulkSummary").className="msg ok";
       $("importQuestions").disabled=false;
     }catch(err){
@@ -141,7 +141,7 @@
     const btn=$("importQuestions"); btn.disabled=true; btn.textContent="VALIDATING & IMPORTING..."; $("bulkErrors").textContent="";
     try{
       const data=await invokeBank({action:"bulk_import",examId,questions:bulkQuestions});
-      msg(`${data.imported||bulkQuestions.length} imported directly into this exam • ${data.autoMapped||0} auto-mapped.`,true);
+      msg(`${data.imported||bulkQuestions.length} imported directly into this exam • syllabus labels stored exactly as entered.`,true);
       bulkQuestions=[]; $("bulkFile").value=""; $("bulkSummary").textContent="No file selected."; $("bulkSummary").className="msg"; $("bulkErrors").textContent="";
       await load();
     }catch(err){
@@ -177,9 +177,16 @@
     };
   }
 
+  function rawSyllabusReady(question){
+    return ['Physics','Chemistry','Biology'].includes(String(question.subject_label||'')) &&
+      String(question.unit_label||'').trim() &&
+      String(question.chapter_label||'').trim() &&
+      String(question.topic_label||'').trim();
+  }
+
   function questionStatus(question,fact,keyed,issues){
     if(issues.duplicateId.has(String(question.id))||issues.invalidNo.has(Number(question.question_no)))return {label:"ISSUE",cls:"issue"};
-    if(!fact)return {label:"NEEDS MAPPING",cls:"issue"};
+    if(!fact&&!rawSyllabusReady(question))return {label:"NEEDS LABELS",cls:"issue"};
     if(!keyed.has(String(question.id))||issues.missingKeyNo.has(Number(question.question_no)))return {label:"KEY MISSING",cls:"issue"};
     return {label:"READY",cls:"ready"};
   }
@@ -190,7 +197,7 @@
   }
 
   async function loadQuestions(){
-    let result=await supabase.from("exam_questions").select("id,question_no,question_text,marks,bank_question_id,difficulty,question_type,source_label,source_year").eq("exam_id",examId).order("question_no");
+    let result=await supabase.from("exam_questions").select("id,question_no,question_text,marks,bank_question_id,difficulty,question_type,source_label,source_year,source_year_label,subject_label,unit_label,chapter_label,topic_label").eq("exam_id",examId).order("question_no");
     if(!result.error)return result;
     return supabase.from("exam_questions").select("id,question_no,question_text,marks").eq("exam_id",examId).order("question_no");
   }
@@ -215,7 +222,7 @@
     const issues=issueSets(tree?.validation||{});
     const subjectCounts={Physics:0,Chemistry:0,Biology:0};
     for(const question of q){
-      const subject=byQuestion.get(String(question.id))?.subject;
+      const subject=byQuestion.get(String(question.id))?.subject||question.subject_label;
       if(subjectCounts[subject]!=null)subjectCounts[subject]++;
     }
 
@@ -224,7 +231,7 @@
     $("physicsCount").textContent=String(subjectCounts.Physics);
     $("chemistryCount").textContent=String(subjectCounts.Chemistry);
     $("biologyCount").textContent=String(subjectCounts.Biology);
-    $("mappedCount").textContent=String(Number(tree?.validation?.mappedQuestions||mappingRows.length||0));
+    $("mappedCount").textContent=String(q.filter(question=>byQuestion.has(String(question.id))||rawSyllabusReady(question)).length);
     $("answerKeyCount").textContent=String(answerKeys.length);
     $("count").textContent=`${q.length} question(s)`;
     $("questionNo").value=(q.length?Math.max(...q.map(x=>x.question_no))+1:1);
@@ -232,9 +239,9 @@
     $("questionsBody").innerHTML=q.length?q.map(question=>{
       const fact=byQuestion.get(String(question.id));
       const status=questionStatus(question,fact,keyed,issues);
-      const source=[question.source_label,question.source_year].filter(v=>v!==null&&v!==undefined&&v!=="").join(" • ")||"—";
-      const topic=fact?.topic||"—";
-      const subject=fact?.subject||"—";
+      const source=[question.source_label,question.source_year_label||question.source_year].filter(v=>v!==null&&v!==undefined&&v!=="").join(" • ")||"—";
+      const topic=fact?.topic||question.topic_label||"—";
+      const subject=fact?.subject||question.subject_label||"—";
       return `<tr><td><b>Q${question.question_no}</b><br><small title="${esc(question.question_text)}">${esc(String(question.question_text||"").slice(0,56))}${String(question.question_text||"").length>56?"…":""}</small></td><td>${esc(subject)}</td><td class="q-topic">${esc(topic)}</td><td>${esc(question.difficulty||"—")}</td><td>${esc(question.question_type||"—")}</td><td class="q-source">${esc(source)}</td><td><span class="q-status ${status.cls}">${status.label}</span></td><td><button class="secondary" data-edit="${question.id}">EDIT</button> <button class="danger" data-del="${question.id}">DELETE</button></td></tr>`;
     }).join(""):`<tr><td colspan="8">No questions added yet.</td></tr>`;
   }

@@ -73,7 +73,12 @@ export function validateImportQuestions(lookup,rawQuestions=[]){
     else seen.add(questionNo);
 
     const syllabus=resolveSyllabusLabels(lookup,q||{});
-    if(!syllabus.ok)add(syllabus.error+'.');
+    const subjectLabel=text(q?.subject);
+    if(!['Physics','Chemistry','Biology'].includes(subjectLabel))add('Subject must be Physics, Chemistry or Biology.');
+    const unitLabel=text(q?.unit),chapterLabel=text(q?.chapter),topicLabel=text(q?.topic);
+    if(!unitLabel)add('Unit is required.');
+    if(!chapterLabel)add('Chapter is required.');
+    if(!topicLabel)add('Topic is required.');
 
     const questionText=text(q?.questionText),optionA=text(q?.optionA),optionB=text(q?.optionB),optionC=text(q?.optionC),optionD=text(q?.optionD);
     if(!questionText)add('Question is missing.');
@@ -94,9 +99,14 @@ export function validateImportQuestions(lookup,rawQuestions=[]){
     const sourceYear=text(q?.sourceYear);
 
     errors.push(...rowErrors);
-    if(!rowErrors.length&&syllabus.ok){
+    if(!rowErrors.length){
+      const subject=subjectLabel;
       resolved.push({
-        questionNo,subject:syllabus.subject,unitId:syllabus.unitId,chapterId:syllabus.chapterId,subtopicId:syllabus.subtopicId,
+        questionNo,subject,
+        unitLabel,chapterLabel,topicLabel,
+        unitId:syllabus.ok?syllabus.unitId:null,
+        chapterId:syllabus.ok?syllabus.chapterId:null,
+        subtopicId:syllabus.ok?syllabus.subtopicId:null,
         questionText,optionA,optionB,optionC,optionD,correctOption,marks:marks.value,negativeMarks:negative.value,
         explanation:text(q?.explanation),difficulty,questionType,source:text(q?.source),sourceYear
       });
