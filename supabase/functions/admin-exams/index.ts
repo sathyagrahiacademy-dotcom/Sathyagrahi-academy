@@ -180,7 +180,7 @@ async function loadPublishValidation(admin: any, examId: string) {
   const { data: exam, error: examErr } = await admin.from('exams').select('id,total_marks').eq('id', examId).maybeSingle()
   if (examErr) throw new Error(examErr.message)
   if (!exam) throw new Error('Exam not found')
-  const { data: questions, error: qErr } = await admin.from('exam_questions').select('id,exam_id,question_no,marks').eq('exam_id', examId).order('question_no')
+  const { data: questions, error: qErr } = await admin.from('exam_questions').select('id,exam_id,question_no,marks,subject_label,unit_label,chapter_label,topic_label').eq('exam_id', examId).order('question_no')
   if (qErr) throw new Error(qErr.message)
   const questionIds = (questions || []).map((q:any)=>q.id)
   let answerKeys:any[] = []
@@ -195,18 +195,52 @@ async function loadPublishValidation(admin: any, examId: string) {
   const mappingRows = (mappingRowsRaw || []).map((row:any)=>({...row,question_no:questionNo.get(String(row.question_id))}))
   const { data: approvedRows, error: subErr } = await admin.from('neet_syllabus_subtopics').select('id').eq('status','approved')
   if (subErr) throw new Error(subErr.message)
-  return validateExamMapping({questions:questions || [],answerKeys,mappingRows,approvedSubtopicIds:(approvedRows || []).map((row:any)=>row.id),totalMarks:exam.total_marks})
+
+  const base=validateExamMapping({questions:questions || [],answerKeys,mappingRows,approvedSubtopicIds:(approvedRows || []).map((row:any)=>row.id),totalMarks:exam.total_marks})
+  const rawSyllabusMappedIds=new Set((questions||[]).filter((q:any)=>
+    ['Physics','Chemistry','Biology'].includes(String(q.subject_label||'')) &&
+    String(q.unit_label||'').trim() &&
+    String(q.chapter_label||'').trim() &&
+    String(q.topic_label||'').trim()
+  ).map((q:any)=>String(q.id)))
+  const rawMappedNos=new Set((questions||[]).filter((q:any)=>rawSyllabusMappedIds.has(String(q.id))).map((q:any)=>Number(q.question_no)))
+  const canonicalMappedIds=new Set((mappingRows||[]).map((row:any)=>String(row.question_id||'')).filter(Boolean))
+  const effectiveMappedIds=new Set([...canonicalMappedIds,...rawSyllabusMappedIds])
+  const effectiveMappedQuestions=effectiveMappedIds.size
+  const unmappedQuestionNos=(base.unmappedQuestionNos||[]).filter((no:any)=>!rawMappedNos.has(Number(no)))
+  const invalidSubtopicQuestionNos=(base.invalidSubtopicQuestionNos||[]).filter((no:any)=>!rawMappedNos.has(Number(no)))
+  const errors:string[]=[]
+  if(!(questions||[]).length)errors.push('Exam has no questions.')
+  if(unmappedQuestionNos.length)errors.push(`${unmappedQuestionNos.length} question(s) are unmapped.`)
+  if((base.invalidQuestionNos||[]).length)errors.push(`${base.invalidQuestionNos.length} mapping row(s) point outside this exam.`)
+  if((base.duplicateQuestionIds||[]).length)errors.push(`${base.duplicateQuestionIds.length} question(s) have overlapping mappings.`)
+  if(invalidSubtopicQuestionNos.length)errors.push(`${invalidSubtopicQuestionNos.length} question(s) use an unapproved subtopic.`)
+  if((base.answerKeyMissingQuestionNos||[]).length)errors.push(`${base.answerKeyMissingQuestionNos.length} question(s) are missing a valid answer key.`)
+  if(!base.marksMatch)errors.push(`Question marks total ${base.questionMarksTotal} does not match exam total ${base.totalMarks}.`)
+  return {
+    ...base,
+    ok:errors.length===0,
+    mappedQuestions:effectiveMappedQuestions,
+    unmappedQuestionNos,
+    invalidSubtopicQuestionNos,
+    errors,
+    rawSyllabusMapping:rawSyllabusMappedIds.size>0,
+    rawSyllabusMappedQuestions:rawSyllabusMappedIds.size,
+    effectiveMappedQuestions
+  }
 }
 
 async function loadMasterBlueprintValidation(admin:any,examId:string){
-  const [examRes,scopeRes,mapRes]=await Promise.all([
+  const [examRes,scopeRes,mapRes,questionRes]=await Promise.all([
     admin.from('exams').select('id,is_published,exam_type,expected_questions,total_marks,physics_question_count,chemistry_question_count,biology_question_count,blueprint_approved_at').eq('id',examId).maybeSingle(),
     admin.from('exam_scope_items').select('unit_id,chapter_id,subtopic_id,planned_questions').eq('exam_id',examId).order('sort_order').order('id'),
-    admin.from('exam_question_syllabus_map').select('question_id,subtopic_id').eq('exam_id',examId)
+    admin.from('exam_question_syllabus_map').select('question_id,subtopic_id').eq('exam_id',examId),
+    admin.from('exam_questions').select('id,subject_label').eq('exam_id',examId)
   ])
   if(examRes.error)throw new Error(examRes.error.message)
   if(scopeRes.error)throw new Error(scopeRes.error.message)
   if(mapRes.error)throw new Error(mapRes.error.message)
+  if(questionRes.error)throw new Error(questionRes.error.message)
   if(!examRes.data)throw new Error('Exam not found')
   const mappingValidation=await loadPublishValidation(admin,examId)
   const {lookup}=await loadScopeTree(admin)
@@ -238,6 +272,14 @@ async function loadMasterBlueprintValidation(admin:any,examId:string){
   }
   const actualSubjectCounts:{[key:string]:number}={Physics:0,Chemistry:0,Biology:0}
   const seenQuestions=new Set<string>()
+  for(const question of questionRes.data||[]){
+    const questionId=String(question.id||'')
+    const subject=String(question.subject_label||'')
+    if(questionId&&subject in actualSubjectCounts){
+      actualSubjectCounts[subject]++
+      seenQuestions.add(questionId)
+    }
+  }
   for(const row of mapRes.data||[]){
     const questionId=String(row.question_id||'')
     if(!questionId||seenQuestions.has(questionId))continue
