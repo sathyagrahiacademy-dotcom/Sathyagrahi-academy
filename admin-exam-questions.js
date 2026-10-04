@@ -48,18 +48,6 @@
 
   let bulkQuestions = [];
   const requiredHeaders = ["Question No","Subject","Unit","Chapter","Topic","Question","Option A","Option B","Option C","Option D","Correct Answer","Marks","Negative Marks","Explanation","Difficulty","Question Type","Source","Source Year"];
-  const approvedQuestionTypes = Object.freeze({
-    Physics:Object.freeze([
-      "Direct Concept MCQ","Numerical / Application","Graph / Diagram","Circuit Based","Formula / Relation","Statement I–II","Match / Order"
-    ]),
-    Chemistry:Object.freeze([
-      "Direct Concept / NCERT","Numerical / Application","Reaction / Product","Reagent / Conversion","Statement Based","Assertion–Reason","Match / Order / Trend"
-    ]),
-    Biology:Object.freeze([
-      "NCERT Direct","Multiple Statements","Statement I–II","Assertion–Reason","Match the Following","Sequence / Order","Diagram / Image"
-    ])
-  });
-
   function normalizeHeader(s){ return String(s??"").trim().toLowerCase().replace(/[^a-z0-9]/g,""); }
   function cell(row,names){
     const keys=Object.keys(row), wanted=names.map(normalizeHeader);
@@ -102,13 +90,7 @@
       if(!Number.isFinite(marks)||marks!==4) errors.push(`Row ${r}: Marks must be 4 for official NEET questions.`);
       if(!Number.isFinite(negativeMarks)||negativeMarks!==1) errors.push(`Row ${r}: Negative Marks must be 1 for official NEET questions.`);
 
-      const allowed=approvedQuestionTypes[q.subject];
-      if(!allowed) errors.push(`Row ${r}: Subject must be Physics, Chemistry or Biology.`);
-      else if(!q.questionType) errors.push(`Row ${r}: Question Type is required and must use an approved ${q.subject} format.`);
-      else if(!allowed.includes(q.questionType)) errors.push(`Row ${r}: Question Type "${q.questionType}" is not an approved ${q.subject} format.`);
-
-      if(q.difficulty&&!['easy','medium','hard'].includes(q.difficulty.toLowerCase())) errors.push(`Row ${r}: Difficulty must be Easy, Medium or Hard.`);
-      if(q.sourceYear&&(!/^\d{4}$/.test(q.sourceYear)||Number(q.sourceYear)<1900||Number(q.sourceYear)>2200)) errors.push(`Row ${r}: invalid Source Year.`);
+      if(!['Physics','Chemistry','Biology'].includes(q.subject)) errors.push(`Row ${r}: Subject must be Physics, Chemistry or Biology.`);
       if(seen.has(q.questionNo)) errors.push(`Row ${r}: duplicate Question No. ${q.questionNo}.`);
       seen.add(q.questionNo);
     });
@@ -144,7 +126,7 @@
         $("bulkErrors").innerHTML=errors.slice(0,25).map(esc).join("<br>");
         return;
       }
-      $("bulkSummary").textContent=`Ready: ${bulkQuestions.length} question(s). Official syllabus, Question Type and +4/−1 marking will be server-verified and AUTO MAPPED on import.`;
+      $("bulkSummary").textContent=`Ready: ${bulkQuestions.length} question(s). Official syllabus, subject split and +4/−1 marking will be server-verified. Question Type, Difficulty, Source and Source Year are kept exactly as entered in Excel.`;
       $("bulkSummary").className="msg ok";
       $("importQuestions").disabled=false;
     }catch(err){
