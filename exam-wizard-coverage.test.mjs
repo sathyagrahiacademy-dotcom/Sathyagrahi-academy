@@ -26,7 +26,7 @@ test('subject distribution is captured with three counts and a derived total',()
   for(const token of ['mwPhysicsQuestions','mwChemistryQuestions','mwBiologyQuestions','mwExpectedQuestions']){
     assert.ok(ui.includes(token),'missing '+token)
   }
-  assert.match(ui,/physics\s*\+\s*chemistry\s*\+\s*biology/)
+  assert.match(ui,/daily:\{physics:15,chemistry:15,biology:15,total:45\}/)
 })
 
 test('successful Draft save advances directly to Questions',()=>{
