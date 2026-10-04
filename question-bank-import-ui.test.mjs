@@ -28,8 +28,8 @@ test('bulk upload page explains official format and marking rules',()=>{
   assert.match(examQuestionsHtml,/Question Type/i);
 });
 
-test('central Question Bank exposes a compact approved format guide',()=>{
-  assert.match(bankHtml,/id="questionFormatGuide"/);
-  for(const heading of ['Physics','Chemistry','Biology']) assert.match(bankHtml,new RegExp(`>${heading}<`));
-  for(const value of ['Direct Concept MCQ','Reaction / Product','NCERT Direct']) assert.ok(bankHtml.includes(value),value);
+test('exam question setup is Excel-only while legacy Question Bank page is not part of the wizard',()=>{
+  assert.match(examQuestionsHtml,/EXCEL UPLOAD/i);
+  assert.match(examQuestionsHtml,/No Question Bank and no manual question entry/i);
+  assert.doesNotMatch(examQuestionsHtml,/FROM QUESTION BANK/);
 });
