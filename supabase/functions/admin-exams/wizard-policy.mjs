@@ -17,6 +17,10 @@ function nonNegativeInt(value){
   return Number.isInteger(n)&&n>=0?n:null
 }
 
+function mapGet(map,key){
+  return map?.get?.(key) ?? map?.get?.(String(key))
+}
+
 export function normaliseSubjectQuestionCounts(input={}){
   const examType=normaliseMasterExamType(input.examType)
   if(!examType)return null
