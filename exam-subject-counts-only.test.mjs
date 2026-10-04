@@ -56,3 +56,19 @@ test('blueprint compares actual mapped question subjects to stored subject count
   assert.match(block,/actualSubjectCounts/)
   assert.match(block,/plannedSubjectCounts/)
 })
+
+
+test('new wizard locks approved exam sizes and subject splits',()=>{
+  assert.match(ui,/daily[\s\S]{0,500}15[\s\S]{0,500}15[\s\S]{0,500}15/i)
+  assert.match(ui,/weekly[\s\S]{0,800}45[\s\S]{0,800}45[\s\S]{0,800}90/i)
+  assert.match(ui,/monthly[\s\S]{0,800}45[\s\S]{0,800}45[\s\S]{0,800}90/i)
+  assert.match(ui,/grand[\s\S]{0,800}45[\s\S]{0,800}45[\s\S]{0,800}90/i)
+  assert.match(ui,/mwPhysicsQuestions[^>]+readonly/i)
+  assert.match(ui,/mwChemistryQuestions[^>]+readonly/i)
+  assert.match(ui,/mwBiologyQuestions[^>]+readonly/i)
+})
+
+test('Questions step is Excel-only and does not expose bank or manual methods',()=>{
+  assert.match(ui,/EXCEL UPLOAD/i)
+  assert.doesNotMatch(ui,/FROM QUESTION BANK|MANUAL QUESTION|admin-question-bank\.html/)
+})
