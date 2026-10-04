@@ -279,9 +279,7 @@
 
   $("cancelEditQuestion").addEventListener("click",()=>{editingQuestionId=null;$("questionForm").reset();$("marks").value=4;$("negativeMarks").value=1;$("saveQuestionBtn").textContent="SAVE QUESTION";$("cancelEditQuestion").style.display="none";load();msg("Edit cancelled.",true);});
 
-  $("fromQuestionBank").href=`admin-question-bank.html?exam=${encodeURIComponent(examId||"")}`;
   $("excelImportMethod").addEventListener("click",()=>{$("bulkUploadSection")?.scrollIntoView({behavior:"smooth",block:"start"});$("bulkFile")?.focus();});
-  $("manualQuestionMethod").addEventListener("click",()=>{$("manualQuestionSection")?.scrollIntoView({behavior:"smooth",block:"start"});$("questionNo")?.focus();});
   $("backToExamSetup").addEventListener("click",event=>{
     if(window.opener&&!window.opener.closed){event.preventDefault();window.opener.focus();window.close();}
   });
