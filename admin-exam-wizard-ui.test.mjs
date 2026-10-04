@@ -24,16 +24,15 @@ test('wizard intercepts Create Exam only in master mode and keeps a separate mod
   assert.doesNotMatch(s,/id=["']modal["']/)
 })
 
-test('wizard presents the approved six setup steps',()=>{
+test('wizard presents the simplified five setup steps',()=>{
   const s=src()
-  for(const label of ['Basic Details','Coverage / Syllabus','Questions','Blueprint & Validation','Students / Audience','Publish / Result Release']){
-    assert.match(s,new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')))
-  }
+  for(const label of ['Basic Details','Questions','Validation','Students / Audience','Review & Publish']) assert.ok(s.includes(label),'missing '+label)
+  assert.equal(s.includes('Coverage / Syllabus'),false)
 })
 
 test('Step 1 has final type batch date identity duration scoring password and result release controls',()=>{
   const s=src()
-  for(const id of ['mwExamType','mwBatchNo','mwExamDate','mwTitle','mwExamCode','mwExpectedQuestions','mwDurationMinutes','mwTotalMarks','mwPassword','mwResultPublishMode','mwResultPublishAt','mwInstructions']){
+  for(const id of ['mwExamType','mwBatchNo','mwExamDate','mwTitle','mwExamCode','mwPhysicsQuestions','mwChemistryQuestions','mwBiologyQuestions','mwExpectedQuestions','mwDurationMinutes','mwTotalMarks','mwPassword','mwResultPublishMode','mwResultPublishAt','mwInstructions']){
     assert.match(s,new RegExp(id),`missing ${id}`)
   }
   for(const value of ['daily','weekly','monthly','grand']) assert.match(s,new RegExp(`value=["']${value}["']`))
@@ -60,7 +59,7 @@ test('wizard calls dedicated authenticated Edge Function and creates draft throu
   assert.match(s,/resultPublishAt/)
 })
 
-test('successful Step 1 stores server exam id and code then advances to Coverage',()=>{
+test('successful Step 1 stores server exam id and code then advances to Questions',()=>{
   const s=src()
   assert.match(s,/state\.examId\s*=\s*data\.examId/)
   assert.match(s,/state\.examCode\s*=\s*data\.examCode/)
