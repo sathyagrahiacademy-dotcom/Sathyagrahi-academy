@@ -99,23 +99,33 @@ test('Chemistry accepts approved Reaction Product format', async () => {
   assert.equal(result.ok,true,result.errors.join(' '));
 });
 
-test('Biology rejects Physics-only Circuit Based format with row-specific error', async () => {
+test('Question Type is preserved as free metadata across subjects', async () => {
   const { buildSyllabusLookup, validateImportQuestions } = await import(modulePath);
   const x=lookupFor('Biology');
-  const result=validateImportQuestions(buildSyllabusLookup(x.data),[officialRow({subject:'Biology',questionType:'Circuit Based'})]);
-  assert.equal(result.ok,false);
-  assert.match(result.errors.join(' '),/Row 2:.*Circuit Based.*Biology/i);
-  assert.equal(result.items.length,0);
+  const row=officialRow({subject:'Biology',questionType:'Circuit Based'});
+  const result=validateImportQuestions(buildSyllabusLookup(x.data),[row]);
+  assert.equal(result.ok,true,result.errors.join(' '));
+  assert.equal(result.items[0].questionType,'Circuit Based');
 });
 
-test('unsupported or missing question type is rejected', async () => {
+test('unsupported blank or custom question type does not block import', async () => {
   const { buildSyllabusLookup, validateImportQuestions } = await import(modulePath);
   const x=lookupFor('Physics'),lookup=buildSyllabusLookup(x.data);
   for(const questionType of ['Random AI Type','']){
     const result=validateImportQuestions(lookup,[officialRow({questionType})]);
-    assert.equal(result.ok,false,questionType||'blank');
-    assert.match(result.errors.join(' '),/Question Type|approved Physics question type/i);
+    assert.equal(result.ok,true,questionType||'blank');
+    assert.equal(result.items[0].questionType,questionType);
   }
+});
+
+test('Difficulty and Source Year are preserved as free metadata', async()=>{
+  const { buildSyllabusLookup, validateImportQuestions } = await import(modulePath);
+  const x=lookupFor('Physics'),lookup=buildSyllabusLookup(x.data);
+  const row={...officialRow(),difficulty:'Very Tricky',sourceYear:'NCERT 2026-27'};
+  const result=validateImportQuestions(lookup,[row]);
+  assert.equal(result.ok,true,result.errors.join(' '));
+  assert.equal(result.items[0].difficulty,'Very Tricky');
+  assert.equal(result.items[0].sourceYear,'NCERT 2026-27');
 });
 
 test('official bank import requires exactly plus 4 and minus 1', async () => {
