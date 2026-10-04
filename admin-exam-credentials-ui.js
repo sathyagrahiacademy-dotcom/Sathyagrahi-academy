@@ -141,9 +141,29 @@
     finally{busy=false}
   }
 
+  async function copyText(value){
+    const text=String(value||'');
+    if(!text)throw new Error('Nothing to copy');
+    if(navigator.clipboard?.writeText){
+      try{await navigator.clipboard.writeText(text);return}
+      catch(_error){}
+    }
+    const area=document.createElement('textarea');
+    area.value=text;
+    area.setAttribute('readonly','');
+    area.style.position='fixed';
+    area.style.opacity='0';
+    document.body.appendChild(area);
+    area.select();
+    area.setSelectionRange(0,area.value.length);
+    const ok=document.execCommand('copy');
+    area.remove();
+    if(!ok)throw new Error('Copy failed');
+  }
+
   async function copyCode(){
     if(!currentExam?.examCode)return;
-    try{await navigator.clipboard.writeText(currentExam.examCode);setMessage('Exam Code copied.')}
+    try{await copyText(currentExam.examCode);setMessage('Exam Code copied.')}
     catch(_error){setMessage('Could not copy Exam Code.')}
   }
 
@@ -152,7 +172,7 @@
     busy=true;setMessage('');
     try{
       const password=revealedPassword||await revealFromServer();
-      await navigator.clipboard.writeText(password);
+      await copyText(password);
       setMessage('Exam Password copied.');
     }catch(error){setMessage(error.message||'Unable to copy password')}
     finally{busy=false}
