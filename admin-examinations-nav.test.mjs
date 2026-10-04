@@ -4,20 +4,21 @@ import fs from 'node:fs';
 
 const nav = fs.readFileSync('admin-examinations-nav.js','utf8');
 const css = fs.readFileSync('admin-dashboard.css','utf8');
-const pages = ['admin-exams.html','admin-question-bank.html','admin-results.html','admin-performance.html','admin-manual-exams.html'];
+const pages = ['admin-exams.html','admin-results.html','admin-performance.html','admin-manual-exams.html'];
 
-test('shared examinations navigation exposes exactly five destinations',()=>{
+test('shared examinations navigation exposes four destinations without Question Bank',()=>{
   const expected = [
     ['admin-exams.html','Exams'],
-    ['admin-question-bank.html','Question Bank'],
     ['admin-results.html','Results'],
     ['admin-performance.html','Performance'],
     ['admin-manual-exams.html','Manual Exams']
   ];
   for (const [href,label] of expected) {
-    assert.match(nav,new RegExp(href.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
-    assert.match(nav,new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+    assert.ok(nav.includes(href));
+    assert.ok(nav.includes(label));
   }
+  assert.equal(nav.includes('admin-question-bank.html'),false);
+  assert.equal(nav.includes("'Question Bank'"),false);
   assert.match(nav,/Student Exam Analysis/);
 });
 
