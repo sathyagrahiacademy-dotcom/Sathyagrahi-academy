@@ -19,9 +19,9 @@ test('Create Exam uses subject counts only and has no syllabus topic picker',()=
   for(const id of ['mwPhysicsQuestions','mwChemistryQuestions','mwBiologyQuestions','mwExpectedQuestions']){
     assert.match(ui,new RegExp(id),'missing '+id)
   }
-  assert.match(ui,/Physics Questions/)
-  assert.match(ui,/Chemistry Questions/)
-  assert.match(ui,/Biology Questions/)
+  assert.match(ui,/PHYSICS QUESTIONS/i)
+  assert.match(ui,/CHEMISTRY QUESTIONS/i)
+  assert.match(ui,/BIOLOGY QUESTIONS/i)
   assert.doesNotMatch(ui,/mwCoverageRows|mwAddCoverage|WHOLE CHAPTER|Select Unit|Select Chapter|Topic \/ Whole Chapter/)
 })
 
