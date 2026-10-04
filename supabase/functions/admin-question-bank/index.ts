@@ -113,7 +113,7 @@ Deno.serve(async (req: Request) => {
       const tree=await loadTree(admin), lookup=buildSyllabusLookup(tree)
       const validation=validateImportQuestions(lookup,raw)
       if(!validation.ok) return json({error:'Import needs review before anything is saved.',errors:validation.errors.slice(0,100)},400)
-      const {data,error}=await admin.rpc('import_exam_questions_to_bank',{p_exam_id:examId,p_items:validation.items,p_created_by:user.id})
+      const {data,error}=await admin.rpc('import_exam_questions_direct',{p_exam_id:examId,p_items:validation.items,p_created_by:user.id})
       if(error) return json({error:error.message},400)
       return json({ok:true,...(data||{})})
     }
