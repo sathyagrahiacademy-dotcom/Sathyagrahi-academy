@@ -60,6 +60,11 @@ Deno.serve(async (req: Request) => {
     const admin=createClient(url,sec,{auth:{persistSession:false}})
     const body=await req.json(); const action=text(body.action)
 
+    if(action!=='bulk_import'){
+      return json({error:'Question Bank is retired. Use the Excel upload inside Create Exam.'},410)
+    }
+
+
     if(action==='folder_summary'){
       const [tree,rows]=await Promise.all([loadTree(admin),loadActiveFolderRows(admin)])
       return json({ok:true,...buildFolderSummary(tree,rows)})
