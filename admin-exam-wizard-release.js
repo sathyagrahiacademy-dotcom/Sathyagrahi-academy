@@ -72,16 +72,16 @@
     updateAssignedCount();renderStudentRows();
   }
 
-  async function renderStep5(){
-    if(!examId||activeStep()!==5)return;
+  async function renderStep4(){
+    if(!examId||activeStep()!==4)return;
     const target=host();if(!target)return;
-    if(target.dataset.releaseStep==='5')return;
-    target.dataset.releaseStep='5';
+    if(target.dataset.releaseStep==='4')return;
+    target.dataset.releaseStep='4';
     ensureStyles();
     target.innerHTML='<div class="mw-placeholder"><b>Students / Audience</b>Loading active students…</div>';
     try{
       const data=await callWizard({action:'master_students',examId});
-      if(activeStep()!==5)return;
+      if(activeStep()!==4)return;
       students=Array.isArray(data.students)?data.students:[];
       selectedIds=new Set(students.filter(student=>student.assigned).map(student=>String(student.id)));
       assignedCount=Number(data.assignedCount||0);
@@ -102,7 +102,7 @@
     }catch(error){target.innerHTML=`<div class="mw-placeholder"><b>Students / Audience</b>${esc(error?.message||'Could not load students')}</div>`}
   }
 
-  async function saveStep5(){
+  async function saveStep4(){
     if(busy)return;
     updateAssignedCount();
     if(assignedCount<=0){setMessage('Select at least one student before continuing.');return}
@@ -112,7 +112,7 @@
       assignedCount=Number(result.assignedCount||0);
       if(assignedCount<=0){setMessage('Select at least one student before continuing.');return}
       setMessage(`${assignedCount} student(s) assigned.`,true);
-      document.querySelector('#mwSteps .mw-step[data-step="6"]')?.click();
+      document.querySelector('#mwSteps .mw-step[data-step="5"]')?.click();
     }catch(error){setMessage(error?.message||'Could not save student audience')}
     finally{busy=false;if(next)next.disabled=false}
   }
@@ -124,17 +124,17 @@
     return 'MANUAL — Admin publishes after grading';
   }
 
-  async function renderStep6(){
-    if(!examId||activeStep()!==6)return;
+  async function renderStep5(){
+    if(!examId||activeStep()!==5)return;
     const target=host();if(!target)return;
-    if(target.dataset.releaseStep==='6')return;
-    target.dataset.releaseStep='6';
+    if(target.dataset.releaseStep==='5')return;
+    target.dataset.releaseStep='5';
     ensureStyles();
     const next=footerNext();if(next)next.style.display='none';
-    target.innerHTML='<div class="mw-placeholder"><b>Publish / Result Release</b>Loading final publish summary…</div>';
+    target.innerHTML='<div class="mw-placeholder"><b>Review & Publish</b>Loading final publish summary…</div>';
     try{
       const data=await callWizard({action:'master_students',examId});
-      if(activeStep()!==6)return;
+      if(activeStep()!==5)return;
       const exam=data.exam||{};
       assignedCount=Number(data.assignedCount||0);
       const code=examCode||'Generated Exam Code';
@@ -147,11 +147,11 @@
         </div>
         <div class="mw-publish-note"><b>Student Portal notification</b><br>Shows exam name, code, date, duration, marks, syllabus/coverage context, Start Anytime while available, and result-release wording. Exam password is not included. No publish email or WhatsApp is sent.</div>
         <div class="mw-publish-action"><button type="button" class="mw-btn primary" id="mwPublishExam">PUBLISH EXAM</button></div>`;
-      document.getElementById('mwPublishExam')?.addEventListener('click',publishStep6);
+      document.getElementById('mwPublishExam')?.addEventListener('click',publishStep5);
     }catch(error){target.innerHTML=`<div class="mw-placeholder"><b>Publish / Result Release</b>${esc(error?.message||'Could not load publish summary')}</div>`}
   }
 
-  async function publishStep6(){
+  async function publishStep5(){
     if(busy)return;
     if(assignedCount<=0){setMessage('Assign at least one student before publishing.');return}
     if(!confirm('Publish this exam to assigned students?'))return;
@@ -169,9 +169,9 @@
   function syncStep(){
     const step=activeStep();
     const next=footerNext();
-    if(step!==6&&next)next.style.display='';
+    if(step!==5&&next)next.style.display='';
+    if(step===4)renderStep4();
     if(step===5)renderStep5();
-    if(step===6)renderStep6();
   }
 
   window.addEventListener('sga:master-exam-draft-saved',event=>{
@@ -183,7 +183,7 @@
     const next=event.target?.closest?.('#mwNext');
     if(!next)return;
     const step=activeStep();
-    if(step===5){event.preventDefault();event.stopImmediatePropagation();saveStep5()}
+    if(step===4){event.preventDefault();event.stopImmediatePropagation();saveStep4()}
   },true);
 
   const observer=new MutationObserver(syncStep);
