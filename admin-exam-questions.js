@@ -29,7 +29,7 @@
     if (error){
       let detail=null;
       try{ detail=await error.context?.json?.(); }catch(_){}
-      const e=new Error(detail?.error||error.message||"Question Bank operation failed.");
+      const e=new Error(detail?.error||error.message||"Excel import operation failed.");
       e.details=Array.isArray(detail?.errors)?detail.errors:[];
       throw e;
     }
@@ -155,11 +155,11 @@
 
   $("importQuestions").addEventListener("click",async()=>{
     if(!bulkQuestions.length) return;
-    if(!confirm(`Validate, auto-map and import ${bulkQuestions.length} questions into this exam and permanent Question Bank?`)) return;
+    if(!confirm(`Validate, auto-map and import ${bulkQuestions.length} questions directly into this exam?`)) return;
     const btn=$("importQuestions"); btn.disabled=true; btn.textContent="VALIDATING & IMPORTING..."; $("bulkErrors").textContent="";
     try{
       const data=await invokeBank({action:"bulk_import",examId,questions:bulkQuestions});
-      msg(`${data.imported||bulkQuestions.length} imported • ${data.autoMapped||0} auto-mapped • Bank: ${data.bankCreated||0} new, ${data.bankReused||0} reused.`,true);
+      msg(`${data.imported||bulkQuestions.length} imported directly into this exam • ${data.autoMapped||0} auto-mapped.`,true);
       bulkQuestions=[]; $("bulkFile").value=""; $("bulkSummary").textContent="No file selected."; $("bulkSummary").className="msg"; $("bulkErrors").textContent="";
       await load();
     }catch(err){
