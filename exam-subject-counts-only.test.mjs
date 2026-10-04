@@ -36,8 +36,8 @@ test('subject counts derive total questions and total marks',()=>{
   assert.match(ui,/mwPhysicsQuestions/)
   assert.match(ui,/mwChemistryQuestions/)
   assert.match(ui,/mwBiologyQuestions/)
-  assert.match(ui,/physics\s*\+\s*chemistry\s*\+\s*biology/)
-  assert.match(ui,/expected\s*\*\s*4/)
+  assert.match(ui,/daily:\{physics:15,chemistry:15,biology:15,total:45\}/)
+  assert.match(ui,/expected\*4/)
 })
 
 test('master create and update persist subject question counts',()=>{
