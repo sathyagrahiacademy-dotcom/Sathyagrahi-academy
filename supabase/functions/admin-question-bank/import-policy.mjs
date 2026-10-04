@@ -73,6 +73,8 @@ export function validateImportQuestions(lookup,rawQuestions=[]){
     else seen.add(questionNo);
 
     const syllabus=resolveSyllabusLabels(lookup,q||{});
+    const subjectLabel=text(q?.subject);
+    if(!['Physics','Chemistry','Biology'].includes(subjectLabel))add('Subject must be Physics, Chemistry or Biology.');
     const unitLabel=text(q?.unit),chapterLabel=text(q?.chapter),topicLabel=text(q?.topic);
     if(!unitLabel)add('Unit is required.');
     if(!chapterLabel)add('Chapter is required.');
@@ -98,7 +100,7 @@ export function validateImportQuestions(lookup,rawQuestions=[]){
 
     errors.push(...rowErrors);
     if(!rowErrors.length){
-      const subject=text(q?.subject);
+      const subject=subjectLabel;
       resolved.push({
         questionNo,subject,
         unitLabel,chapterLabel,topicLabel,
